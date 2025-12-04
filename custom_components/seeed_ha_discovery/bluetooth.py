@@ -279,8 +279,18 @@ def parse_ble_advertisement(
     # 解析 BTHome 数据
     sensors, events, is_v2, is_encrypted = parse_bthome_data(bthome_data)
 
-    if not sensors and not events:
-        _LOGGER.debug("没有解析到传感器或事件数据")
+    # 检查是否有控制服务（即使没有传感器也可以发现）
+    has_control_service = False
+    if service_info.service_uuids:
+        from .const import SEEED_CONTROL_SERVICE_UUID
+        for uuid in service_info.service_uuids:
+            if SEEED_CONTROL_SERVICE_UUID.lower() in uuid.lower():
+                has_control_service = True
+                break
+
+    # 如果没有传感器/事件，也没有控制服务，则不是有效设备
+    if not sensors and not events and not has_control_service and not is_v2:
+        _LOGGER.debug("没有解析到传感器或事件数据，也没有控制服务")
         return None
 
     # 创建设备对象
@@ -296,11 +306,12 @@ def parse_ble_advertisement(
     )
 
     _LOGGER.info(
-        "发现 Seeed BLE 设备: %s (%s), 传感器: %d, 事件: %d",
+        "发现 Seeed BLE 设备: %s (%s), 传感器: %d, 事件: %d, 控制服务: %s",
         device.name,
         device.short_address,
         len(device.sensors),
         len(device.events),
+        has_control_service,
     )
 
     return device

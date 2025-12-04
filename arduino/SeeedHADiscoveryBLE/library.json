@@ -1,12 +1,13 @@
 {
   "name": "Seeed Home Assistant Discovery BLE",
-  "version": "1.0.0",
-  "description": "Connect ESP32/nRF52840 devices to Home Assistant via Bluetooth using BTHome v2 protocol. Supports XIAO ESP32 (NimBLE), XIAO nRF52840 mbed BSP (ArduinoBLE), and Adafruit nRF52 BSP (Bluefruit).",
+  "version": "1.5.0",
+  "description": "Connect ESP32/nRF52840 devices to Home Assistant via Bluetooth. Supports BTHome v2 passive advertising for sensors and GATT bidirectional communication for switches. Compatible with XIAO ESP32 (NimBLE) and XIAO nRF52840 (ArduinoBLE).",
   "keywords": [
     "homeassistant",
     "bluetooth",
     "ble",
     "bthome",
+    "gatt",
     "esp32",
     "nrf52840",
     "xiao",
@@ -14,6 +15,7 @@
     "iot",
     "smart-home",
     "sensor",
+    "switch",
     "seeed"
   ],
   "repository": {

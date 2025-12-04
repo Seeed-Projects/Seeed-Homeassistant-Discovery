@@ -15,7 +15,7 @@
       },
       "bluetooth_confirm": {
         "title": "发现蓝牙设备",
-        "description": "发现了一个 Seeed HA 蓝牙设备:\n\n**设备名称:** {name}\n**型号:** {model}\n**蓝牙地址:** {address}\n**当前传感器:** {sensors}\n\n是否添加此设备？"
+        "description": "发现了一个 Seeed HA 蓝牙设备:\n\n**设备名称:** {name}\n**型号:** {model}\n**蓝牙地址:** {address}\n**当前传感器:** {sensors}\n**支持控制:** {control}\n\n是否添加此设备？"
       }
     },
     "error": {

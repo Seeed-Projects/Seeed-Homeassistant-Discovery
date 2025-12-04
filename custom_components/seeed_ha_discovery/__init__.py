@@ -125,22 +125,31 @@ async def _async_setup_ble_entry(hass: HomeAssistant, entry: ConfigEntry) -> boo
     设置 BLE 设备
     Set up a BLE device.
 
-    BLE 设备使用被动监听模式，不需要主动连接。
-    传感器数据通过蓝牙广播接收。
+    BLE 设备支持两种模式：
+    1. 被动监听模式 - 传感器数据通过蓝牙广播接收
+    2. 主动连接模式 - 通过 GATT 控制设备（如开关）
     """
+    from .const import CONF_BLE_CONTROL
+
     ble_address = entry.data[CONF_BLE_ADDRESS]
+    ble_control = entry.data.get(CONF_BLE_CONTROL, False)
 
-    _LOGGER.info("正在设置 Seeed HA BLE 设备: %s", ble_address)
-    _LOGGER.info("Setting up Seeed HA BLE device: %s", ble_address)
+    _LOGGER.info("正在设置 Seeed HA BLE 设备: %s (控制=%s)", ble_address, ble_control)
+    _LOGGER.info("Setting up Seeed HA BLE device: %s (control=%s)", ble_address, ble_control)
 
-    # BLE 设备不需要主动连接，只需要保存配置
+    # 保存配置
     hass.data[DOMAIN][entry.entry_id] = {
         "ble_address": ble_address,
         "connection_type": CONNECTION_TYPE_BLE,
+        "ble_control": ble_control,
     }
 
-    # 加载传感器平台（会自动处理 BLE 传感器）
-    await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
+    # 加载平台
+    platforms = ["sensor"]
+    if ble_control:
+        platforms.append("switch")
+
+    await hass.config_entries.async_forward_entry_setups(entry, platforms)
 
     # 注册配置更新监听器
     entry.async_on_unload(entry.add_update_listener(async_update_options))
@@ -164,15 +173,23 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     返回 | Returns:
         bool: 卸载是否成功
     """
+    from .const import CONF_BLE_CONTROL
+
     _LOGGER.info("正在卸载 Seeed HA 设备")
     _LOGGER.info("Unloading Seeed HA device")
 
     # 获取连接类型
     data = hass.data[DOMAIN].get(entry.entry_id, {})
     connection_type = data.get("connection_type", CONNECTION_TYPE_WIFI)
+    ble_control = data.get("ble_control", False)
 
     # 确定要卸载的平台
-    platforms_to_unload = ["sensor"] if connection_type == CONNECTION_TYPE_BLE else PLATFORMS
+    if connection_type == CONNECTION_TYPE_BLE:
+        platforms_to_unload = ["sensor"]
+        if ble_control:
+            platforms_to_unload.append("switch")
+    else:
+        platforms_to_unload = PLATFORMS
 
     # 卸载所有平台
     unload_ok = await hass.config_entries.async_unload_platforms(entry, platforms_to_unload)
@@ -185,6 +202,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if connection_type == CONNECTION_TYPE_WIFI and "coordinator" in data:
             coordinator: SeeedHACoordinator = data["coordinator"]
             await coordinator.async_disconnect()
+
+        # 如果是 BLE 设备且有控制功能，断开 GATT 连接
+        if connection_type == CONNECTION_TYPE_BLE and "ble_manager" in data:
+            manager = data["ble_manager"]
+            await manager.async_disconnect()
 
         _LOGGER.info("设备卸载完成")
         _LOGGER.info("Device unloaded successfully")

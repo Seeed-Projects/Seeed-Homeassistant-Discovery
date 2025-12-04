@@ -9,11 +9,6 @@
  * - XIAO nRF52840 mbed 版本 (ArduinoBLE)
  * - XIAO nRF52840 Adafruit BSP (Bluefruit)
  *
- * 参考 | References:
- * - https://wiki.seeedstudio.com/XIAO-BLE-Sense-Bluetooth-Usage/ (mbed + ArduinoBLE)
- * - https://wiki.seeedstudio.com/XIAO-BLE-Sense-Bluetooth_Usage/ (Adafruit + Bluefruit)
- * - https://bthome.io/format/ (BTHome v2 规范)
- *
  * @author limengdu
  */
 
@@ -21,7 +16,49 @@
 #include <stdarg.h>
 
 // =============================================================================
-// SeeedBLESensor 实现 | SeeedBLESensor Implementation
+// 全局回调指针（用于平台回调）
+// =============================================================================
+
+static SeeedHADiscoveryBLE* g_pInstance = nullptr;
+
+// =============================================================================
+// ESP32 NimBLE 回调类
+// =============================================================================
+
+#ifdef SEEED_BLE_ESP32
+
+class SeeedBLEServerCallbacks : public NimBLEServerCallbacks {
+    void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override {
+        if (g_pInstance) {
+            g_pInstance->_onConnect();
+        }
+    }
+
+    void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
+        if (g_pInstance) {
+            g_pInstance->_onDisconnect();
+        }
+        // 重新开始广播
+        NimBLEDevice::startAdvertising();
+    }
+};
+
+class SeeedBLECharCallbacks : public NimBLECharacteristicCallbacks {
+    void onWrite(NimBLECharacteristic* pChar, NimBLEConnInfo& connInfo) override {
+        if (g_pInstance) {
+            NimBLEAttValue value = pChar->getValue();
+            g_pInstance->_handleCommand(value.data(), value.length());
+        }
+    }
+};
+
+static SeeedBLEServerCallbacks serverCallbacks;
+static SeeedBLECharCallbacks charCallbacks;
+
+#endif
+
+// =============================================================================
+// SeeedBLESensor 实现
 // =============================================================================
 
 SeeedBLESensor::SeeedBLESensor(BTHomeObjectId objectId)
@@ -37,7 +74,6 @@ void SeeedBLESensor::setValue(int32_t value) {
 }
 
 void SeeedBLESensor::setValue(float value) {
-    // 根据对象类型转换浮点数到整数
     float multiplier = _getMultiplier();
     _rawValue = (int32_t)(value * multiplier);
     _hasValue = true;
@@ -60,13 +96,10 @@ float SeeedBLESensor::_getMultiplier() const {
         case BTHOME_DEWPOINT:
         case BTHOME_MOISTURE:
         case BTHOME_SPEED:
-            return 100.0f;  // 0.01 精度
-
         case BTHOME_PRESSURE:
         case BTHOME_ILLUMINANCE:
         case BTHOME_POWER:
-            return 100.0f;  // 0.01 精度
-
+            return 100.0f;
         case BTHOME_VOLTAGE:
         case BTHOME_CURRENT:
         case BTHOME_ENERGY:
@@ -77,27 +110,23 @@ float SeeedBLESensor::_getMultiplier() const {
         case BTHOME_GAS_UINT32:
         case BTHOME_ENERGY_UINT32:
         case BTHOME_DURATION:
-            return 1000.0f;  // 0.001 精度
-
+            return 1000.0f;
         case BTHOME_MASS_KG:
         case BTHOME_MASS_LB:
-            return 100.0f;  // 0.01 精度
-
+            return 100.0f;
         case BTHOME_TEMPERATURE_TENTH:
         case BTHOME_ROTATION:
         case BTHOME_DISTANCE_M:
         case BTHOME_VOLUME_LITERS:
         case BTHOME_VOLTAGE_TENTH:
-            return 10.0f;  // 0.1 精度
-
+            return 10.0f;
         default:
-            return 1.0f;  // 整数
+            return 1.0f;
     }
 }
 
 uint8_t SeeedBLESensor::getDataSize() const {
     switch (_objectId) {
-        // 1 字节数据
         case BTHOME_BATTERY:
         case BTHOME_COUNT_UINT8:
         case BTHOME_HUMIDITY_UINT8:
@@ -112,33 +141,6 @@ uint8_t SeeedBLESensor::getDataSize() const {
         case BTHOME_BINARY_OCCUPANCY:
         case BTHOME_BUTTON:
             return 1;
-
-        // 2 字节数据
-        case BTHOME_TEMPERATURE:
-        case BTHOME_HUMIDITY:
-        case BTHOME_DEWPOINT:
-        case BTHOME_MASS_KG:
-        case BTHOME_MASS_LB:
-        case BTHOME_COUNT_UINT16:
-        case BTHOME_VOLTAGE:
-        case BTHOME_PM25:
-        case BTHOME_PM10:
-        case BTHOME_CO2:
-        case BTHOME_TVOC:
-        case BTHOME_MOISTURE:
-        case BTHOME_DISTANCE_MM:
-        case BTHOME_DISTANCE_M:
-        case BTHOME_CURRENT:
-        case BTHOME_SPEED:
-        case BTHOME_TEMPERATURE_TENTH:
-        case BTHOME_VOLUME_LITERS:
-        case BTHOME_VOLUME_ML:
-        case BTHOME_VOLUME_FLOW:
-        case BTHOME_VOLTAGE_TENTH:
-        case BTHOME_ROTATION:
-            return 2;
-
-        // 3 字节数据
         case BTHOME_PRESSURE:
         case BTHOME_ILLUMINANCE:
         case BTHOME_ENERGY:
@@ -146,27 +148,20 @@ uint8_t SeeedBLESensor::getDataSize() const {
         case BTHOME_DURATION:
         case BTHOME_GAS:
             return 3;
-
-        // 4 字节数据
         case BTHOME_COUNT_UINT32:
         case BTHOME_GAS_UINT32:
         case BTHOME_ENERGY_UINT32:
         case BTHOME_VOLUME_UINT32:
         case BTHOME_WATER:
             return 4;
-
         default:
-            return 2;  // 默认 2 字节
+            return 2;
     }
 }
 
 void SeeedBLESensor::writeToBuffer(uint8_t* buffer, uint8_t& offset) const {
     if (!_hasValue) return;
-
-    // 写入 Object ID
     buffer[offset++] = _objectId;
-
-    // 写入数据（小端序）
     uint8_t dataSize = getDataSize();
     for (uint8_t i = 0; i < dataSize; i++) {
         buffer[offset++] = (_rawValue >> (i * 8)) & 0xFF;
@@ -174,30 +169,80 @@ void SeeedBLESensor::writeToBuffer(uint8_t* buffer, uint8_t& offset) const {
 }
 
 // =============================================================================
-// SeeedHADiscoveryBLE 实现 | SeeedHADiscoveryBLE Implementation
+// SeeedBLESwitch 实现
+// =============================================================================
+
+SeeedBLESwitch::SeeedBLESwitch(const char* id, const char* name)
+    : _state(false)
+    , _callback(nullptr)
+    , _parent(nullptr)
+{
+    strncpy(_id, id, sizeof(_id) - 1);
+    _id[sizeof(_id) - 1] = '\0';
+    strncpy(_name, name, sizeof(_name) - 1);
+    _name[sizeof(_name) - 1] = '\0';
+}
+
+void SeeedBLESwitch::setState(bool state) {
+    if (_state != state) {
+        _state = state;
+        if (_parent) {
+            _parent->_notifyStateChange();
+        }
+    }
+}
+
+void SeeedBLESwitch::toggle() {
+    setState(!_state);
+}
+
+void SeeedBLESwitch::_handleCommand(bool state) {
+    _state = state;
+    if (_callback) {
+        _callback(state);
+    }
+    if (_parent) {
+        _parent->_notifyStateChange();
+    }
+}
+
+// =============================================================================
+// SeeedHADiscoveryBLE 实现
 // =============================================================================
 
 SeeedHADiscoveryBLE::SeeedHADiscoveryBLE()
     : _debug(false)
     , _running(false)
+    , _connected(false)
+    , _controlEnabled(false)
     , _advertiseInterval(5000)
     , _txPower(0)
     , _packetId(0)
     , _advDataLen(0)
 #ifdef SEEED_BLE_ESP32
+    , _pServer(nullptr)
+    , _pControlService(nullptr)
+    , _pCommandChar(nullptr)
+    , _pStateChar(nullptr)
     , _pAdvertising(nullptr)
+#elif defined(SEEED_BLE_MBED_NRF52840)
+    , _pControlService(nullptr)
+    , _pCommandChar(nullptr)
+    , _pStateChar(nullptr)
 #endif
 {
     strcpy(_deviceName, "Seeed Sensor");
     memset(_advData, 0, sizeof(_advData));
+    g_pInstance = this;
 }
 
 SeeedHADiscoveryBLE::~SeeedHADiscoveryBLE() {
     stop();
-    for (auto sensor : _sensors) {
-        delete sensor;
-    }
+    for (auto sensor : _sensors) delete sensor;
+    for (auto sw : _switches) delete sw;
     _sensors.clear();
+    _switches.clear();
+    g_pInstance = nullptr;
 }
 
 void SeeedHADiscoveryBLE::setDeviceName(const char* name) {
@@ -218,60 +263,119 @@ void SeeedHADiscoveryBLE::setTxPower(int8_t power) {
 }
 
 bool SeeedHADiscoveryBLE::begin(const char* deviceName) {
+    return begin(deviceName, false);
+}
+
+bool SeeedHADiscoveryBLE::begin(const char* deviceName, bool enableControl) {
     if (deviceName) {
         setDeviceName(deviceName);
     }
+    _controlEnabled = enableControl;
 
     _log("====================================");
-    _log("Seeed HA Discovery BLE");
+    _log("Seeed HA Discovery BLE v1.1.0");
     _log("====================================");
 
 // =============================================================================
-// ESP32 平台 - 使用 NimBLE
+// ESP32 - NimBLE
 // =============================================================================
 #ifdef SEEED_BLE_ESP32
     _log(SEEED_BLE_PLATFORM);
 
     NimBLEDevice::init(_deviceName);
-    NimBLEDevice::setPower(ESP_PWR_LVL_P9);  // 最大功率
+    NimBLEDevice::setPower(ESP_PWR_LVL_P9);
+
+    if (_controlEnabled) {
+        // 创建 GATT 服务器
+        _pServer = NimBLEDevice::createServer();
+        _pServer->setCallbacks(&serverCallbacks);
+
+        // 创建控制服务
+        _pControlService = _pServer->createService(SEEED_CONTROL_SERVICE_UUID);
+
+        // 命令特征值（可写）
+        _pCommandChar = _pControlService->createCharacteristic(
+            SEEED_CONTROL_COMMAND_CHAR_UUID,
+            NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR
+        );
+        _pCommandChar->setCallbacks(&charCallbacks);
+
+        // 状态特征值（可读 + 通知）
+        _pStateChar = _pControlService->createCharacteristic(
+            SEEED_CONTROL_STATE_CHAR_UUID,
+            NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
+        );
+
+        _pControlService->start();
+        _log("GATT Control Service started");
+    }
 
     _pAdvertising = NimBLEDevice::getAdvertising();
+
+    if (_controlEnabled) {
+        // 可连接广播
+        _pAdvertising->addServiceUUID(SEEED_CONTROL_SERVICE_UUID);
+    }
 
     _running = true;
     _log("BLE OK");
     return true;
 
 // =============================================================================
-// nRF52840 mbed 平台 - 使用 ArduinoBLE
+// nRF52840 mbed - ArduinoBLE
 // =============================================================================
 #elif defined(SEEED_BLE_MBED_NRF52840)
     _log(SEEED_BLE_PLATFORM);
 
-    // 初始化 BLE
     if (!BLE.begin()) {
         _log("BLE init failed!");
         return false;
     }
 
-    // 设置设备名称
     BLE.setLocalName(_deviceName);
     BLE.setDeviceName(_deviceName);
+
+    if (_controlEnabled) {
+        // 创建控制服务
+        _pControlService = new BLEService(SEEED_CONTROL_SERVICE_UUID);
+
+        // 命令特征值（可写）
+        _pCommandChar = new BLECharacteristic(
+            SEEED_CONTROL_COMMAND_CHAR_UUID,
+            BLEWrite | BLEWriteWithoutResponse,
+            64
+        );
+
+        // 状态特征值（可读 + 通知）
+        _pStateChar = new BLECharacteristic(
+            SEEED_CONTROL_STATE_CHAR_UUID,
+            BLERead | BLENotify,
+            64
+        );
+
+        _pControlService->addCharacteristic(*_pCommandChar);
+        _pControlService->addCharacteristic(*_pStateChar);
+
+        BLE.addService(*_pControlService);
+        BLE.setAdvertisedService(*_pControlService);
+
+        _log("GATT Control Service started");
+    }
 
     _running = true;
     _log("BLE OK");
     return true;
 
 // =============================================================================
-// nRF52840 Adafruit BSP - 使用 Bluefruit
+// nRF52840 Adafruit - Bluefruit
 // =============================================================================
 #elif defined(SEEED_BLE_NRF52_BLUEFRUIT)
     _log(SEEED_BLE_PLATFORM);
 
     Bluefruit.begin();
-    Bluefruit.setTxPower(4);  // 4 dBm
+    Bluefruit.setTxPower(4);
     Bluefruit.setName(_deviceName);
 
-    // 设置广播参数
     Bluefruit.Advertising.setType(BLE_GAP_ADV_TYPE_NONCONNECTABLE_SCANNABLE_UNDIRECTED);
     Bluefruit.Advertising.clearData();
 
@@ -290,11 +394,12 @@ void SeeedHADiscoveryBLE::stop() {
 
 #ifdef SEEED_BLE_ESP32
     NimBLEDevice::deinit();
-
 #elif defined(SEEED_BLE_MBED_NRF52840)
     BLE.stopAdvertise();
     BLE.end();
-
+    if (_pControlService) delete _pControlService;
+    if (_pCommandChar) delete _pCommandChar;
+    if (_pStateChar) delete _pStateChar;
 #elif defined(SEEED_BLE_NRF52_BLUEFRUIT)
     Bluefruit.Advertising.stop();
 #endif
@@ -303,29 +408,53 @@ void SeeedHADiscoveryBLE::stop() {
     _log("BLE stopped");
 }
 
+void SeeedHADiscoveryBLE::loop() {
+#ifdef SEEED_BLE_MBED_NRF52840
+    if (_controlEnabled) {
+        BLE.poll();
+
+        // 检查连接状态
+        BLEDevice central = BLE.central();
+        if (central) {
+            if (!_connected) {
+                _onConnect();
+            }
+
+            // 检查命令特征值
+            if (_pCommandChar && _pCommandChar->written()) {
+                uint8_t buffer[64];
+                int len = _pCommandChar->readValue(buffer, sizeof(buffer));
+                if (len > 0) {
+                    _handleCommand(buffer, len);
+                }
+            }
+        } else {
+            if (_connected) {
+                _onDisconnect();
+            }
+        }
+    }
+#endif
+    // ESP32 的回调是自动触发的，不需要在 loop 中轮询
+}
+
 String SeeedHADiscoveryBLE::getAddress() {
     if (!_running) {
         return "00:00:00:00:00:00";
     }
 
 #ifdef SEEED_BLE_ESP32
-    // ESP32 NimBLE: 获取 MAC 地址
     NimBLEAddress addr = NimBLEDevice::getAddress();
     return String(addr.toString().c_str());
-
 #elif defined(SEEED_BLE_MBED_NRF52840)
-    // nRF52840 ArduinoBLE: 获取 MAC 地址
     return BLE.address();
-
 #elif defined(SEEED_BLE_NRF52_BLUEFRUIT)
-    // nRF52840 Bluefruit: 获取 MAC 地址
     uint8_t mac[6];
     Bluefruit.getAddr(mac);
     char macStr[18];
     snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X",
              mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]);
     return String(macStr);
-
 #else
     return "00:00:00:00:00:00";
 #endif
@@ -342,46 +471,44 @@ SeeedBLESensor* SeeedHADiscoveryBLE::addSensor(BTHomeObjectId objectId) {
     return sensor;
 }
 
+SeeedBLESwitch* SeeedHADiscoveryBLE::addSwitch(const char* id, const char* name) {
+    SeeedBLESwitch* sw = new SeeedBLESwitch(id, name);
+    sw->_setParent(this);
+    _switches.push_back(sw);
+
+    if (_debug) {
+        Serial.print("[SeeedBLE] Add switch: ");
+        Serial.println(id);
+    }
+    return sw;
+}
+
 void SeeedHADiscoveryBLE::_buildAdvData() {
     _advDataLen = 0;
 
-    // BTHome Service Data 格式:
-    // [长度][类型=0x16][UUID低][UUID高][设备信息][传感器数据...]
-
-    // 首先计算传感器数据长度
     uint8_t sensorDataLen = 0;
     for (auto sensor : _sensors) {
         if (sensor->hasValue()) {
-            sensorDataLen += 1 + sensor->getDataSize();  // Object ID + Data
+            sensorDataLen += 1 + sensor->getDataSize();
         }
     }
 
-    // Service Data 总长度 = UUID(2) + 设备信息(1) + 传感器数据
     uint8_t serviceDataLen = 2 + 1 + sensorDataLen;
 
-    // 构建广播数据
     uint8_t offset = 0;
 
-    // 1. Flags
-    _advData[offset++] = 0x02;  // 长度
-    _advData[offset++] = 0x01;  // AD Type: Flags
-    _advData[offset++] = 0x06;  // LE General Discoverable + BR/EDR Not Supported
+    // Flags
+    _advData[offset++] = 0x02;
+    _advData[offset++] = 0x01;
+    _advData[offset++] = 0x06;
 
-    // 2. Service Data (BTHome)
-    _advData[offset++] = serviceDataLen + 1;  // 长度（包括类型字节）
-    _advData[offset++] = 0x16;  // AD Type: Service Data - 16 bit UUID
-
-    // BTHome Service UUID (0xFCD2, 小端序)
+    // Service Data (BTHome)
+    _advData[offset++] = serviceDataLen + 1;
+    _advData[offset++] = 0x16;
     _advData[offset++] = 0xD2;
     _advData[offset++] = 0xFC;
+    _advData[offset++] = BTHOME_DEVICE_INFO_VERSION;
 
-    // 设备信息字节
-    // Bit 0: 加密 (0 = 无加密)
-    // Bit 2: 触发器 (0 = 非触发器)
-    // Bit 5-7: 版本 (0x02 = BTHome v2)
-    _advData[offset++] = BTHOME_DEVICE_INFO_VERSION;  // 0x40 = BTHome v2
-
-    // 传感器数据
     for (auto sensor : _sensors) {
         if (sensor->hasValue()) {
             sensor->writeToBuffer(_advData, offset);
@@ -394,59 +521,43 @@ void SeeedHADiscoveryBLE::_buildAdvData() {
 void SeeedHADiscoveryBLE::updateAdvertiseData() {
     _buildAdvData();
 
-// =============================================================================
-// ESP32 - NimBLE
-// =============================================================================
 #ifdef SEEED_BLE_ESP32
     if (_pAdvertising) {
         _pAdvertising->stop();
 
         NimBLEAdvertisementData advData;
-        // NimBLE 2.x API: addData(const uint8_t* data, size_t length)
         advData.addData(_advData, _advDataLen);
-
         _pAdvertising->setAdvertisementData(advData);
 
-        // 设置设备名称在 Scan Response 中
         NimBLEAdvertisementData scanResponse;
         scanResponse.setName(_deviceName);
         _pAdvertising->setScanResponseData(scanResponse);
+
+        // 重新添加控制服务 UUID（如果启用了控制）
+        if (_controlEnabled) {
+            // 注意：addServiceUUID 是累积的，不会被 setAdvertisementData 清除
+            // 但为了确保，我们每次都重新添加
+            _pAdvertising->clearServiceUUIDs();
+            _pAdvertising->addServiceUUID(SEEED_CONTROL_SERVICE_UUID);
+        }
     }
 
-// =============================================================================
-// nRF52840 mbed - ArduinoBLE
-// =============================================================================
 #elif defined(SEEED_BLE_MBED_NRF52840)
-    // ArduinoBLE 使用 BLEAdvertisingData 类
     BLEAdvertisingData advData;
-    
-    // 设置 Flags
     advData.setFlags(BLEFlagsBREDRNotSupported | BLEFlagsGeneralDiscoverable);
-    
-    // 设置 Service Data
-    // _buildAdvData() 构建的数据格式:
-    // [0-2]: Flags (3 bytes)
-    // [3]: Service Data 长度
-    // [4]: 0x16 (Service Data type)
-    // [5-6]: UUID (0xD2, 0xFC)
-    // [7]: BTHome Device Info
-    // [8+]: Sensor Data
-    //
-    // setAdvertisedServiceData(UUID, data, len) 会自动添加 UUID
-    // 所以我们需要从 offset 7 开始（跳过 UUID），长度减 2
-    uint8_t serviceDataLen = _advData[3] - 1;  // 原始 Service Data 长度（不含类型字节）
-    uint8_t btHomeDataLen = serviceDataLen - 2;  // 减去 UUID 的 2 字节
+
+    uint8_t serviceDataLen = _advData[3] - 1;
+    uint8_t btHomeDataLen = serviceDataLen - 2;
     advData.setAdvertisedServiceData(0xFCD2, &_advData[7], btHomeDataLen);
-    
-    // 设置设备名称
     advData.setLocalName(_deviceName);
-    
-    // 应用广播数据
+
+    // 如果启用了控制，重新设置控制服务广播
+    if (_controlEnabled && _pControlService) {
+        BLE.setAdvertisedService(*_pControlService);
+    }
+
     BLE.setAdvertisingData(advData);
 
-// =============================================================================
-// nRF52840 Adafruit - Bluefruit
-// =============================================================================
 #elif defined(SEEED_BLE_NRF52_BLUEFRUIT)
     Bluefruit.Advertising.clearData();
     Bluefruit.Advertising.addData(BLE_GAP_AD_TYPE_FLAGS, &_advData[2], 1);
@@ -461,19 +572,12 @@ void SeeedHADiscoveryBLE::advertise() {
         return;
     }
 
-    // 更新包 ID（用于去重）
     _packetId++;
-
-    // 构建广播数据
     updateAdvertiseData();
 
-// =============================================================================
-// ESP32 - NimBLE
-// =============================================================================
 #ifdef SEEED_BLE_ESP32
     if (_pAdvertising) {
         _pAdvertising->start();
-
         if (_debug) {
             Serial.print("[SeeedBLE] Advertise ID=");
             Serial.print(_packetId);
@@ -482,14 +586,12 @@ void SeeedHADiscoveryBLE::advertise() {
         }
     }
 
-// =============================================================================
-// nRF52840 mbed - ArduinoBLE
-// =============================================================================
 #elif defined(SEEED_BLE_MBED_NRF52840)
-    // 设置广播参数
-    BLE.setConnectable(false);  // 不可连接广播
-    
-    // 开始广播
+    if (_controlEnabled) {
+        BLE.setConnectable(true);
+    } else {
+        BLE.setConnectable(false);
+    }
     BLE.advertise();
 
     if (_debug) {
@@ -499,12 +601,8 @@ void SeeedHADiscoveryBLE::advertise() {
         Serial.println(_advDataLen);
     }
 
-// =============================================================================
-// nRF52840 Adafruit - Bluefruit
-// =============================================================================
 #elif defined(SEEED_BLE_NRF52_BLUEFRUIT)
-    Bluefruit.Advertising.start(0);  // 0 = 无超时
-
+    Bluefruit.Advertising.start(0);
     if (_debug) {
         Serial.print("[SeeedBLE] Advertise ID=");
         Serial.print(_packetId);
@@ -512,6 +610,81 @@ void SeeedHADiscoveryBLE::advertise() {
         Serial.println(_advDataLen);
     }
 #endif
+}
+
+void SeeedHADiscoveryBLE::_handleCommand(const uint8_t* data, size_t length) {
+    if (length < 2) return;
+
+    // 命令格式: [switch_index][state]
+    // 或者: [0xFF][switch_index][state] 表示控制指定开关
+    
+    if (_debug) {
+        Serial.print("[SeeedBLE] Received command: ");
+        for (size_t i = 0; i < length; i++) {
+            Serial.print(data[i], HEX);
+            Serial.print(" ");
+        }
+        Serial.println();
+    }
+
+    uint8_t switchIndex = data[0];
+    bool state = data[1] != 0;
+
+    if (switchIndex < _switches.size()) {
+        _switches[switchIndex]->_handleCommand(state);
+        if (_debug) {
+            Serial.print("[SeeedBLE] Switch ");
+            Serial.print(switchIndex);
+            Serial.print(" -> ");
+            Serial.println(state ? "ON" : "OFF");
+        }
+    }
+}
+
+void SeeedHADiscoveryBLE::_notifyStateChange() {
+    if (!_controlEnabled) return;
+
+    uint8_t buffer[64];
+    size_t length = 0;
+    _buildStateData(buffer, &length);
+
+#ifdef SEEED_BLE_ESP32
+    if (_pStateChar && _connected) {
+        _pStateChar->setValue(buffer, length);
+        _pStateChar->notify();
+    }
+#elif defined(SEEED_BLE_MBED_NRF52840)
+    if (_pStateChar && _connected) {
+        _pStateChar->writeValue(buffer, length);
+    }
+#endif
+
+    if (_debug) {
+        Serial.println("[SeeedBLE] State notified");
+    }
+}
+
+void SeeedHADiscoveryBLE::_buildStateData(uint8_t* buffer, size_t* length) {
+    // 状态数据格式: [switch_count][sw0_state][sw1_state]...
+    size_t offset = 0;
+    buffer[offset++] = _switches.size();
+
+    for (auto sw : _switches) {
+        buffer[offset++] = sw->getState() ? 1 : 0;
+    }
+
+    *length = offset;
+}
+
+void SeeedHADiscoveryBLE::_onConnect() {
+    _connected = true;
+    _log("Client connected");
+    _notifyStateChange();
+}
+
+void SeeedHADiscoveryBLE::_onDisconnect() {
+    _connected = false;
+    _log("Client disconnected");
 }
 
 void SeeedHADiscoveryBLE::_log(const char* message) {
@@ -528,7 +701,6 @@ void SeeedHADiscoveryBLE::_logf(const char* format, ...) {
         va_start(args, format);
         vsnprintf(buffer, sizeof(buffer), format, args);
         va_end(args);
-
         Serial.print("[SeeedBLE] ");
         Serial.println(buffer);
     }

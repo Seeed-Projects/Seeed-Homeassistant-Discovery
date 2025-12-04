@@ -1,6 +1,6 @@
 {
   "name": "Seeed Home Assistant Discovery",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Connect ESP32 devices to Home Assistant via WiFi. A lightweight library for ESP32-C3/C6/S3 with mDNS auto-discovery, WebSocket real-time communication, and sensor data reporting.",
   "keywords": [
     "homeassistant",

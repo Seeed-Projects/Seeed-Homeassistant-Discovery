@@ -40,10 +40,12 @@ from .const import (
     CONF_MODEL,
     CONF_CONNECTION_TYPE,
     CONF_BLE_ADDRESS,
+    CONF_BLE_CONTROL,
     CONNECTION_TYPE_WIFI,
     CONNECTION_TYPE_BLE,
     DEFAULT_HTTP_PORT,
     DEFAULT_WS_PORT,
+    SEEED_CONTROL_SERVICE_UUID,
 )
 from .bluetooth import parse_ble_advertisement, is_seeed_ble_device
 
@@ -88,6 +90,10 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._ble_address: str | None = None
         # BLE 设备的传感器信息 (用于显示)
         self._ble_sensors: list[str] = []
+        # BLE 设备是否支持控制
+        self._ble_control: bool = False
+        # BLE 设备的开关配置
+        self._switch_configs: list[dict[str, Any]] = []
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -304,10 +310,41 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._model = "XIAO BLE"  # 默认型号
         self._connection_type = CONNECTION_TYPE_BLE
 
+        # 检查是否支持控制服务
+        # 只有在广播中明确包含控制服务 UUID 的设备才启用控制
+        # 纯传感器设备（如 ButtonBLE、TemperatureBLE）不会广播此 UUID
+        self._ble_control = False
+        if discovery_info.service_uuids:
+            for uuid in discovery_info.service_uuids:
+                if SEEED_CONTROL_SERVICE_UUID.lower() in uuid.lower():
+                    self._ble_control = True
+                    _LOGGER.info("BLE 设备支持控制服务: %s", self._ble_address)
+                    break
+        
+        if not self._ble_control:
+            _LOGGER.info("BLE 设备仅支持传感器功能: %s", self._ble_address)
+
         # 保存传感器信息用于显示
         self._ble_sensors = [
             f"{s.name}: {s.value} {s.unit or ''}" for s in device.sensors
         ]
+
+        # 如果支持控制，根据二进制传感器生成开关配置
+        switch_configs = []
+        if self._ble_control:
+            binary_sensors = [s for s in device.sensors if s.device_class in [None, "power", "opening"]]
+            if binary_sensors:
+                switch_names = ["单击", "双击", "长按"]  # 默认名称
+                for i, sensor in enumerate(binary_sensors):
+                    name = switch_names[i] if i < len(switch_names) else f"开关{i+1}"
+                    switch_configs.append({
+                        "index": i,
+                        "name": name,
+                        "id": f"switch_{i}",
+                    })
+                _LOGGER.info("生成 %d 个开关配置", len(switch_configs))
+        
+        self._switch_configs = switch_configs
 
         # 设置通知中显示的设备名称
         self.context["title_placeholders"] = {"name": device.name}
@@ -333,21 +370,30 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """
         if user_input is not None:
             # 用户点击了确认，创建配置入口
-            _LOGGER.info("用户确认添加 BLE 设备: %s (%s)", 
-                         self._device_name, self._ble_address)
+            _LOGGER.info("用户确认添加 BLE 设备: %s (%s), 控制=%s", 
+                         self._device_name, self._ble_address, self._ble_control)
 
+            entry_data = {
+                CONF_DEVICE_ID: self._device_id,
+                CONF_BLE_ADDRESS: self._ble_address,
+                CONF_MODEL: self._model,
+                CONF_CONNECTION_TYPE: CONNECTION_TYPE_BLE,
+                CONF_BLE_CONTROL: self._ble_control,
+            }
+            
+            # 如果有开关配置，保存它
+            if hasattr(self, '_switch_configs') and self._switch_configs:
+                entry_data["switch_configs"] = self._switch_configs
+                _LOGGER.info("保存开关配置: %s", self._switch_configs)
+            
             return self.async_create_entry(
                 title=self._device_name or f"Seeed BLE ({self._ble_address})",
-                data={
-                    CONF_DEVICE_ID: self._device_id,
-                    CONF_BLE_ADDRESS: self._ble_address,
-                    CONF_MODEL: self._model,
-                    CONF_CONNECTION_TYPE: CONNECTION_TYPE_BLE,
-                },
+                data=entry_data,
             )
 
         # 格式化传感器信息用于显示
         sensors_str = ", ".join(self._ble_sensors) if self._ble_sensors else "无"
+        control_str = "是（支持开关控制）" if self._ble_control else "否（仅传感器）"
 
         # 显示确认表单
         return self.async_show_form(
@@ -357,6 +403,7 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "address": self._ble_address,
                 "model": self._model,
                 "sensors": sensors_str,
+                "control": control_str,
             },
         )
 

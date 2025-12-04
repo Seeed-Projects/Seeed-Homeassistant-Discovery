@@ -124,6 +124,27 @@ async def async_setup_ble_sensors(
         if new_entities:
             async_add_entities(new_entities)
 
+        # 处理按钮事件
+        if device.events:
+            for event_data in device.events:
+                _LOGGER.info(
+                    "收到 BLE 事件: %s - %s",
+                    event_data.get("type"),
+                    event_data.get("event"),
+                )
+                # 触发 Home Assistant 事件
+                hass.bus.async_fire(
+                    f"{DOMAIN}_button_event",
+                    {
+                        "device_id": device_id,
+                        "device_name": device_name,
+                        "address": ble_address,
+                        "event_type": event_data.get("type"),
+                        "event": event_data.get("event"),
+                        "value": event_data.get("value"),
+                    },
+                )
+
     # 注册蓝牙回调
     # 使用 Service Data UUID 匹配
     entry.async_on_unload(

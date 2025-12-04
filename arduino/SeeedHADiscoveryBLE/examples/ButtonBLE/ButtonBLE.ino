@@ -45,13 +45,26 @@ const char* DEVICE_NAME = "XIAO 按钮";
 // =============================================================================
 
 SeeedHADiscoveryBLE ble;
-SeeedBLESensor* button;
+
+// 三个开关，对应三种按法
+SeeedBLESwitch* singleClickSwitch;
+SeeedBLESwitch* doubleClickSwitch;
+SeeedBLESwitch* longPressSwitch;
+
+// 状态传感器（用于BTHome广播）
+SeeedBLESensor* singleState;
+SeeedBLESensor* doubleState;
+SeeedBLESensor* longState;
 
 // 按钮状态
 bool lastButtonState = HIGH;
 unsigned long buttonPressTime = 0;
 unsigned long lastClickTime = 0;
 uint8_t clickCount = 0;
+
+// 广播间隔
+unsigned long lastAdvertise = 0;
+#define ADVERTISE_INTERVAL 5000  // 每5秒广播一次（用于发现）
 
 // =============================================================================
 // 按钮处理
@@ -130,18 +143,46 @@ void setup() {
     // 启用调试
     ble.enableDebug(true);
 
-    // 初始化 BLE
-    if (!ble.begin(DEVICE_NAME)) {
+    // 初始化 BLE（启用控制功能）
+    // 第二个参数 true 表示启用 GATT 双向通信
+    if (!ble.begin(DEVICE_NAME, true)) {
         Serial.println("BLE 初始化失败！");
         while (1) delay(1000);
     }
 
     Serial.println("BLE 初始化成功！");
 
-    // 添加按钮
-    button = ble.addButton();
+    // 添加状态传感器（用于BTHome广播，让HA显示状态）
+    singleState = ble.addSensor(BTHOME_BINARY_POWER);
+    singleState->setState(false);
+    doubleState = ble.addSensor(BTHOME_BINARY_GENERIC);
+    doubleState->setState(false);
+    longState = ble.addSensor(BTHOME_BINARY_OPENING);  // 使用不同的类型区分
+    longState->setState(false);
 
-    Serial.println("按钮已添加");
+    // 添加三个开关，对应三种按法（GATT控制）
+    singleClickSwitch = ble.addSwitch("single", "单击");
+    doubleClickSwitch = ble.addSwitch("double", "双击");
+    longPressSwitch = ble.addSwitch("long", "长按");
+
+    // 注册回调：当 HA 远程控制时，同步更新传感器状态
+    singleClickSwitch->onStateChange([](bool state) {
+        singleState->setState(state);
+        Serial.print("HA 控制 [单击]: ");
+        Serial.println(state ? "开" : "关");
+    });
+    doubleClickSwitch->onStateChange([](bool state) {
+        doubleState->setState(state);
+        Serial.print("HA 控制 [双击]: ");
+        Serial.println(state ? "开" : "关");
+    });
+    longPressSwitch->onStateChange([](bool state) {
+        longState->setState(state);
+        Serial.print("HA 控制 [长按]: ");
+        Serial.println(state ? "开" : "关");
+    });
+
+    Serial.println("三个开关已添加");
 
     Serial.println();
     Serial.println("========================================");
@@ -162,38 +203,80 @@ void setup() {
     Serial.println("  - 长按 (>1秒)");
     Serial.println();
     Serial.println("等待按钮事件...");
+    Serial.println("按钮触发后，对应的开关会切换状态");
     Serial.println();
 }
 
+void setLED(bool state) {
+    // LED 反馈（如果有）
+    // digitalWrite(LED_BUILTIN, state ? HIGH : LOW);
+}
+
 void loop() {
+    unsigned long now = millis();
+
+    // 处理 BLE GATT 事件（必须调用）
+    ble.loop();
+
     // 检测按钮事件
     BTHomeButtonEvent event = detectButtonEvent();
 
-    // 如果有事件，发送广播
+    // 如果有事件，切换对应开关的状态
     if (event != BTHOME_BUTTON_NONE) {
-        button->triggerButton(event);
-        ble.advertise();
+        const char* eventName = "未知";
+        SeeedBLESwitch* targetSwitch = nullptr;
 
-        const char* eventName;
         switch (event) {
             case BTHOME_BUTTON_PRESS:
                 eventName = "单击";
+                targetSwitch = singleClickSwitch;
                 break;
             case BTHOME_BUTTON_DOUBLE:
                 eventName = "双击";
+                targetSwitch = doubleClickSwitch;
                 break;
             case BTHOME_BUTTON_TRIPLE:
-                eventName = "三击";
+                // 三击作为双击处理
+                eventName = "三击(作为双击)";
+                targetSwitch = doubleClickSwitch;
                 break;
             case BTHOME_BUTTON_LONG_PRESS:
                 eventName = "长按";
+                targetSwitch = longPressSwitch;
                 break;
             default:
-                eventName = "未知";
+                break;
         }
 
-        Serial.print("按钮事件: ");
-        Serial.println(eventName);
+        if (targetSwitch) {
+            // 切换开关状态
+            bool newState = !targetSwitch->getState();
+            targetSwitch->setState(newState);
+
+            // 同步更新对应的传感器状态
+            if (targetSwitch == singleClickSwitch) {
+                singleState->setState(newState);
+            } else if (targetSwitch == doubleClickSwitch) {
+                doubleState->setState(newState);
+            } else if (targetSwitch == longPressSwitch) {
+                longState->setState(newState);
+            }
+
+            Serial.print("按钮事件: ");
+            Serial.print(eventName);
+            Serial.print(" -> 开关状态: ");
+            Serial.println(newState ? "开" : "关");
+
+            // 立即广播状态更新
+            ble.advertise();
+            lastAdvertise = now;
+        }
+    }
+
+    // 定期广播，保持设备可被发现
+    if (now - lastAdvertise >= ADVERTISE_INTERVAL) {
+        ble.advertise();
+        lastAdvertise = now;
     }
 
     delay(10);  // 按钮去抖
