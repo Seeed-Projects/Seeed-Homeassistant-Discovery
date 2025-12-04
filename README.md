@@ -2,14 +2,23 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/ESP32-C3%20%7C%20C6%20%7C%20S3-blue" alt="ESP32 Support">
-  <img src="https://img.shields.io/badge/Home%20Assistant-2024.1+-green" alt="Home Assistant">
+  <img src="https://img.shields.io/badge/Home%20Assistant-2025.11+-green" alt="Home Assistant">
   <img src="https://img.shields.io/badge/Arduino-IDE%20%7C%20PlatformIO-orange" alt="Arduino">
-  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
+  <img src="https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-yellow" alt="License">
+  <img src="https://img.shields.io/badge/HACS-Custom-41BDF5" alt="HACS Custom">
 </p>
 
 **Seeed HA Discovery** 是一个让 ESP32 设备轻松连接 Home Assistant 的解决方案，由 [Seeed Studio](https://www.seeedstudio.com/) 提供。
 
 只要你的 ESP32 设备和 Home Assistant 在同一局域网内，设备就能被自动发现并添加！
+
+## ⚡ 一键安装
+
+点击下方按钮，将此集成添加到你的 Home Assistant：
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=limengdu&repository=Seeed-Homeassistant-Discovery&category=integration)
+
+> **前提条件**：你的 Home Assistant 必须已安装 [HACS](https://hacs.xyz/)
 
 ## ✨ 特点
 
@@ -34,6 +43,19 @@
 ## 🚀 快速开始
 
 ### 1. 安装 Home Assistant 集成
+
+**方法 A: 通过 HACS 一键安装（推荐）**
+
+点击上方的 "一键安装" 按钮，或者手动添加：
+
+1. 打开 HACS → 集成
+2. 点击右上角 "⋮" → "自定义存储库"
+3. 输入 `https://github.com/limengdu/Seeed-Homeassistant-Discovery`
+4. 类别选择 "Integration"
+5. 点击添加，然后搜索 "Seeed HA Discovery" 并安装
+6. 重启 Home Assistant
+
+**方法 B: 手动安装**
 
 将 `custom_components/seeed_ha_discovery` 文件夹复制到 Home Assistant 的 `config/custom_components/` 目录，然后重启 Home Assistant。
 
@@ -237,6 +259,91 @@ seeed-ha-discovery/
   }
 }
 ```
+
+## ❓ 常见问题 (FAQ)
+
+### Q1: 传感器数量有限制吗？
+
+**没有硬编码限制**。Arduino 端使用动态数组存储传感器列表，理论上只受 ESP32 内存限制。你可以添加任意数量的传感器：
+
+```cpp
+ha.addSensor("temp1", "温度1", "temperature", "°C");
+ha.addSensor("temp2", "温度2", "temperature", "°C");
+ha.addSensor("humidity", "湿度", "humidity", "%");
+ha.addSensor("pressure", "气压", "pressure", "hPa");
+ha.addSensor("light", "光照", "illuminance", "lx");
+// ... 继续添加更多
+```
+
+### Q2: 一个传感器可以发送多个数值吗？
+
+**当前框架不支持**。每个 `SeeedHASensor` 对应**一个数值**。
+
+如果你的传感器有多个数值，需要创建多个传感器实例：
+
+```cpp
+// 例如：环境传感器有 PM2.5, PM10, CO2, TVOC, 温度
+SeeedHASensor* pm25 = ha.addSensor("pm25", "PM2.5", "pm25", "μg/m³");
+SeeedHASensor* pm10 = ha.addSensor("pm10", "PM10", "pm10", "μg/m³");
+SeeedHASensor* co2 = ha.addSensor("co2", "CO2", "carbon_dioxide", "ppm");
+SeeedHASensor* tvoc = ha.addSensor("tvoc", "TVOC", "volatile_organic_compounds", "ppb");
+SeeedHASensor* temp = ha.addSensor("temperature", "温度", "temperature", "°C");
+```
+
+### Q3: 单位可以自定义吗？有什么限制？
+
+**单位完全由 Arduino 端定义，是纯字符串，没有任何验证**。你可以使用任何字符串作为单位，包括特殊符号：
+
+```cpp
+ha.addSensor("pm25", "PM2.5", "pm25", "μg/m³");     // ✅ 微克每立方米
+ha.addSensor("temp", "温度", "temperature", "°C");  // ✅ 摄氏度
+ha.addSensor("custom", "自定义", "", "个/秒");      // ✅ 任意字符串
+```
+
+单位在 Arduino 代码中设置后，会原样传递给 Home Assistant 显示。
+
+### Q4: device_class 必须使用 Home Assistant 支持的值吗？
+
+**建议使用，但非强制**。
+
+- 如果使用 HA 支持的 `device_class`（如 `temperature`, `humidity`），会自动显示对应图标和格式
+- 如果使用不支持的值，只会打印警告，传感器仍然可以正常创建和使用
+- 你也可以留空 `device_class`，然后用 `setIcon()` 自定义图标
+
+```cpp
+// 方式1: 使用标准 device_class（推荐）
+ha.addSensor("temp", "温度", "temperature", "°C");
+
+// 方式2: 不使用 device_class，自定义图标
+SeeedHASensor* custom = ha.addSensor("custom", "自定义传感器", "", "单位");
+custom->setIcon("mdi:gauge");
+```
+
+### Q5: 支持哪些 device_class？
+
+Home Assistant 传感器支持的常用 `device_class`：
+
+| device_class | 说明 | 常用单位 |
+|--------------|------|----------|
+| `temperature` | 温度 | °C, °F, K |
+| `humidity` | 湿度 | % |
+| `pressure` | 气压 | hPa, mbar, Pa |
+| `illuminance` | 光照 | lx |
+| `battery` | 电池电量 | % |
+| `voltage` | 电压 | V, mV |
+| `current` | 电流 | A, mA |
+| `power` | 功率 | W, kW |
+| `energy` | 能量 | Wh, kWh |
+| `carbon_dioxide` | CO2 浓度 | ppm |
+| `carbon_monoxide` | CO 浓度 | ppm |
+| `pm25` | PM2.5 | μg/m³ |
+| `pm10` | PM10 | μg/m³ |
+| `volatile_organic_compounds` | TVOC | ppb |
+| `distance` | 距离 | m, cm, mm |
+| `speed` | 速度 | m/s, km/h |
+| `weight` | 重量 | kg, g, lb |
+
+完整列表参考 [Home Assistant 传感器文档](https://www.home-assistant.io/integrations/sensor/#device-class)。
 
 ## 📄 许可证
 
