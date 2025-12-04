@@ -3,11 +3,17 @@
   "name": "Seeed HA Discovery",
   "codeowners": ["@limengdu"],
   "config_flow": true,
-  "dependencies": [],
+  "dependencies": ["bluetooth_adapters"],
   "documentation": "https://github.com/limengdu/Seeed-Homeassistant-Discovery",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/limengdu/Seeed-Homeassistant-Discovery/issues",
   "requirements": ["zeroconf>=0.47.0"],
-  "version": "1.1.0",
-  "zeroconf": ["_seeed_ha._tcp.local."]
+  "version": "2.0.0",
+  "zeroconf": ["_seeed_ha._tcp.local."],
+  "bluetooth": [
+    {
+      "service_data_uuid": "0000fcd2-0000-1000-8000-00805f9b34fb",
+      "manufacturer_id": 24301
+    }
+  ]
 }

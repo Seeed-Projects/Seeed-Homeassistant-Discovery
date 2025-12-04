@@ -1,0 +1,42 @@
+{
+  "name": "Seeed Home Assistant Discovery BLE",
+  "version": "1.0.0",
+  "description": "Connect ESP32/nRF52840 devices to Home Assistant via Bluetooth using BTHome v2 protocol. Features passive advertising, ultra-low power, and automatic HA discovery.",
+  "keywords": [
+    "homeassistant",
+    "bluetooth",
+    "ble",
+    "bthome",
+    "esp32",
+    "nrf52840",
+    "xiao",
+    "arduino",
+    "iot",
+    "smart-home",
+    "sensor",
+    "seeed"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/limengdu/Seeed-Homeassistant-Discovery.git"
+  },
+  "authors": [
+    {
+      "name": "limengdu",
+      "email": "limengdu@seeed.cc",
+      "maintainer": true
+    }
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/limengdu/Seeed-Homeassistant-Discovery",
+  "frameworks": ["arduino"],
+  "platforms": ["espressif32", "nordicnrf52"],
+  "dependencies": [
+    {
+      "name": "NimBLE-Arduino",
+      "version": "^1.4.0",
+      "platforms": ["espressif32"]
+    }
+  ]
+}
+
