@@ -1,16 +1,23 @@
 """
 Seeed HA Discovery - 数据协调器
-Data Coordinator for Seeed HA Discovery.
+Seeed HA Discovery - Data Coordinator.
 
 这个模块是 Home Assistant 和设备之间的桥梁：
+This module is the bridge between Home Assistant and devices:
 1. 管理与设备的连接
+   Manage connections with devices
 2. 接收设备的状态更新
+   Receive device state updates
 3. 通知 HA 实体更新状态
+   Notify HA entities to update state
 
-工作原理：
+工作原理 | How it works:
 - 继承自 DataUpdateCoordinator，这是 HA 推荐的数据管理方式
+  Inherits from DataUpdateCoordinator, the recommended data management approach in HA
 - 设备主动推送数据（push 模式），而不是轮询（poll 模式）
+  Device actively pushes data (push mode), instead of polling (poll mode)
 - 当收到新数据时，自动通知所有相关实体更新
+  When new data is received, automatically notifies all related entities to update
 """
 from __future__ import annotations
 

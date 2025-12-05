@@ -1,21 +1,33 @@
 """
 Seeed HA Discovery - 主入口文件
-The Seeed HA Discovery integration.
+Seeed HA Discovery - Main entry file.
 
 这个文件是 Home Assistant 集成的主入口，负责：
+This file is the main entry point for the Home Assistant integration, responsible for:
 1. 初始化集成 - 当用户添加设备时调用
+   Initialize integration - called when user adds a device
 2. 区分 WiFi 和 BLE 设备，使用不同的连接方式
+   Distinguish between WiFi and BLE devices, use different connection methods
 3. WiFi 设备：建立与 ESP32 设备的 WebSocket 连接
+   WiFi devices: Establish WebSocket connection with ESP32 devices
 4. BLE 设备：通过蓝牙被动监听广播数据
+   BLE devices: Passively listen to Bluetooth broadcast data
 5. 加载传感器平台
+   Load sensor platforms
 6. 处理集成的卸载
+   Handle integration unloading
 
-工作流程：
+工作流程 | Workflow:
 1. 用户通过配置流程添加设备（手动输入IP/自动发现WiFi/自动发现BLE）
+   User adds device via config flow (manual IP/WiFi auto-discovery/BLE auto-discovery)
 2. async_setup_entry() 被调用，根据连接类型创建设备连接
+   async_setup_entry() is called, creates device connection based on connection type
 3. 加载 sensor 平台，创建传感器实体
+   Load sensor platform, create sensor entities
 4. WiFi: 保持 WebSocket 连接，实时接收传感器数据
+   WiFi: Maintain WebSocket connection, receive sensor data in real-time
 5. BLE: 被动监听蓝牙广播，自动更新传感器数据
+   BLE: Passively listen to Bluetooth broadcasts, auto-update sensor data
 """
 from __future__ import annotations
 

@@ -1,11 +1,15 @@
 """
 Seeed HA Discovery - BLE 传感器实体
-BLE sensor entities for Seeed HA Discovery.
+Seeed HA Discovery - BLE sensor entities.
 
 这个文件负责：
+This file is responsible for:
 1. 创建和管理 BLE 设备的传感器实体
+   Create and manage BLE device sensor entities
 2. 接收蓝牙广播数据更新
+   Receive Bluetooth broadcast data updates
 3. 解析 BTHome 格式数据并更新传感器状态
+   Parse BTHome format data and update sensor state
 """
 from __future__ import annotations
 

@@ -1,22 +1,33 @@
 """
 Seeed HA Discovery - 开关平台
-Switch platform for Seeed HA Discovery.
+Seeed HA Discovery - Switch platform.
 
 这个模块实现开关实体，支持：
+This module implements switch entities, supporting:
 1. WiFi 设备：通过 WebSocket 发送控制命令
+   WiFi devices: Send control commands via WebSocket
 2. BLE 设备：通过 GATT 发送控制命令
+   BLE devices: Send control commands via GATT
 
-WiFi 工作流程：
+WiFi 工作流程 | WiFi workflow:
 1. 设备通过 WebSocket 发送 discovery 消息，报告其开关列表
+   Device sends discovery message via WebSocket, reporting its switch list
 2. 本模块根据 discovery 创建对应的开关实体
+   This module creates corresponding switch entities based on discovery
 3. 用户在 HA 界面操作开关时，发送 command 消息到设备
+   When user operates switch in HA interface, send command message to device
 4. 设备执行操作后，发送 state 消息确认新状态
+   After device executes operation, send state message to confirm new state
 
-BLE 工作流程：
+BLE 工作流程 | BLE workflow:
 1. 设备广播 GATT 控制服务
+   Device broadcasts GATT control service
 2. HA 连接设备并发现开关
+   HA connects to device and discovers switches
 3. 用户操作时，HA 通过 GATT 写入命令
+   When user operates, HA writes command via GATT
 4. 设备执行后通过 GATT 通知返回状态
+   After device executes, return state via GATT notification
 """
 from __future__ import annotations
 

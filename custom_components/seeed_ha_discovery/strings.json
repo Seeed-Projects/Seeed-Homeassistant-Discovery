@@ -2,30 +2,30 @@
   "config": {
     "step": {
       "user": {
-        "title": "Seeed HA 设备",
-        "description": "添加一个 Seeed HA WiFi 设备。请输入 ESP32 设备的 IP 地址。",
+        "title": "Seeed HA Device",
+        "description": "Add a Seeed HA WiFi device. Enter the IP address of your ESP32 device.",
         "data": {
-          "host": "IP 地址",
-          "port": "WebSocket 端口"
+          "host": "IP Address",
+          "port": "WebSocket Port"
         }
       },
       "zeroconf_confirm": {
-        "title": "发现 WiFi 设备",
-        "description": "发现了一个 Seeed HA WiFi 设备:\n\n**设备名称:** {name}\n**型号:** {model}\n**地址:** {host}\n\n是否添加此设备？"
+        "title": "WiFi Device Discovered",
+        "description": "A Seeed HA WiFi device was discovered:\n\n**Device Name:** {name}\n**Model:** {model}\n**Address:** {host}\n\nDo you want to add this device?"
       },
       "bluetooth_confirm": {
-        "title": "发现蓝牙设备",
-        "description": "发现了一个 Seeed HA 蓝牙设备:\n\n**设备名称:** {name}\n**型号:** {model}\n**蓝牙地址:** {address}\n**当前传感器:** {sensors}\n**支持控制:** {control}\n\n是否添加此设备？"
+        "title": "Bluetooth Device Discovered",
+        "description": "A Seeed HA Bluetooth device was discovered:\n\n**Device Name:** {name}\n**Model:** {model}\n**Bluetooth Address:** {address}\n**Current Sensors:** {sensors}\n**Supports Control:** {control}\n\nDo you want to add this device?"
       }
     },
     "error": {
-      "cannot_connect": "无法连接到设备，请检查 IP 地址和网络连接",
-      "timeout": "连接超时，请检查设备是否在线",
-      "unknown": "发生未知错误"
+      "cannot_connect": "Cannot connect to device. Please check IP address and network connection.",
+      "timeout": "Connection timeout. Please check if device is online.",
+      "unknown": "Unknown error occurred."
     },
     "abort": {
-      "already_configured": "该设备已经配置过了",
-      "not_supported": "不支持的设备类型"
+      "already_configured": "This device is already configured.",
+      "not_supported": "Device type not supported."
     }
   }
 }

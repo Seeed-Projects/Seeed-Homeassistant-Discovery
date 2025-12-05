@@ -1,26 +1,36 @@
 """
 Seeed HA Discovery - 传感器平台
-Sensor platform for Seeed HA Discovery.
+Seeed HA Discovery - Sensor platform.
 
 这个模块实现传感器实体，支持：
+This module implements sensor entities, supporting:
 1. WiFi 设备：通过 WebSocket 接收数据
+   WiFi devices: Receive data via WebSocket
 2. BLE 设备：通过蓝牙被动监听广播数据
+   BLE devices: Passively listen to Bluetooth broadcast data
 
-WiFi 传感器工作流程：
+WiFi 传感器工作流程 | WiFi sensor workflow:
 1. 设备通过 WebSocket 发送 discovery 消息，报告其传感器列表
+   Device sends discovery message via WebSocket, reporting its sensor list
 2. 本模块根据 discovery 创建对应的传感器实体
+   This module creates corresponding sensor entities based on discovery
 3. 设备持续发送 state 消息更新传感器值
+   Device continuously sends state messages to update sensor values
 4. 实体自动刷新 UI 显示
+   Entities automatically refresh UI display
 
-BLE 传感器工作流程：
+BLE 传感器工作流程 | BLE sensor workflow:
 1. 设备广播 BTHome 格式数据
+   Device broadcasts BTHome format data
 2. HA 蓝牙适配器接收广播
+   HA Bluetooth adapter receives broadcast
 3. 解析数据并更新传感器状态
+   Parse data and update sensor state
 
-传感器数据格式示例（WiFi）：
+传感器数据格式示例（WiFi）| Sensor data format example (WiFi):
 {
     "id": "temperature",
-    "name": "温度",
+    "name": "Temperature",
     "type": "sensor",
     "device_class": "temperature",
     "unit_of_measurement": "°C",

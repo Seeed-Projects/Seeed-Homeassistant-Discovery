@@ -1,15 +1,19 @@
 """
 Seeed HA Discovery - 蓝牙设备解析器
-Bluetooth device parser for Seeed HA Discovery.
+Seeed HA Discovery - Bluetooth device parser.
 
 这个文件负责：
+This file is responsible for:
 1. 解析 BTHome 格式的 BLE 广播数据
+   Parse BTHome format BLE advertisement data
 2. 提取传感器值和设备信息
+   Extract sensor values and device information
 3. 提供给 config_flow 和传感器实体使用
+   Provide data to config_flow and sensor entities
 
-BTHome 数据格式：
+BTHome 数据格式 | BTHome data format:
 - Service UUID: 0xFCD2
-- Device Info: 1 byte (包含版本号和加密信息)
+- Device Info: 1 byte (包含版本号和加密信息 | contains version and encryption info)
 - Sensor Data: [Object ID (1 byte)][Value (1-4 bytes)]...
 """
 from __future__ import annotations
@@ -32,16 +36,19 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-# BTHome v2 设备信息标志
-BTHOME_DEVICE_INFO_ENCRYPT = 0x01  # 数据已加密
-BTHOME_DEVICE_INFO_TRIGGER = 0x04  # 触发器设备
-BTHOME_DEVICE_INFO_VERSION_MASK = 0xE0  # 版本位掩码
+# BTHome v2 设备信息标志 | BTHome v2 device info flags
+BTHOME_DEVICE_INFO_ENCRYPT = 0x01  # 数据已加密 | Data is encrypted
+BTHOME_DEVICE_INFO_TRIGGER = 0x04  # 触发器设备 | Trigger device
+BTHOME_DEVICE_INFO_VERSION_MASK = 0xE0  # 版本位掩码 | Version bit mask
 BTHOME_VERSION_2 = 0x40  # BTHome v2
 
 
 @dataclass
 class BTHomeSensorData:
-    """BTHome 传感器数据"""
+    """
+    BTHome 传感器数据
+    BTHome sensor data.
+    """
     object_id: int
     name: str
     value: Any
@@ -66,7 +73,10 @@ class SeeedBLEDevice:
 
     @property
     def short_address(self) -> str:
-        """返回短地址格式"""
+        """
+        返回短地址格式
+        Return short address format.
+        """
         return short_address(self.address)
 
 
@@ -76,10 +86,11 @@ def parse_bthome_data(data: bytes) -> tuple[list[BTHomeSensorData], list[dict[st
     Parse BTHome format service data.
 
     参数 | Args:
-        data: BTHome Service Data 字节
+        data: BTHome Service Data 字节 | BTHome Service Data bytes
 
     返回 | Returns:
         tuple: (传感器列表, 事件列表, 是否 BTHome v2, 是否加密)
+               (sensor list, event list, is BTHome v2, is encrypted)
     """
     if len(data) < 1:
         return [], [], False, False
@@ -87,7 +98,7 @@ def parse_bthome_data(data: bytes) -> tuple[list[BTHomeSensorData], list[dict[st
     sensors: list[BTHomeSensorData] = []
     events: list[dict[str, Any]] = []
 
-    # 第一个字节是设备信息
+    # 第一个字节是设备信息 | First byte is device info
     device_info = data[0]
     is_v2 = (device_info & BTHOME_DEVICE_INFO_VERSION_MASK) == BTHOME_VERSION_2
     is_encrypted = bool(device_info & BTHOME_DEVICE_INFO_ENCRYPT)
@@ -102,13 +113,13 @@ def parse_bthome_data(data: bytes) -> tuple[list[BTHomeSensorData], list[dict[st
         _LOGGER.debug("Not BTHome v2 format")
         return [], [], is_v2, is_encrypted
 
-    # 从第二个字节开始解析传感器数据
+    # 从第二个字节开始解析传感器数据 | Parse sensor data starting from second byte
     offset = 1
     while offset < len(data):
         object_id = data[offset]
         offset += 1
 
-        # 获取传感器类型信息
+        # 获取传感器类型信息 | Get sensor type info
         sensor_info = None
         is_event = False
         is_binary = False
@@ -129,36 +140,36 @@ def parse_bthome_data(data: bytes) -> tuple[list[BTHomeSensorData], list[dict[st
             offset += 2
             continue
 
-        # 根据 Object ID 获取数据大小
+        # 根据 Object ID 获取数据大小 | Get data size based on Object ID
         data_size = _get_data_size(object_id)
         if offset + data_size > len(data):
             # 数据不完整 | Incomplete data
             _LOGGER.warning("Incomplete data: need %d bytes, only have %d bytes", data_size, len(data) - offset)
             break
 
-        # 读取值
+        # 读取值 | Read value
         value_bytes = data[offset:offset + data_size]
         offset += data_size
 
-        # 解析值
+        # 解析值 | Parse value
         value = _parse_value(object_id, value_bytes)
 
-        # 应用缩放因子
+        # 应用缩放因子 | Apply scaling factor
         factor = sensor_info.get("factor", 1)
         if isinstance(value, (int, float)) and factor != 1:
             value = round(value * factor, 2)
 
         if is_event:
-            # 事件类型
+            # 事件类型 | Event type
             event_name = sensor_info.get("events", {}).get(value, "unknown")
             events.append({
                 "type": sensor_info["name"],
                 "event": event_name,
                 "value": value,
             })
-            _LOGGER.debug("BTHome 事件: %s = %s", sensor_info["name"], event_name)
+            _LOGGER.debug("BTHome event: %s = %s", sensor_info["name"], event_name)
         else:
-            # 传感器类型
+            # 传感器类型 | Sensor type
             sensor = BTHomeSensorData(
                 object_id=object_id,
                 name=sensor_info["name"],
@@ -167,7 +178,7 @@ def parse_bthome_data(data: bytes) -> tuple[list[BTHomeSensorData], list[dict[st
                 unit=sensor_info.get("unit"),
             )
             sensors.append(sensor)
-            _LOGGER.debug("BTHome 传感器: %s = %s %s", sensor.name, sensor.value, sensor.unit or "")
+            _LOGGER.debug("BTHome sensor: %s = %s %s", sensor.name, sensor.value, sensor.unit or "")
 
     return sensors, events, is_v2, is_encrypted
 
@@ -177,7 +188,7 @@ def _get_data_size(object_id: int) -> int:
     根据 Object ID 获取数据大小
     Get data size based on Object ID.
     """
-    # 1 字节数据
+    # 1 字节数据 | 1-byte data
     one_byte = {
         0x01,  # Battery
         0x09,  # Count uint8
@@ -194,7 +205,7 @@ def _get_data_size(object_id: int) -> int:
         0x46,  # UV Index
     }
 
-    # 3 字节数据
+    # 3 字节数据 | 3-byte data
     three_bytes = {
         0x04,  # Pressure
         0x05,  # Illuminance
@@ -204,7 +215,7 @@ def _get_data_size(object_id: int) -> int:
         0x4B,  # Gas
     }
 
-    # 4 字节数据
+    # 4 字节数据 | 4-byte data
     four_bytes = {
         0x3E,  # Count uint32
         0x4C,  # Gas uint32
@@ -220,7 +231,7 @@ def _get_data_size(object_id: int) -> int:
     elif object_id in four_bytes:
         return 4
     else:
-        return 2  # 默认 2 字节
+        return 2  # 默认 2 字节 | Default 2 bytes
 
 
 def _parse_value(object_id: int, value_bytes: bytes) -> int | float:
@@ -230,7 +241,7 @@ def _parse_value(object_id: int, value_bytes: bytes) -> int | float:
     """
     size = len(value_bytes)
 
-    # 有符号类型
+    # 有符号类型 | Signed types
     signed_types = {0x02, 0x08, 0x3F, 0x45}  # Temperature, Dewpoint, Rotation, Temperature_tenth
 
     if size == 1:
@@ -242,7 +253,7 @@ def _parse_value(object_id: int, value_bytes: bytes) -> int | float:
             return struct.unpack("<h", value_bytes)[0]
         return struct.unpack("<H", value_bytes)[0]
     elif size == 3:
-        # 24 位无符号整数
+        # 24 位无符号整数 | 24-bit unsigned integer
         return value_bytes[0] | (value_bytes[1] << 8) | (value_bytes[2] << 16)
     elif size == 4:
         return struct.unpack("<I", value_bytes)[0]
@@ -258,10 +269,11 @@ def parse_ble_advertisement(
     Parse BLE advertisement data.
 
     参数 | Args:
-        service_info: Home Assistant 蓝牙服务信息
+        service_info: Home Assistant 蓝牙服务信息 | Home Assistant Bluetooth service info
 
     返回 | Returns:
         SeeedBLEDevice: 解析后的设备数据，如果不是有效的 Seeed/BTHome 设备则返回 None
+                       Parsed device data, or None if not a valid Seeed/BTHome device
     """
     # 解析 BLE 广播 | Parsing BLE advertisement
     _LOGGER.debug(
@@ -282,10 +294,10 @@ def parse_ble_advertisement(
 
     _LOGGER.debug("BTHome Service Data: %s", bthome_data.hex())
 
-    # 解析 BTHome 数据
+    # 解析 BTHome 数据 | Parse BTHome data
     sensors, events, is_v2, is_encrypted = parse_bthome_data(bthome_data)
 
-    # 检查是否有控制服务（即使没有传感器也可以发现）
+    # 检查是否有控制服务（即使没有传感器也可以发现）| Check for control service (even without sensors)
     has_control_service = False
     if service_info.service_uuids:
         from .const import SEEED_CONTROL_SERVICE_UUID
@@ -300,7 +312,7 @@ def parse_ble_advertisement(
         _LOGGER.debug("No sensors, events, or control service found")
         return None
 
-    # 创建设备对象
+    # 创建设备对象 | Create device object
     device = SeeedBLEDevice(
         address=service_info.address,
         name=service_info.name or f"Seeed BLE {short_address(service_info.address)}",

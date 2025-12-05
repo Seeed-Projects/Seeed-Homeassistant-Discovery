@@ -1,18 +1,27 @@
 """
 Seeed HA Discovery - 设备通信模块
-Device communication handler for Seeed HA Discovery.
+Seeed HA Discovery - Device communication module.
 
 这个模块负责与 ESP32 设备的所有通信：
+This module handles all communication with ESP32 devices:
 1. 建立 WebSocket 连接
+   Establish WebSocket connection
 2. 接收传感器数据更新
+   Receive sensor data updates
 3. 处理心跳保活
+   Handle heartbeat keep-alive
 4. 自动重连机制
+   Auto-reconnect mechanism
 
-通信协议：
+通信协议 | Communication protocol:
 - 使用 WebSocket 进行实时双向通信
+  Use WebSocket for real-time bidirectional communication
 - 数据格式为 JSON
+  Data format is JSON
 - 支持 ping/pong 心跳检测
+  Supports ping/pong heartbeat detection
 - 设备主动推送传感器状态更新
+  Device actively pushes sensor state updates
 """
 from __future__ import annotations
 

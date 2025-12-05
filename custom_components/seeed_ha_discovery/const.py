@@ -1,14 +1,15 @@
 """
 Seeed HA Discovery - 常量定义文件
-Constants for the Seeed HA Discovery integration.
+Seeed HA Discovery - Constants definition file.
 
 这个文件定义了集成中使用的所有常量，包括：
-- 域名和制造商信息
-- 配置相关的键名
-- 默认端口设置
-- mDNS 服务类型
-- WebSocket 消息类型
-- BLE 相关配置
+This file defines all constants used in the integration, including:
+- 域名和制造商信息 | Domain and manufacturer information
+- 配置相关的键名 | Configuration key names
+- 默认端口设置 | Default port settings
+- mDNS 服务类型 | mDNS service type
+- WebSocket 消息类型 | WebSocket message types
+- BLE 相关配置 | BLE related configurations
 """
 from typing import Final
 
@@ -71,6 +72,7 @@ HEARTBEAT_INTERVAL: Final = 15
 # mDNS 服务类型，用于自动发现设备
 # mDNS service type for auto-discovery
 # 设备会广播这个服务类型，HA 会自动发现
+# Device broadcasts this service type, HA will auto-discover
 ZEROCONF_SERVICE_TYPE: Final = "_seeed_ha._tcp.local."
 
 # =============================================================================
@@ -118,20 +120,20 @@ SEEED_MANUFACTURER_ID: Final = 0x5EED
 # BTHome Service UUID
 BTHOME_SERVICE_UUID: Final = "0000fcd2-0000-1000-8000-00805f9b34fb"
 
-# Seeed HA Control Service UUID (用于双向通信)
+# Seeed HA Control Service UUID (用于双向通信 | for bidirectional communication)
 SEEED_CONTROL_SERVICE_UUID: Final = "5eed0001-b5a3-f393-e0a9-e50e24dcca9e"
 SEEED_CONTROL_COMMAND_CHAR_UUID: Final = "5eed0002-b5a3-f393-e0a9-e50e24dcca9e"
 SEEED_CONTROL_STATE_CHAR_UUID: Final = "5eed0003-b5a3-f393-e0a9-e50e24dcca9e"
 
-# 连接类型
+# 连接类型 | Connection type
 CONF_CONNECTION_TYPE: Final = "connection_type"
 CONNECTION_TYPE_WIFI: Final = "wifi"
 CONNECTION_TYPE_BLE: Final = "ble"
 
-# BLE 设备地址
+# BLE 设备地址 | BLE device address
 CONF_BLE_ADDRESS: Final = "ble_address"
 
-# BLE 设备是否支持控制
+# BLE 设备是否支持控制 | Whether BLE device supports control
 CONF_BLE_CONTROL: Final = "ble_control"
 
 # =============================================================================
@@ -139,6 +141,7 @@ CONF_BLE_CONTROL: Final = "ble_control"
 # =============================================================================
 
 # BTHome Object ID 到 Home Assistant 传感器类型的映射
+# BTHome Object ID to Home Assistant sensor type mapping
 BTHOME_SENSOR_TYPES: Final = {
     0x01: {"name": "Battery", "device_class": "battery", "unit": "%"},
     0x02: {"name": "Temperature", "device_class": "temperature", "unit": "°C", "factor": 0.01},
@@ -162,19 +165,22 @@ BTHOME_SENSOR_TYPES: Final = {
 }
 
 # BTHome 二进制传感器类型映射
+# BTHome binary sensor type mapping
 # 注意：这些作为普通 sensor 创建时，device_class 需要设为 None
+# Note: When created as regular sensor, device_class needs to be None
 # 因为 HA 的 sensor 和 binary_sensor 的 device_class 不同
+# Because HA's sensor and binary_sensor have different device_class values
 BTHOME_BINARY_SENSOR_TYPES: Final = {
     0x0F: {"name": "Generic", "device_class": None},
-    0x10: {"name": "Power State", "device_class": None},  # 二进制：电源开/关
-    0x11: {"name": "Opening", "device_class": None},      # 二进制：开门/关门
+    0x10: {"name": "Power State", "device_class": None},  # 二进制：电源开/关 | Binary: power on/off
+    0x11: {"name": "Opening", "device_class": None},      # 二进制：开门/关门 | Binary: door open/closed
     0x15: {"name": "Battery Low", "device_class": None},
     0x16: {"name": "Battery Charging", "device_class": None},
     0x20: {"name": "Occupancy", "device_class": None},
     0x21: {"name": "Motion", "device_class": None},
 }
 
-# BTHome 事件类型（如按钮）
+# BTHome 事件类型（如按钮）| BTHome event types (e.g., button)
 BTHOME_EVENT_TYPES: Final = {
     0x3A: {"name": "Button", "events": {
         0x00: "none",

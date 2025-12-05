@@ -1,11 +1,15 @@
 """
 Seeed HA Discovery - BLE 开关实体
-BLE switch entities for Seeed HA Discovery.
+Seeed HA Discovery - BLE switch entities.
 
 这个文件负责：
+This file is responsible for:
 1. 通过 GATT 连接控制 BLE 设备的开关
+   Control BLE device switches via GATT connection
 2. 监听状态通知更新开关状态
+   Listen to state notifications and update switch state
 3. 处理连接/断开事件
+   Handle connect/disconnect events
 """
 from __future__ import annotations
 

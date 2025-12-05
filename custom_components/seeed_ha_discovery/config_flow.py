@@ -1,21 +1,31 @@
 """
 Seeed HA Discovery - 配置流程
-Config flow for Seeed HA Discovery integration.
+Seeed HA Discovery - Config flow.
 
 这个文件处理设备的添加流程，支持三种方式：
+This file handles the device addition flow, supporting three methods:
 1. 手动添加 - 用户输入设备 IP 地址 (WiFi 设备)
+   Manual addition - User enters device IP address (WiFi devices)
 2. 自动发现 (mDNS) - 通过 Zeroconf 自动发现局域网内的 WiFi 设备
+   Auto-discovery (mDNS) - Discover WiFi devices on LAN via Zeroconf
 3. 自动发现 (BLE) - 通过蓝牙发现 BTHome 格式的 BLE 设备
+   Auto-discovery (BLE) - Discover BLE devices in BTHome format via Bluetooth
 
-WiFi 自动发现工作原理：
+WiFi 自动发现工作原理 | WiFi auto-discovery mechanism:
 - ESP32 设备会广播 mDNS 服务 (_seeed_ha._tcp)
+  ESP32 devices broadcast mDNS service (_seeed_ha._tcp)
 - Home Assistant 监听这个服务类型
+  Home Assistant listens for this service type
 - 当发现新设备时，会弹出通知让用户确认添加
+  When new device is found, a notification pops up for user confirmation
 
-BLE 自动发现工作原理：
+BLE 自动发现工作原理 | BLE auto-discovery mechanism:
 - XIAO nRF52840/ESP32 设备广播 BTHome 格式的数据
+  XIAO nRF52840/ESP32 devices broadcast BTHome format data
 - Home Assistant 通过蓝牙适配器扫描并识别
+  Home Assistant scans and identifies via Bluetooth adapter
 - 当发现新设备时，会弹出通知让用户确认添加
+  When new device is found, a notification pops up for user confirmation
 """
 from __future__ import annotations
 
