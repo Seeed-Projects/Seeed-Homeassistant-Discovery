@@ -1,0 +1,1 @@
+#define BOARD_SCREEN_COMBO 521 // reTerminal E1002 (UC8179C)

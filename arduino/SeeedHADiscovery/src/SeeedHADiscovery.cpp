@@ -198,6 +198,59 @@ void SeeedHASwitch::_notifyChange() {
 }
 
 // =============================================================================
+// SeeedHAState Implementation | SeeedHAState 实现
+// =============================================================================
+
+SeeedHAState::SeeedHAState(const String& entityId) :
+    _entityId(entityId),
+    _state(""),
+    _friendlyName(""),
+    _unit(""),
+    _deviceClass(""),
+    _hasValue(false),
+    _lastUpdate(0)
+{
+    // Constructor initialization complete | 构造函数初始化完成
+}
+
+float SeeedHAState::getFloat() const {
+    if (!_hasValue) return 0;
+    return _state.toFloat();
+}
+
+int SeeedHAState::getInt() const {
+    if (!_hasValue) return 0;
+    return _state.toInt();
+}
+
+bool SeeedHAState::getBool() const {
+    if (!_hasValue) return false;
+    
+    // Check common "on" states | 检查常见的 "开" 状态
+    String s = _state;
+    s.toLowerCase();
+    return (s == "on" || s == "true" || s == "1" || 
+            s == "home" || s == "open" || s == "yes");
+}
+
+void SeeedHAState::_updateState(const String& state, JsonObject& attributes) {
+    _state = state;
+    _hasValue = true;
+    _lastUpdate = millis();
+    
+    // Update attributes | 更新属性
+    if (attributes.containsKey("friendly_name")) {
+        _friendlyName = attributes["friendly_name"].as<String>();
+    }
+    if (attributes.containsKey("unit_of_measurement")) {
+        _unit = attributes["unit_of_measurement"].as<String>();
+    }
+    if (attributes.containsKey("device_class")) {
+        _deviceClass = attributes["device_class"].as<String>();
+    }
+}
+
+// =============================================================================
 // SeeedHADiscovery Implementation | SeeedHADiscovery 实现
 // =============================================================================
 
@@ -208,6 +261,7 @@ SeeedHADiscovery::SeeedHADiscovery() :
     _httpServer(nullptr),
     _wsServer(nullptr),
     _wsClientConnected(false),
+    _haStateCallback(nullptr),
     _debug(false),
     _lastHeartbeat(0)
 {
@@ -239,6 +293,12 @@ SeeedHADiscovery::~SeeedHADiscovery() {
         delete sw;
     }
     _switches.clear();
+
+    // Cleanup HA states | 清理 HA 状态
+    for (auto& pair : _haStates) {
+        delete pair.second;
+    }
+    _haStates.clear();
 }
 
 void SeeedHADiscovery::setDeviceInfo(const String& name, const String& model, const String& version) {
@@ -628,6 +688,19 @@ void SeeedHADiscovery::_handleWSEvent(uint8_t num, WStype_t type, uint8_t* paylo
                 // 格式: {type: "command", entity_id: "led", state: true}
                 _handleCommand(doc);
             }
+            else if (msgType == "ha_state") {
+                // HA entity state push | HA 实体状态推送
+                // Format: {type: "ha_state", entity_id: "sensor.xxx", state: "25.5", attributes: {...}}
+                // 格式: {type: "ha_state", entity_id: "sensor.xxx", state: "25.5", attributes: {...}}
+                _handleHAState(doc);
+            }
+            else if (msgType == "ha_state_clear") {
+                // HA entity state clear | HA 实体状态清除
+                // Format: {type: "ha_state_clear"}
+                // 格式: {type: "ha_state_clear"}
+                _log("Received HA state clear command");
+                clearHAStates();
+            }
             break;
         }
 
@@ -856,6 +929,73 @@ void SeeedHADiscovery::_handleCommand(JsonDocument& doc) {
     }
 
     _log("Switch not found: " + entityId);
+}
+
+void SeeedHADiscovery::_handleHAState(JsonDocument& doc) {
+    // Handle HA entity state push from Home Assistant
+    // 处理来自 Home Assistant 的实体状态推送
+    // Format: {type: "ha_state", entity_id: "sensor.xxx", state: "25.5", attributes: {...}}
+    // 格式: {type: "ha_state", entity_id: "sensor.xxx", state: "25.5", attributes: {...}}
+
+    String entityId = doc["entity_id"].as<String>();
+    String state = doc["state"].as<String>();
+
+    if (entityId.length() == 0) {
+        _log("HA state error: missing entity_id");
+        return;
+    }
+
+    _log("Received HA state: " + entityId + " = " + state);
+
+    // Get or create SeeedHAState object | 获取或创建 SeeedHAState 对象
+    SeeedHAState* haState = nullptr;
+    auto it = _haStates.find(entityId);
+    if (it != _haStates.end()) {
+        haState = it->second;
+    } else {
+        // Create new state object | 创建新的状态对象
+        if (_haStates.size() >= SEEED_HA_MAX_SUBSCRIBED_ENTITIES) {
+            _log("HA state error: max entities reached");
+            return;
+        }
+        haState = new SeeedHAState(entityId);
+        _haStates[entityId] = haState;
+        _log("Created new HA state for: " + entityId);
+    }
+
+    // Update state | 更新状态
+    JsonObject attrs = doc["attributes"].as<JsonObject>();
+    haState->_updateState(state, attrs);
+
+    // Call user callback if registered | 如果注册了回调，调用用户回调
+    if (_haStateCallback != nullptr) {
+        _haStateCallback(entityId.c_str(), state.c_str(), attrs);
+    }
+}
+
+void SeeedHADiscovery::onHAState(HAStateCallback callback) {
+    _haStateCallback = callback;
+    _log("HA state callback registered");
+}
+
+SeeedHAState* SeeedHADiscovery::getHAState(const String& entityId) {
+    auto it = _haStates.find(entityId);
+    if (it != _haStates.end()) {
+        return it->second;
+    }
+    return nullptr;
+}
+
+void SeeedHADiscovery::clearHAStates() {
+    // Clear all subscribed HA states | 清除所有订阅的 HA 状态
+    _log("Clearing all HA states, count: " + String(_haStates.size()));
+    
+    for (auto& pair : _haStates) {
+        delete pair.second;
+    }
+    _haStates.clear();
+    
+    _log("HA states cleared");
 }
 
 void SeeedHADiscovery::handle() {

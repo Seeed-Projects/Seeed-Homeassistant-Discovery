@@ -69,7 +69,10 @@
 // =============================================================================
 
 // Library version | 库版本号
-#define SEEED_HA_DISCOVERY_VERSION "1.3.0"
+#define SEEED_HA_DISCOVERY_VERSION "1.4.0"
+
+// Maximum number of subscribed HA entities | 最大订阅 HA 实体数量
+#define SEEED_HA_MAX_SUBSCRIBED_ENTITIES 20
 
 // Default ports | 默认端口
 #define SEEED_HA_HTTP_PORT 80   // HTTP server port (for device info API) | HTTP 服务器端口（用于设备信息接口）
@@ -95,6 +98,22 @@ class SeeedHASwitch;
  *              新的开关状态（true = 开, false = 关）
  */
 typedef void (*SwitchCallback)(bool state);
+
+/**
+ * HA state change callback type
+ * HA 状态变化回调函数类型
+ *
+ * Called when a subscribed Home Assistant entity's state changes.
+ * 当订阅的 Home Assistant 实体状态变化时调用。
+ *
+ * @param entityId The entity ID (e.g., "sensor.living_room_temperature")
+ *                 实体 ID（如 "sensor.living_room_temperature"）
+ * @param state The new state value as string
+ *              新的状态值（字符串形式）
+ * @param attributes JSON object containing entity attributes
+ *                   包含实体属性的 JSON 对象
+ */
+typedef void (*HAStateCallback)(const char* entityId, const char* state, JsonObject& attributes);
 
 // =============================================================================
 // SeeedHASensor - Sensor Class | 传感器类
@@ -381,6 +400,154 @@ private:
 };
 
 // =============================================================================
+// SeeedHAState - HA Entity State Class | HA 实体状态类
+// =============================================================================
+
+/**
+ * HA Entity State class - stores state of a subscribed Home Assistant entity
+ * HA 实体状态类 - 存储订阅的 Home Assistant 实体的状态
+ *
+ * This class is used to receive and store states from Home Assistant entities.
+ * 这个类用于接收和存储来自 Home Assistant 实体的状态。
+ *
+ * The states are pushed from HA when:
+ * 状态会在以下情况下从 HA 推送：
+ * - Device connects to HA (initial sync) | 设备连接到 HA 时（初始同步）
+ * - Entity state changes in HA | HA 中实体状态变化时
+ *
+ * Usage:
+ * 使用方法：
+ * ```cpp
+ * // In setup(), register callback for HA state changes
+ * ha.onHAState([](const char* entityId, const char* state, JsonObject& attrs) {
+ *     Serial.printf("HA state: %s = %s\n", entityId, state);
+ * });
+ *
+ * // Or access stored states directly
+ * SeeedHAState* tempState = ha.getHAState("sensor.living_room_temperature");
+ * if (tempState && tempState->hasValue()) {
+ *     float temp = tempState->getFloat();
+ *     Serial.printf("Temperature: %.1f\n", temp);
+ * }
+ * ```
+ */
+class SeeedHAState {
+public:
+    /**
+     * Constructor | 构造函数
+     *
+     * @param entityId HA entity ID (e.g., "sensor.living_room_temperature")
+     *                 HA 实体 ID（如 "sensor.living_room_temperature"）
+     */
+    SeeedHAState(const String& entityId);
+
+    // =========================================================================
+    // Value Getters | 值获取方法
+    // =========================================================================
+
+    /**
+     * Check if value has been received
+     * 检查是否已接收到值
+     *
+     * @return true if value is available | 如果有值返回 true
+     */
+    bool hasValue() const { return _hasValue; }
+
+    /**
+     * Get state as string
+     * 获取字符串形式的状态
+     *
+     * @return State value as string | 字符串形式的状态值
+     */
+    const String& getString() const { return _state; }
+
+    /**
+     * Get state as float
+     * 获取浮点数形式的状态
+     *
+     * Useful for numeric sensors like temperature, humidity.
+     * 适用于温度、湿度等数值型传感器。
+     *
+     * @return State value as float, 0 if not a number
+     *         浮点数形式的状态值，如果不是数字则返回 0
+     */
+    float getFloat() const;
+
+    /**
+     * Get state as integer
+     * 获取整数形式的状态
+     *
+     * @return State value as integer, 0 if not a number
+     *         整数形式的状态值，如果不是数字则返回 0
+     */
+    int getInt() const;
+
+    /**
+     * Get state as boolean
+     * 获取布尔形式的状态
+     *
+     * Returns true for "on", "true", "1", "home", etc.
+     * 对于 "on", "true", "1", "home" 等返回 true。
+     *
+     * @return State value as boolean | 布尔形式的状态值
+     */
+    bool getBool() const;
+
+    // =========================================================================
+    // Attribute Getters | 属性获取方法
+    // =========================================================================
+
+    /**
+     * Get entity ID
+     * 获取实体 ID
+     */
+    const String& getEntityId() const { return _entityId; }
+
+    /**
+     * Get friendly name
+     * 获取友好名称
+     */
+    const String& getFriendlyName() const { return _friendlyName; }
+
+    /**
+     * Get unit of measurement
+     * 获取单位
+     */
+    const String& getUnit() const { return _unit; }
+
+    /**
+     * Get device class
+     * 获取设备类别
+     */
+    const String& getDeviceClass() const { return _deviceClass; }
+
+    /**
+     * Get last update timestamp (millis)
+     * 获取最后更新时间戳（毫秒）
+     */
+    unsigned long getLastUpdate() const { return _lastUpdate; }
+
+    // =========================================================================
+    // Internal Methods | 内部方法
+    // =========================================================================
+
+    /**
+     * Update state from HA (internal use)
+     * 从 HA 更新状态（内部使用）
+     */
+    void _updateState(const String& state, JsonObject& attributes);
+
+private:
+    String _entityId;       // HA entity ID | HA 实体 ID
+    String _state;          // Current state | 当前状态
+    String _friendlyName;   // Friendly name | 友好名称
+    String _unit;           // Unit of measurement | 单位
+    String _deviceClass;    // Device class | 设备类别
+    bool _hasValue;         // Whether value is set | 是否已设置值
+    unsigned long _lastUpdate; // Last update time | 最后更新时间
+};
+
+// =============================================================================
 // SeeedHADiscovery - Main Class | 主类
 // =============================================================================
 
@@ -536,6 +703,78 @@ public:
     );
 
     // =========================================================================
+    // HA State Subscription | HA 状态订阅
+    // =========================================================================
+
+    /**
+     * Register callback for HA state changes
+     * 注册 HA 状态变化回调
+     *
+     * This callback is invoked when Home Assistant pushes entity state updates.
+     * 当 Home Assistant 推送实体状态更新时，此回调会被调用。
+     *
+     * Note: You need to configure which entities to subscribe in HA integration settings.
+     * 注意：你需要在 HA 集成设置中配置要订阅哪些实体。
+     *
+     * @param callback Callback function receiving entity ID, state, and attributes
+     *                 回调函数，接收实体 ID、状态和属性
+     *
+     * Example:
+     * 示例：
+     * ```cpp
+     * ha.onHAState([](const char* entityId, const char* state, JsonObject& attrs) {
+     *     Serial.printf("HA state: %s = %s\n", entityId, state);
+     *     String unit = attrs["unit_of_measurement"] | "";
+     *     Serial.printf("Unit: %s\n", unit.c_str());
+     * });
+     * ```
+     */
+    void onHAState(HAStateCallback callback);
+
+    /**
+     * Get HA entity state by entity ID
+     * 通过实体 ID 获取 HA 实体状态
+     *
+     * Returns the stored state for a subscribed HA entity.
+     * 返回订阅的 HA 实体的存储状态。
+     *
+     * @param entityId HA entity ID (e.g., "sensor.living_room_temperature")
+     *                 HA 实体 ID（如 "sensor.living_room_temperature"）
+     * @return Pointer to SeeedHAState object, or nullptr if not found
+     *         SeeedHAState 对象指针，如果未找到则返回 nullptr
+     *
+     * Example:
+     * 示例：
+     * ```cpp
+     * SeeedHAState* temp = ha.getHAState("sensor.living_room_temperature");
+     * if (temp && temp->hasValue()) {
+     *     float value = temp->getFloat();
+     *     String unit = temp->getUnit();
+     *     Serial.printf("Temperature: %.1f %s\n", value, unit.c_str());
+     * }
+     * ```
+     */
+    SeeedHAState* getHAState(const String& entityId);
+
+    /**
+     * Get all subscribed HA states
+     * 获取所有订阅的 HA 状态
+     *
+     * @return Reference to the map of entity ID to SeeedHAState pointers
+     *         实体 ID 到 SeeedHAState 指针的映射引用
+     */
+    const std::map<String, SeeedHAState*>& getHAStates() const { return _haStates; }
+
+    /**
+     * Clear all subscribed HA states
+     * 清除所有订阅的 HA 状态
+     *
+     * Called internally when subscription is updated from HA.
+     * 当 HA 更新订阅时内部调用。
+     */
+    void clearHAStates();
+
+    // =========================================================================
     // Runtime Methods | 运行时方法
     // =========================================================================
 
@@ -617,6 +856,12 @@ private:
     std::vector<SeeedHASwitch*> _switches;
 
     // -------------------------------------------------------------------------
+    // HA State Subscription | HA 状态订阅
+    // -------------------------------------------------------------------------
+    std::map<String, SeeedHAState*> _haStates;  // Subscribed HA states | 订阅的 HA 状态
+    HAStateCallback _haStateCallback;            // HA state change callback | HA 状态变化回调
+
+    // -------------------------------------------------------------------------
     // State Variables | 状态变量
     // -------------------------------------------------------------------------
     bool _debug;                  // Debug mode | 调试模式
@@ -657,6 +902,9 @@ private:
 
     // Handle command from HA | 处理来自 HA 的命令消息
     void _handleCommand(JsonDocument& doc);
+
+    // Handle HA state push | 处理来自 HA 的状态推送
+    void _handleHAState(JsonDocument& doc);
 
     // Broadcast message to all WebSocket clients
     // 广播消息到所有 WebSocket 客户端

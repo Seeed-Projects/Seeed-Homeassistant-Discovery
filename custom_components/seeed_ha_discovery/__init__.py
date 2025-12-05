@@ -45,6 +45,7 @@ from .const import (
     CONF_PORT,
     CONF_CONNECTION_TYPE,
     CONF_BLE_ADDRESS,
+    CONF_SUBSCRIBED_ENTITIES,
     CONNECTION_TYPE_WIFI,
     CONNECTION_TYPE_BLE,
     DEFAULT_WS_PORT,
@@ -122,6 +123,13 @@ async def _async_setup_wifi_entry(hass: HomeAssistant, entry: ConfigEntry) -> bo
         "coordinator": coordinator,
         "connection_type": CONNECTION_TYPE_WIFI,
     }
+
+    # 设置 HA 实体订阅（如果配置了）
+    # Set up HA entity subscription (if configured)
+    subscribed_entities = entry.options.get(CONF_SUBSCRIBED_ENTITIES, [])
+    if subscribed_entities:
+        await device.async_setup_entity_subscription(subscribed_entities)
+        _LOGGER.info("Subscribed to %d HA entities for device %s", len(subscribed_entities), host)
 
     # 加载传感器平台
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -233,9 +241,22 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
     处理配置选项更新
     Handle options update.
 
-    当用户修改设备配置时调用，会重新加载集成。
-    Called when user modifies device config, will reload the integration.
+    当用户修改设备配置时调用。
+    对于实体订阅更新，直接更新订阅列表而不重新加载整个集成。
+    Called when user modifies device config.
+    For entity subscription updates, directly update the subscription list
+    without reloading the entire integration.
     """
     # 配置已更新 | Config updated
-    _LOGGER.info("Config updated, reloading")
-    await hass.config_entries.async_reload(entry.entry_id)
+    _LOGGER.info("Config options updated for %s", entry.title)
+
+    # 获取设备数据 | Get device data
+    data = hass.data[DOMAIN].get(entry.entry_id, {})
+    connection_type = data.get("connection_type", CONNECTION_TYPE_WIFI)
+
+    # 如果是 WiFi 设备，更新实体订阅 | If WiFi device, update entity subscription
+    if connection_type == CONNECTION_TYPE_WIFI and "device" in data:
+        device: SeeedHADevice = data["device"]
+        subscribed_entities = entry.options.get(CONF_SUBSCRIBED_ENTITIES, [])
+        await device.async_setup_entity_subscription(subscribed_entities)
+        _LOGGER.info("Updated entity subscription: %d entities", len(subscribed_entities))

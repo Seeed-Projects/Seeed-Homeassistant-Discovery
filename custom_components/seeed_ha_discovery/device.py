@@ -36,12 +36,16 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+from homeassistant.helpers.event import async_track_state_change_event
+
 from .const import (
     MSG_TYPE_PING,
     MSG_TYPE_PONG,
     MSG_TYPE_STATE,
     MSG_TYPE_DISCOVERY,
     MSG_TYPE_COMMAND,
+    MSG_TYPE_HA_STATE,
+    MSG_TYPE_HA_STATE_CLEAR,
     HEARTBEAT_INTERVAL,
     RECONNECT_INTERVAL,
     DEFAULT_HTTP_PORT,
@@ -104,6 +108,15 @@ class SeeedHADevice:
 
         # 设备基本信息（型号、版本等）
         self._device_info: dict[str, Any] = {}
+
+        # =========================================================================
+        # HA 实体订阅相关 | HA Entity Subscription
+        # =========================================================================
+        
+        # 订阅的 HA 实体列表 | Subscribed HA entities
+        self._subscribed_entities: list[str] = []
+        # 状态监听取消函数 | State listener cancel function
+        self._state_unsub: Callable[[], None] | None = None
 
     @property
     def connected(self) -> bool:
@@ -237,6 +250,11 @@ class SeeedHADevice:
         # 正在断开连接 | Disconnecting
         _LOGGER.info("Disconnecting: %s", self.host)
         self._connected = False
+
+        # 取消 HA 实体状态监听 | Cancel HA entity state listener
+        if self._state_unsub:
+            self._state_unsub()
+            self._state_unsub = None
 
         # 取消接收任务
         if self._receive_task:
@@ -426,9 +444,37 @@ class SeeedHADevice:
             if await self.async_connect():
                 # 重连成功 | Reconnected successfully
                 _LOGGER.info("Reconnected successfully: %s", self.host)
+                
+                # 重连后恢复实体订阅 | Restore entity subscription after reconnect
+                if self._subscribed_entities:
+                    _LOGGER.info("Restoring entity subscription: %d entities", len(self._subscribed_entities))
+                    # 重新发送订阅的实体状态 | Re-send subscribed entity states
+                    await self._async_restore_entity_subscription()
+                
                 break
 
         self._reconnect_task = None
+
+    async def _async_restore_entity_subscription(self) -> None:
+        """
+        恢复实体订阅（重连后调用）
+        Restore entity subscription (called after reconnect).
+
+        不需要重新设置状态监听器，因为它们仍然有效。
+        只需要重新推送当前状态到设备。
+        No need to re-setup state listeners as they are still valid.
+        Just need to re-push current states to device.
+        """
+        # 发送清除消息 | Send clear message
+        await self._async_send_ha_state_clear()
+        
+        # 重新推送所有订阅实体的当前状态 | Re-push current states of all subscribed entities
+        for entity_id in self._subscribed_entities:
+            state = self.hass.states.get(entity_id)
+            if state:
+                await self._async_push_ha_state(entity_id, state)
+            else:
+                _LOGGER.warning("Entity not found during restore: %s", entity_id)
 
     async def _async_send(self, data: dict[str, Any]) -> bool:
         """
@@ -516,3 +562,122 @@ class SeeedHADevice:
             return False
 
         return await self._async_send(data)
+
+    # =========================================================================
+    # HA 实体状态订阅 | HA Entity State Subscription
+    # =========================================================================
+
+    async def async_setup_entity_subscription(
+        self,
+        entity_ids: list[str]
+    ) -> None:
+        """
+        设置 HA 实体状态订阅
+        Set up HA entity state subscription.
+
+        监听指定 HA 实体的状态变化，并推送给 Arduino 设备。
+        Listen to state changes of specified HA entities and push to Arduino device.
+
+        参数 | Args:
+            entity_ids: 要订阅的 HA 实体 ID 列表
+                        List of HA entity IDs to subscribe
+
+        示例 | Example:
+            await device.async_setup_entity_subscription([
+                "sensor.living_room_temperature",
+                "sensor.outdoor_humidity"
+            ])
+        """
+        # 取消之前的订阅 | Cancel previous subscription
+        if self._state_unsub:
+            self._state_unsub()
+            self._state_unsub = None
+
+        # 发送清除消息到 Arduino，清除旧的订阅状态
+        # Send clear message to Arduino to clear old subscribed states
+        await self._async_send_ha_state_clear()
+
+        self._subscribed_entities = entity_ids
+
+        if not entity_ids:
+            _LOGGER.info("No entities to subscribe, cleared all")
+            return
+
+        _LOGGER.info("Setting up HA entity subscription: %s", entity_ids)
+
+        # 监听实体状态变化 | Listen to entity state changes
+        self._state_unsub = async_track_state_change_event(
+            self.hass,
+            entity_ids,
+            self._async_handle_ha_state_change,
+        )
+
+        # 发送所有实体的初始状态 | Send initial state of all entities
+        for entity_id in entity_ids:
+            state = self.hass.states.get(entity_id)
+            if state:
+                await self._async_push_ha_state(entity_id, state)
+            else:
+                _LOGGER.warning("Entity not found: %s", entity_id)
+
+    async def _async_handle_ha_state_change(self, event) -> None:
+        """
+        处理 HA 实体状态变化事件
+        Handle HA entity state change event.
+
+        当订阅的 HA 实体状态变化时，此方法会被调用。
+        This method is called when a subscribed HA entity state changes.
+        """
+        entity_id = event.data.get("entity_id")
+        new_state = event.data.get("new_state")
+
+        if new_state is None:
+            # 实体被删除 | Entity was removed
+            _LOGGER.debug("Entity removed: %s", entity_id)
+            return
+
+        await self._async_push_ha_state(entity_id, new_state)
+
+    async def _async_push_ha_state(
+        self,
+        entity_id: str,
+        state
+    ) -> None:
+        """
+        推送 HA 实体状态到 Arduino 设备
+        Push HA entity state to Arduino device.
+
+        参数 | Args:
+            entity_id: HA 实体 ID
+            state: HA 状态对象
+        """
+        # 构建推送数据 | Build push data
+        data = {
+            "type": MSG_TYPE_HA_STATE,
+            "entity_id": entity_id,
+            "state": state.state,
+            "attributes": {
+                "friendly_name": state.attributes.get("friendly_name", entity_id),
+                "unit_of_measurement": state.attributes.get("unit_of_measurement", ""),
+                "device_class": state.attributes.get("device_class", ""),
+                "icon": state.attributes.get("icon", ""),
+            }
+        }
+
+        _LOGGER.debug("Pushing HA state to device: %s = %s", entity_id, state.state)
+        await self._async_send(data)
+
+    async def _async_send_ha_state_clear(self) -> None:
+        """
+        发送清除 HA 状态消息到 Arduino 设备
+        Send clear HA states message to Arduino device.
+
+        通知 Arduino 清除所有已存储的 HA 实体状态。
+        Notify Arduino to clear all stored HA entity states.
+        """
+        data = {
+            "type": MSG_TYPE_HA_STATE_CLEAR,
+        }
+
+        _LOGGER.debug("Sending HA state clear to device")
+        await self._async_send(data)

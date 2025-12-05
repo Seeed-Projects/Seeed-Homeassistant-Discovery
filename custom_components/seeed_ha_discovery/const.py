@@ -67,7 +67,11 @@ RECONNECT_INTERVAL: Final = 30
 
 # 心跳间隔（秒）
 # Heartbeat interval in seconds
-HEARTBEAT_INTERVAL: Final = 15
+# Note: Increased to 60s to accommodate E-Paper display refresh
+# which can take 30+ seconds and blocks the device
+# 注意：增加到 60 秒以适应墨水屏刷新
+# 墨水屏刷新可能需要 30 秒以上并阻塞设备
+HEARTBEAT_INTERVAL: Final = 60
 
 # =============================================================================
 # mDNS 配置 | mDNS Configuration
@@ -102,6 +106,22 @@ MSG_TYPE_DISCOVERY: Final = "discovery"
 # 控制命令 - HA 发送到设备
 # Control command - sent from HA to device
 MSG_TYPE_COMMAND: Final = "command"
+
+# HA 状态推送 - HA 发送订阅的实体状态到设备
+# HA state push - HA sends subscribed entity states to device
+MSG_TYPE_HA_STATE: Final = "ha_state"
+
+# HA 状态清除 - 清除设备上所有订阅的 HA 状态
+# HA state clear - clear all subscribed HA states on device
+MSG_TYPE_HA_STATE_CLEAR: Final = "ha_state_clear"
+
+# =============================================================================
+# 实体订阅配置 | Entity Subscription Configuration
+# =============================================================================
+
+# 订阅的 HA 实体列表
+# List of subscribed HA entities
+CONF_SUBSCRIBED_ENTITIES: Final = "subscribed_entities"
 
 # =============================================================================
 # 支持的平台 | Supported Platforms

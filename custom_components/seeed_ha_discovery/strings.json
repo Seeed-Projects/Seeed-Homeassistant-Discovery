@@ -27,5 +27,19 @@
       "already_configured": "This device is already configured.",
       "not_supported": "Device type not supported."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure Entity Subscription",
+        "description": "Select Home Assistant entities to push to **{device_name}**.\n\nThe selected entities' states will be sent to your Arduino device in real-time, allowing your device to display or use these values.",
+        "data": {
+          "subscribed_entities": "Entities to subscribe"
+        }
+      }
+    },
+    "abort": {
+      "ble_not_supported": "BLE devices do not support entity subscription. This feature is only available for WiFi devices."
+    }
   }
 }

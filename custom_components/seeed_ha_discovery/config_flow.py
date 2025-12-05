@@ -40,8 +40,10 @@ from homeassistant import config_entries
 from homeassistant.components import zeroconf
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.const import CONF_HOST, CONF_NAME
+from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers import selector
 
 from .const import (
     DOMAIN,
@@ -51,6 +53,7 @@ from .const import (
     CONF_CONNECTION_TYPE,
     CONF_BLE_ADDRESS,
     CONF_BLE_CONTROL,
+    CONF_SUBSCRIBED_ENTITIES,
     CONNECTION_TYPE_WIFI,
     CONNECTION_TYPE_BLE,
     DEFAULT_HTTP_PORT,
@@ -76,6 +79,20 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     # 配置流程版本，用于迁移旧配置 | Config flow version for migration
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> config_entries.OptionsFlow:
+        """
+        获取选项配置流程
+        Get the options flow for this handler.
+        
+        用于让用户配置要订阅的 HA 实体。
+        Used to let users configure HA entities to subscribe.
+        """
+        return SeeedHAOptionsFlow(config_entry)
 
     def __init__(self) -> None:
         """
@@ -470,3 +487,81 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             # HTTP 请求超时 | HTTP request timeout
             _LOGGER.warning("HTTP request timeout")
             raise
+
+
+# =============================================================================
+# 选项配置流程 | Options Flow
+# =============================================================================
+
+class SeeedHAOptionsFlow(config_entries.OptionsFlow):
+    """
+    Seeed HA Discovery 选项配置流程
+    Handle options flow for Seeed HA Discovery.
+
+    让用户选择要下发到设备的 Home Assistant 实体。
+    Allows users to select HA entities to push to the device.
+    """
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """
+        初始化选项配置流程
+        Initialize options flow.
+        """
+        self.config_entry = config_entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """
+        显示实体选择界面
+        Show entity selection interface.
+
+        让用户选择要订阅并推送到 Arduino 设备的 HA 实体。
+        Allows users to select HA entities to subscribe and push to Arduino device.
+        """
+        # 只有 WiFi 设备支持实体订阅
+        # Only WiFi devices support entity subscription
+        connection_type = self.config_entry.data.get(
+            CONF_CONNECTION_TYPE, CONNECTION_TYPE_WIFI
+        )
+        if connection_type != CONNECTION_TYPE_WIFI:
+            return self.async_abort(reason="ble_not_supported")
+
+        if user_input is not None:
+            # 用户保存了选择 | User saved selection
+            _LOGGER.info(
+                "User selected entities to subscribe: %s",
+                user_input.get(CONF_SUBSCRIBED_ENTITIES, [])
+            )
+            return self.async_create_entry(
+                title="",
+                data={
+                    CONF_SUBSCRIBED_ENTITIES: user_input.get(CONF_SUBSCRIBED_ENTITIES, [])
+                },
+            )
+
+        # 获取当前已选择的实体 | Get currently selected entities
+        current_entities = self.config_entry.options.get(CONF_SUBSCRIBED_ENTITIES, [])
+
+        # 显示实体选择表单 | Show entity selection form
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_SUBSCRIBED_ENTITIES,
+                        default=current_entities,
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(
+                            # 允许选择多个实体 | Allow multiple selection
+                            multiple=True,
+                            # 可以选择的实体域 | Allowed entity domains
+                            domain=["sensor", "binary_sensor", "switch", "light", "climate", "weather"],
+                        )
+                    ),
+                }
+            ),
+            description_placeholders={
+                "device_name": self.config_entry.title,
+            },
+        )

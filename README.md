@@ -28,7 +28,7 @@ With just a few lines of code in **Arduino IDE** or **PlatformIO** for your **XI
 | 📤 **Report Sensor Data** | Device → HA | ✅ | ✅ |
 | 📥 **Receive Control Commands** | HA → Device | ✅ | ✅ (GATT) |
 | 📷 **Camera Streaming** | Device → HA | ✅ (ESP32-S3) | ❌ |
-| 🔄 **Get HA States** | HA → Device | *Coming Soon* | ❌ |
+| 🔄 **Get HA States** | HA → Device | ✅ (v2.3 New) | ❌ |
 | 🔋 **Ultra-Low Power** | - | ❌ | ✅ (Broadcast Mode) |
 
 ### 💡 No Complex Configuration
@@ -55,6 +55,7 @@ Click the button below to add this integration to your Home Assistant:
 - 🌡️ **Sensor Support** - Support for temperature, humidity, and various other sensors (upstream data)
 - 💡 **Switch Control** - Support for LED, relay, and other switch controls (downstream commands)
 - 📷 **Camera Streaming** - Support XIAO ESP32-S3 Sense camera live feed (v2.2 New)
+- 🔄 **HA State Subscription** - Device can subscribe to HA entity states, ideal for display applications (v2.3 New)
 - 📱 **Status Page** - Built-in web page to view device status
 
 ### BLE Version (v2.0 New)
@@ -409,6 +410,28 @@ void loop() {
 1. Make sure HA has a Bluetooth adapter or ESP32 Bluetooth proxy
 2. Device will automatically appear in **Settings** → **Devices & Services** → **BTHome**
 
+### 5. Configure HA State Subscription (v2.3 New)
+
+WiFi devices can subscribe to Home Assistant entity states, which is particularly useful for display devices.
+
+**Configuration Steps:**
+1. Go to **Settings** → **Devices & Services** → **Seeed HA Discovery**
+2. Find your device and click **Configure**
+3. Select entities to subscribe from the dropdown list
+4. Click **Submit**
+
+**Supported Entity Types:**
+- sensor
+- binary_sensor
+- switch
+- light
+- climate
+
+**How It Works:**
+- When entity state changes, HA **automatically pushes** to the device
+- Subscriptions are **automatically restored** after device reconnection
+- After modifying subscription config, device **immediately receives** new entity states
+
 ---
 
 ## 📖 API Reference
@@ -426,6 +449,10 @@ void loop() {
 | `isWiFiConnected()` | Check WiFi connection |
 | `isHAConnected()` | Check HA connection |
 | `getLocalIP()` | Get IP address |
+| `onHAState(callback)` | Register HA state change callback |
+| `getHAState(entityId)` | Get state object for specified entity |
+| `getHAStates()` | Get all subscribed entity states |
+| `clearHAStates()` | Clear all HA state cache |
 
 ### WiFi Library - SeeedHASensor Class
 
@@ -445,6 +472,19 @@ void loop() {
 | `toggle()` | Toggle switch state |
 | `getState()` | Get current state |
 | `setIcon(icon)` | Set icon (mdi:xxx format) |
+
+### WiFi Library - SeeedHAState Class (v2.3 New)
+
+| Method | Description |
+|--------|-------------|
+| `getEntityId()` | Get entity ID |
+| `getFriendlyName()` | Get friendly name |
+| `getString()` | Get state as string |
+| `getFloat()` | Get state as float value |
+| `getBool()` | Get state as boolean |
+| `getUnit()` | Get unit of measurement |
+| `getDeviceClass()` | Get device class |
+| `hasValue()` | Check if has valid value |
 
 ### BLE Library - SeeedHADiscoveryBLE Class
 
