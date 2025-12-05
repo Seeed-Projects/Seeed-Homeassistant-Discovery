@@ -149,26 +149,36 @@ async def _async_setup_ble_entry(hass: HomeAssistant, entry: ConfigEntry) -> boo
     1. 被动监听模式 - 传感器数据通过蓝牙广播接收
     2. 主动连接模式 - 通过 GATT 控制设备（如开关）
     """
-    from .const import CONF_BLE_CONTROL
+    from .const import CONF_BLE_CONTROL, CONF_BLE_SUBSCRIBED_ENTITIES
 
     ble_address = entry.data[CONF_BLE_ADDRESS]
     ble_control = entry.data.get(CONF_BLE_CONTROL, False)
+    ble_subscribed = entry.data.get(CONF_BLE_SUBSCRIBED_ENTITIES, {})
 
     # 正在设置 BLE 设备 | Setting up BLE device
-    _LOGGER.info("Setting up Seeed HA BLE device: %s (control=%s)", ble_address, ble_control)
-
-    # 保存配置
-    hass.data[DOMAIN][entry.entry_id] = {
-        "ble_address": ble_address,
-        "connection_type": CONNECTION_TYPE_BLE,
-        "ble_control": ble_control,
-    }
+    _LOGGER.info(
+        "Setting up Seeed HA BLE device: %s (control=%s, subscribed=%d)",
+        ble_address, ble_control, len(ble_subscribed)
+    )
 
     # 加载平台（BLE 设备不支持摄像头）
     # Load platforms (BLE devices don't support camera)
+    # 如果有控制服务或订阅实体，需要加载 switch 平台来创建 BLE 管理器
+    # If control service or subscribed entities, need switch platform for BLE manager
     platforms = ["sensor"]
-    if ble_control:
+    if ble_control or ble_subscribed:
         platforms.append("switch")
+        _LOGGER.info("Loading switch platform for BLE manager (control=%s, subscribed=%d)", 
+                     ble_control, len(ble_subscribed))
+
+    # 保存配置和已加载的平台列表（用于卸载时）
+    # Save config and list of loaded platforms (for unloading)
+    hass.data[DOMAIN][entry.entry_id] = {
+        "ble_address": ble_address,
+        "connection_type": CONNECTION_TYPE_BLE,
+        "ble_control": ble_control or bool(ble_subscribed),
+        "loaded_platforms": platforms,  # Record actually loaded platforms | 记录实际加载的平台
+    }
 
     await hass.config_entries.async_forward_entry_setups(entry, platforms)
 
@@ -195,7 +205,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     返回 | Returns:
         bool: 卸载是否成功
     """
-    from .const import CONF_BLE_CONTROL
+    from .const import CONF_BLE_CONTROL, CONF_BLE_SUBSCRIBED_ENTITIES
 
     # 正在卸载设备 | Unloading device
     _LOGGER.info("Unloading Seeed HA device")
@@ -204,17 +214,26 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     data = hass.data[DOMAIN].get(entry.entry_id, {})
     connection_type = data.get("connection_type", CONNECTION_TYPE_WIFI)
     ble_control = data.get("ble_control", False)
+    ble_subscribed = entry.data.get(CONF_BLE_SUBSCRIBED_ENTITIES, {})
 
-    # 确定要卸载的平台
+    # 确定要卸载的平台 - 使用运行时记录的已加载平台，而不是当前配置
+    # Determine platforms to unload - use runtime record, not current config
     if connection_type == CONNECTION_TYPE_BLE:
-        platforms_to_unload = ["sensor"]
-        if ble_control:
-            platforms_to_unload.append("switch")
+        # 使用运行时记录的平台列表
+        # Use the platforms that were actually loaded at runtime
+        platforms_to_unload = data.get("loaded_platforms", ["sensor"])
+        _LOGGER.info("BLE device unloading platforms: %s", platforms_to_unload)
     else:
         platforms_to_unload = PLATFORMS
 
     # 卸载所有平台
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, platforms_to_unload)
+    try:
+        unload_ok = await hass.config_entries.async_unload_platforms(entry, platforms_to_unload)
+    except ValueError as err:
+        # 平台可能从未加载，记录警告但继续
+        # Platform might never have been loaded, log warning but continue
+        _LOGGER.warning("Error unloading platforms (may not have been loaded): %s", err)
+        unload_ok = True  # Allow cleanup to continue | 允许继续清理
 
     if unload_ok:
         # 获取并清理设备数据
@@ -242,11 +261,10 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
     Handle options update.
 
     当用户修改设备配置时调用。
-    对于实体订阅更新，直接更新订阅列表而不重新加载整个集成。
     Called when user modifies device config.
-    For entity subscription updates, directly update the subscription list
-    without reloading the entire integration.
     """
+    from .const import CONF_BLE_SUBSCRIBED_ENTITIES
+
     # 配置已更新 | Config updated
     _LOGGER.info("Config options updated for %s", entry.title)
 
@@ -260,3 +278,11 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
         subscribed_entities = entry.options.get(CONF_SUBSCRIBED_ENTITIES, [])
         await device.async_setup_entity_subscription(subscribed_entities)
         _LOGGER.info("Updated entity subscription: %d entities", len(subscribed_entities))
+
+    # BLE 设备的重载由 config_flow 的 delayed_reload 处理，这里不重复重载
+    # BLE device reload is handled by config_flow's delayed_reload, don't reload here
+    elif connection_type == CONNECTION_TYPE_BLE:
+        ble_subscribed = entry.data.get(CONF_BLE_SUBSCRIBED_ENTITIES, {})
+        _LOGGER.info("BLE config changed (subscribed=%d), reload will be triggered by config_flow", len(ble_subscribed))
+        # 不在这里重载，由 config_flow 的 delayed_reload 处理
+        # Don't reload here, let config_flow's delayed_reload handle it

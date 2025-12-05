@@ -54,8 +54,18 @@ class SeeedBLECharCallbacks : public NimBLECharacteristicCallbacks {
     }
 };
 
+class SeeedBLEHAStateCharCallbacks : public NimBLECharacteristicCallbacks {
+    void onWrite(NimBLECharacteristic* pChar, NimBLEConnInfo& connInfo) override {
+        if (g_pInstance) {
+            NimBLEAttValue value = pChar->getValue();
+            g_pInstance->_handleHAState(value.data(), value.length());
+        }
+    }
+};
+
 static SeeedBLEServerCallbacks serverCallbacks;
 static SeeedBLECharCallbacks charCallbacks;
+static SeeedBLEHAStateCharCallbacks haStateCharCallbacks;
 
 #endif
 
@@ -209,6 +219,48 @@ void SeeedBLESwitch::_handleCommand(bool state) {
 }
 
 // =============================================================================
+// SeeedBLEHAState Implementation | SeeedBLEHAState 实现
+// =============================================================================
+
+SeeedBLEHAState::SeeedBLEHAState(uint8_t entityIndex)
+    : _entityIndex(entityIndex)
+    , _numericValue(0)
+    , _hasValue(false)
+    , _lastUpdate(0)
+{
+    _entityId[0] = '\0';
+    _state[0] = '\0';
+}
+
+void SeeedBLEHAState::setEntityId(const char* entityId) {
+    strncpy(_entityId, entityId, sizeof(_entityId) - 1);
+    _entityId[sizeof(_entityId) - 1] = '\0';
+}
+
+void SeeedBLEHAState::_updateState(const char* state, float numericValue) {
+    strncpy(_state, state, sizeof(_state) - 1);
+    _state[sizeof(_state) - 1] = '\0';
+    _numericValue = numericValue;
+    _hasValue = true;
+    _lastUpdate = millis();
+}
+
+bool SeeedBLEHAState::getBool() const {
+    if (!_hasValue) return false;
+    
+    // Check common "true" values | 检查常见的 "true" 值
+    if (strcasecmp(_state, "on") == 0) return true;
+    if (strcasecmp(_state, "true") == 0) return true;
+    if (strcasecmp(_state, "1") == 0) return true;
+    if (strcasecmp(_state, "home") == 0) return true;
+    if (strcasecmp(_state, "open") == 0) return true;
+    if (strcasecmp(_state, "playing") == 0) return true;
+    if (strcasecmp(_state, "active") == 0) return true;
+    
+    return false;
+}
+
+// =============================================================================
 // SeeedHADiscoveryBLE Implementation | SeeedHADiscoveryBLE 实现
 // =============================================================================
 
@@ -221,20 +273,25 @@ SeeedHADiscoveryBLE::SeeedHADiscoveryBLE()
     , _txPower(0)
     , _packetId(0)
     , _advDataLen(0)
+    , _haStateCount(0)
+    , _haStateCallback(nullptr)
 #ifdef SEEED_BLE_ESP32
     , _pServer(nullptr)
     , _pControlService(nullptr)
     , _pCommandChar(nullptr)
     , _pStateChar(nullptr)
+    , _pHAStateChar(nullptr)
     , _pAdvertising(nullptr)
 #elif defined(SEEED_BLE_MBED_NRF52840)
     , _pControlService(nullptr)
     , _pCommandChar(nullptr)
     , _pStateChar(nullptr)
+    , _pHAStateChar(nullptr)
 #endif
 {
     strcpy(_deviceName, "Seeed Sensor");
     memset(_advData, 0, sizeof(_advData));
+    memset(_haStates, 0, sizeof(_haStates));
     g_pInstance = this;
 }
 
@@ -242,6 +299,9 @@ SeeedHADiscoveryBLE::~SeeedHADiscoveryBLE() {
     stop();
     for (auto sensor : _sensors) delete sensor;
     for (auto sw : _switches) delete sw;
+    for (int i = 0; i < SEEED_BLE_MAX_HA_ENTITIES; i++) {
+        if (_haStates[i]) delete _haStates[i];
+    }
     _sensors.clear();
     _switches.clear();
     g_pInstance = nullptr;
@@ -275,7 +335,7 @@ bool SeeedHADiscoveryBLE::begin(const char* deviceName, bool enableControl) {
     _controlEnabled = enableControl;
 
     _log("====================================");
-    _log("Seeed HA Discovery BLE v1.5.0");
+    _log("Seeed HA Discovery BLE v1.6.0");
     _log("====================================");
 
 // =============================================================================
@@ -308,8 +368,16 @@ bool SeeedHADiscoveryBLE::begin(const char* deviceName, bool enableControl) {
             NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
         );
 
+        // HA State characteristic (writable) - receives HA entity states
+        // HA 状态特征值（可写）- 接收 HA 实体状态
+        _pHAStateChar = _pControlService->createCharacteristic(
+            SEEED_HA_STATE_CHAR_UUID,
+            NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR
+        );
+        _pHAStateChar->setCallbacks(&haStateCharCallbacks);
+
         _pControlService->start();
-        _log("GATT Control Service started");
+        _log("GATT Control Service started (with HA State support)");
     }
 
     _pAdvertising = NimBLEDevice::getAdvertising();
@@ -355,13 +423,22 @@ bool SeeedHADiscoveryBLE::begin(const char* deviceName, bool enableControl) {
             64
         );
 
+        // HA State characteristic (writable) - receives HA entity states
+        // HA 状态特征值（可写）- 接收 HA 实体状态
+        _pHAStateChar = new BLECharacteristic(
+            SEEED_HA_STATE_CHAR_UUID,
+            BLEWrite | BLEWriteWithoutResponse,
+            128  // Larger buffer for HA state data | 更大的缓冲区用于 HA 状态数据
+        );
+
         _pControlService->addCharacteristic(*_pCommandChar);
         _pControlService->addCharacteristic(*_pStateChar);
+        _pControlService->addCharacteristic(*_pHAStateChar);
 
         BLE.addService(*_pControlService);
         BLE.setAdvertisedService(*_pControlService);
 
-        _log("GATT Control Service started");
+        _log("GATT Control Service started (with HA State support)");
     }
 
     _running = true;
@@ -402,6 +479,7 @@ void SeeedHADiscoveryBLE::stop() {
     if (_pControlService) delete _pControlService;
     if (_pCommandChar) delete _pCommandChar;
     if (_pStateChar) delete _pStateChar;
+    if (_pHAStateChar) delete _pHAStateChar;
 #elif defined(SEEED_BLE_NRF52_BLUEFRUIT)
     Bluefruit.Advertising.stop();
 #endif
@@ -428,6 +506,15 @@ void SeeedHADiscoveryBLE::loop() {
                 int len = _pCommandChar->readValue(buffer, sizeof(buffer));
                 if (len > 0) {
                     _handleCommand(buffer, len);
+                }
+            }
+
+            // Check HA state characteristic | 检查 HA 状态特征值
+            if (_pHAStateChar && _pHAStateChar->written()) {
+                uint8_t buffer[128];
+                int len = _pHAStateChar->readValue(buffer, sizeof(buffer));
+                if (len > 0) {
+                    _handleHAState(buffer, len);
                 }
             }
         } else {
@@ -539,12 +626,10 @@ void SeeedHADiscoveryBLE::updateAdvertiseData() {
         // Re-add control service UUID if control enabled
         // 重新添加控制服务 UUID（如果启用了控制）
         if (_controlEnabled) {
-            // Note: addServiceUUID is cumulative, not cleared by setAdvertisementData
-            // But for safety, we re-add each time
-            // 注意：addServiceUUID 是累积的，不会被 setAdvertisementData 清除
-            // 但为了确保，我们每次都重新添加
-            _pAdvertising->clearServiceUUIDs();
-            _pAdvertising->addServiceUUID(SEEED_CONTROL_SERVICE_UUID);
+            // Note: Service UUID is set during begin(), no need to re-add here
+            // NimBLE handles duplicate addServiceUUID calls gracefully
+            // 注意：Service UUID 在 begin() 中已设置，这里不需要重复添加
+            // NimBLE 会正确处理重复的 addServiceUUID 调用
         }
     }
 
@@ -690,11 +775,226 @@ void SeeedHADiscoveryBLE::_onConnect() {
     _connected = true;
     _log("Client connected");
     _notifyStateChange();
+    
+    // Send subscription info if any entities are subscribed | 如果有订阅的实体则发送订阅信息
+    if (_haStateCount > 0) {
+        _sendSubscriptionInfo();
+    }
 }
 
 void SeeedHADiscoveryBLE::_onDisconnect() {
     _connected = false;
     _log("Client disconnected");
+}
+
+// =============================================================================
+// HA State Subscription Implementation | HA 状态订阅实现
+// =============================================================================
+
+SeeedBLEHAState* SeeedHADiscoveryBLE::subscribeEntity(uint8_t entityIndex, const char* entityId) {
+    if (entityIndex >= SEEED_BLE_MAX_HA_ENTITIES) {
+        _logf("Invalid entity index: %d (max: %d)", entityIndex, SEEED_BLE_MAX_HA_ENTITIES - 1);
+        return nullptr;
+    }
+
+    // Create or update the state object | 创建或更新状态对象
+    if (_haStates[entityIndex] == nullptr) {
+        _haStates[entityIndex] = new SeeedBLEHAState(entityIndex);
+        _haStateCount++;
+    }
+
+    _haStates[entityIndex]->setEntityId(entityId);
+
+    if (_debug) {
+        Serial.print("[SeeedBLE] Subscribe entity[");
+        Serial.print(entityIndex);
+        Serial.print("]: ");
+        Serial.println(entityId);
+    }
+
+    return _haStates[entityIndex];
+}
+
+void SeeedHADiscoveryBLE::onHAState(BLEHAStateCallback callback) {
+    _haStateCallback = callback;
+}
+
+SeeedBLEHAState* SeeedHADiscoveryBLE::getHAState(uint8_t entityIndex) {
+    if (entityIndex >= SEEED_BLE_MAX_HA_ENTITIES) {
+        return nullptr;
+    }
+    return _haStates[entityIndex];
+}
+
+void SeeedHADiscoveryBLE::_handleHAState(const uint8_t* data, size_t length) {
+    /**
+     * HA State Protocol v2 (binary format with entity_id):
+     * HA 状态协议 v2（包含实体 ID 的二进制格式）:
+     *
+     * Special commands:
+     * - Single byte 0xFF = Clear all cached states (清除所有缓存状态)
+     *
+     * Normal state update:
+     * [1 byte: entity_index]
+     * [1 byte: entity_id_length]
+     * [N bytes: entity_id_string (max 48)]
+     * [1 byte: state_length]
+     * [M bytes: state_string (max 30)]
+     * [4 bytes: numeric_value as int32 (value * 100)]
+     *
+     * Minimum length: 1 + 1 + 1 + 1 + 1 + 4 = 9 bytes
+     */
+    
+    // Check for clear command (single byte 0xFF)
+    // 检查清除命令（单字节 0xFF）
+    if (length == 1 && data[0] == 0xFF) {
+        _log("Clearing all HA state cache");
+        for (int i = 0; i < SEEED_BLE_MAX_HA_ENTITIES; i++) {
+            if (_haStates[i] != nullptr) {
+                delete _haStates[i];
+                _haStates[i] = nullptr;
+            }
+        }
+        _haStateCount = 0;
+        return;
+    }
+    
+    if (length < 9) {
+        _logf("HA state data too short: %d bytes", length);
+        return;
+    }
+
+    size_t offset = 0;
+    
+    // Parse entity index | 解析实体索引
+    uint8_t entityIndex = data[offset++];
+    if (entityIndex >= SEEED_BLE_MAX_HA_ENTITIES) {
+        _logf("Invalid entity index: %d", entityIndex);
+        return;
+    }
+
+    // Parse entity_id | 解析实体 ID
+    uint8_t entityIdLen = data[offset++];
+    if (offset + entityIdLen + 1 + 1 + 4 > length) {
+        _logf("HA state data incomplete at entity_id");
+        return;
+    }
+    
+    char entityId[64];
+    size_t idCopyLen = entityIdLen < sizeof(entityId) - 1 ? entityIdLen : sizeof(entityId) - 1;
+    memcpy(entityId, &data[offset], idCopyLen);
+    entityId[idCopyLen] = '\0';
+    offset += entityIdLen;
+
+    // Parse state string | 解析状态字符串
+    uint8_t stateLen = data[offset++];
+    if (offset + stateLen + 4 > length) {
+        _logf("HA state data incomplete at state");
+        return;
+    }
+    
+    char state[32];
+    size_t stateCopyLen = stateLen < sizeof(state) - 1 ? stateLen : sizeof(state) - 1;
+    memcpy(state, &data[offset], stateCopyLen);
+    state[stateCopyLen] = '\0';
+    offset += stateLen;
+
+    // Extract numeric value (int32, needs to be divided by 100) | 提取数值（int32，需要除以 100）
+    int32_t rawValue = 0;
+    memcpy(&rawValue, &data[offset], 4);
+    float numericValue = rawValue / 100.0f;
+
+    // Create state object if not exists | 如果不存在则创建状态对象
+    if (_haStates[entityIndex] == nullptr) {
+        _haStates[entityIndex] = new SeeedBLEHAState(entityIndex);
+        _haStateCount++;
+    }
+
+    // Update entity_id and state | 更新实体 ID 和状态
+    _haStates[entityIndex]->setEntityId(entityId);
+    _haStates[entityIndex]->_updateState(state, numericValue);
+
+    if (_debug) {
+        Serial.print("[SeeedBLE] HA state[");
+        Serial.print(entityIndex);
+        Serial.print("] ");
+        Serial.print(entityId);
+        Serial.print(" = ");
+        Serial.print(state);
+        Serial.print(" (");
+        Serial.print(numericValue, 2);
+        Serial.println(")");
+    }
+
+    // Invoke callback if registered | 如果已注册则调用回调
+    if (_haStateCallback) {
+        _haStateCallback(
+            entityIndex,
+            entityId,
+            state,
+            numericValue
+        );
+    }
+}
+
+void SeeedHADiscoveryBLE::_sendSubscriptionInfo() {
+    /**
+     * Send subscription info to HA when connected
+     * 连接后向 HA 发送订阅信息
+     *
+     * Format:
+     * [1 byte: count]
+     * [1 byte: index][1 byte: id_len][N bytes: entity_id]...
+     */
+    
+    if (!_connected || !_controlEnabled) return;
+
+    uint8_t buffer[256];
+    size_t offset = 0;
+
+    // Count of subscribed entities | 订阅的实体数量
+    buffer[offset++] = _haStateCount;
+
+    // Add each subscribed entity | 添加每个订阅的实体
+    for (int i = 0; i < SEEED_BLE_MAX_HA_ENTITIES && offset < sizeof(buffer) - 66; i++) {
+        if (_haStates[i] != nullptr) {
+            const char* entityId = _haStates[i]->getEntityId();
+            size_t idLen = strlen(entityId);
+            if (idLen > 63) idLen = 63;
+
+            buffer[offset++] = i;  // index
+            buffer[offset++] = idLen;
+            memcpy(&buffer[offset], entityId, idLen);
+            offset += idLen;
+        }
+    }
+
+#ifdef SEEED_BLE_ESP32
+    if (_pStateChar) {
+        // Use state characteristic to send subscription info (with special prefix)
+        // We prepend 0xFF to indicate this is subscription info, not switch state
+        // 使用状态特征值发送订阅信息（带特殊前缀）
+        // 我们在前面加 0xFF 来表示这是订阅信息，不是开关状态
+        uint8_t subBuffer[257];
+        subBuffer[0] = 0xFF;  // Subscription info marker | 订阅信息标记
+        memcpy(&subBuffer[1], buffer, offset);
+        _pStateChar->setValue(subBuffer, offset + 1);
+        _pStateChar->notify();
+    }
+#elif defined(SEEED_BLE_MBED_NRF52840)
+    if (_pStateChar) {
+        uint8_t subBuffer[257];
+        subBuffer[0] = 0xFF;
+        memcpy(&subBuffer[1], buffer, offset);
+        _pStateChar->writeValue(subBuffer, offset + 1);
+    }
+#endif
+
+    if (_debug) {
+        Serial.print("[SeeedBLE] Sent subscription info: ");
+        Serial.print(_haStateCount);
+        Serial.println(" entities");
+    }
 }
 
 void SeeedHADiscoveryBLE::_log(const char* message) {

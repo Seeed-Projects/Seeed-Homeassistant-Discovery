@@ -28,7 +28,7 @@
 | 📤 **上报传感器数据** | 设备 → HA | ✅ | ✅ |
 | 📥 **接收控制命令** | HA → 设备 | ✅ | ✅ (GATT) |
 | 📷 **摄像头推流** | 设备 → HA | ✅ (ESP32-S3) | ❌ |
-| 🔄 **获取 HA 状态** | HA → 设备 | ✅ (v2.3 新增) | ❌ |
+| 🔄 **获取 HA 状态** | HA → 设备 | ✅ (v2.3 新增) | ✅ (v2.4 新增) |
 | 🔋 **超低功耗** | - | ❌ | ✅ (广播模式) |
 
 ### 💡 无需复杂配置
@@ -65,6 +65,7 @@
 - 📱 **支持 nRF52840** - 不仅限于 ESP32，也支持 XIAO nRF52840
 - 🔘 **事件支持** - 支持按钮单击、双击、长按等事件
 - 🔄 **双向控制** - 支持 GATT 双向通信，可远程控制开关
+- 📥 **HA 状态订阅** - BLE 设备可接收 HA 实体状态，适合显示屏应用 (v2.4 新增)
 
 ## 🤔 为什么不用 ESPHome？
 
@@ -412,7 +413,7 @@ void loop() {
 
 ### 5. 配置 HA 状态订阅 (v2.3 新增)
 
-WiFi 设备可以订阅 Home Assistant 中的实体状态，这对于显示屏设备特别有用。
+WiFi 和 BLE 设备都可以订阅 Home Assistant 中的实体状态，这对于显示屏设备特别有用。
 
 **配置步骤：**
 1. 进入 **设置** → **设备与服务** → **Seeed HA Discovery**
@@ -426,11 +427,16 @@ WiFi 设备可以订阅 Home Assistant 中的实体状态，这对于显示屏�
 - switch (开关)
 - light (灯)
 - climate (空调/温控)
+- weather (天气)
 
 **工作原理：**
 - 实体状态变化时，HA 会**自动推送**到设备
 - 设备重连后，订阅会**自动恢复**
 - 修改订阅配置后，设备会**立即收到**新的实体状态
+
+**BLE 设备限制：**
+- 最多支持 16 个实体（受 BLE 带宽限制）
+- 需要启用 GATT 双向模式（`ble.begin("设备名", true)`）
 
 ---
 
@@ -501,6 +507,10 @@ WiFi 设备可以订阅 Home Assistant 中的实体状态，这对于显示屏�
 | `advertise()` | 发送 BLE 广播 |
 | `loop()` | 处理 GATT 事件（启用 GATT 时必须调用）|
 | `stop()` | 停止 BLE |
+| `onHAState(callback)` | 注册 HA 状态变化回调 (v2.4 新增) |
+| `getHAState(index)` | 获取指定索引的 HA 状态对象 (v2.4 新增) |
+| `getSubscribedEntityCount()` | 获取已接收的实体数量 (v2.4 新增) |
+| `isConnected()` | 检查 GATT 连接状态 |
 
 ### BLE 库 - SeeedBLESensor 类
 
@@ -517,6 +527,17 @@ WiFi 设备可以订阅 Home Assistant 中的实体状态，这对于显示屏�
 | `onStateChange(callback)` | 注册状态变化回调（接收 HA 命令）|
 | `setState(state)` | 设置开关状态（同步到 HA）|
 | `getState()` | 获取当前状态 |
+
+### BLE 库 - SeeedBLEHAState 类 (v2.4 新增)
+
+| 方法 | 说明 |
+|------|------|
+| `getEntityId()` | 获取 HA 实体 ID |
+| `getString()` | 获取状态字符串 |
+| `getFloat()` | 获取状态浮点数值 |
+| `getInt()` | 获取状态整数值 |
+| `getBool()` | 获取状态布尔值 |
+| `hasValue()` | 检查是否有有效值 |
 
 ### BLE 按钮事件类型
 
@@ -579,7 +600,8 @@ seeed-ha-discovery/
 │       ├── examples/
 │       │   ├── TemperatureBLE/       # 温湿度传感器示例 (被动广播)
 │       │   ├── ButtonBLE/            # 按钮开关示例 (GATT 双向)
-│       │   └── LEDSwitchBLE/         # LED 开关示例 (GATT 双向)
+│       │   ├── LEDSwitchBLE/         # LED 开关示例 (GATT 双向)
+│       │   └── HAStateSubscribeBLE/  # HA 状态订阅示例 (v2.4 新增)
 │       ├── library.json
 │       └── library.properties
 ├── hacs.json

@@ -27,5 +27,34 @@
       "already_configured": "该设备已经配置过了",
       "not_supported": "不支持的设备类型"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "配置实体订阅",
+        "description": "选择要推送到 **{device_name}** 的 Home Assistant 实体。\n\n选中的实体状态将实时发送到你的 Arduino 设备，让设备可以显示或使用这些值。",
+        "data": {
+          "subscribed_entities": "订阅的实体"
+        }
+      },
+      "wifi_entities": {
+        "title": "配置实体订阅",
+        "description": "选择要推送到 **{device_name}** 的 Home Assistant 实体。\n\n选中的实体状态将实时发送到你的 Arduino 设备，让设备可以显示或使用这些值。",
+        "data": {
+          "subscribed_entities": "订阅的实体"
+        }
+      },
+      "ble_entities": {
+        "title": "配置 BLE 实体订阅",
+        "description": "选择要通过蓝牙推送到 **{device_name}** 的 Home Assistant 实体。\n\n⚠️ **注意:** BLE 带宽有限，最多可订阅 **{max_entities}** 个实体。\n\n实体将按选择顺序分配索引 0, 1, 2...，请确保你的 Arduino 代码订阅了相同的索引。",
+        "data": {
+          "ble_subscribed_entities": "订阅的实体（最多 16 个）"
+        }
+      }
+    },
+    "abort": {
+      "ble_not_supported": "BLE 设备不支持实体订阅，此功能仅适用于 WiFi 设备。",
+      "ble_control_not_supported": "此 BLE 设备不支持双向通信。实体订阅需要启用了 GATT 控制服务的设备。"
+    }
   }
 }

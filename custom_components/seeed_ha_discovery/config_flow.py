@@ -53,6 +53,7 @@ from .const import (
     CONF_CONNECTION_TYPE,
     CONF_BLE_ADDRESS,
     CONF_BLE_CONTROL,
+    CONF_BLE_SUBSCRIBED_ENTITIES,
     CONF_SUBSCRIBED_ENTITIES,
     CONNECTION_TYPE_WIFI,
     CONNECTION_TYPE_BLE,
@@ -493,6 +494,10 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 # 选项配置流程 | Options Flow
 # =============================================================================
 
+# BLE 设备最大订阅实体数 | Max subscribed entities for BLE device
+BLE_MAX_SUBSCRIBED_ENTITIES = 16
+
+
 class SeeedHAOptionsFlow(config_entries.OptionsFlow):
     """
     Seeed HA Discovery 选项配置流程
@@ -519,18 +524,28 @@ class SeeedHAOptionsFlow(config_entries.OptionsFlow):
         让用户选择要订阅并推送到 Arduino 设备的 HA 实体。
         Allows users to select HA entities to subscribe and push to Arduino device.
         """
-        # 只有 WiFi 设备支持实体订阅
-        # Only WiFi devices support entity subscription
         connection_type = self.config_entry.data.get(
             CONF_CONNECTION_TYPE, CONNECTION_TYPE_WIFI
         )
-        if connection_type != CONNECTION_TYPE_WIFI:
-            return self.async_abort(reason="ble_not_supported")
 
+        # 根据连接类型选择不同的配置流程
+        # Choose different config flow based on connection type
+        if connection_type == CONNECTION_TYPE_BLE:
+            return await self.async_step_ble_entities(user_input)
+        else:
+            return await self.async_step_wifi_entities(user_input)
+
+    async def async_step_wifi_entities(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """
+        WiFi 设备的实体选择界面
+        Entity selection interface for WiFi devices.
+        """
         if user_input is not None:
             # 用户保存了选择 | User saved selection
             _LOGGER.info(
-                "User selected entities to subscribe: %s",
+                "User selected entities to subscribe (WiFi): %s",
                 user_input.get(CONF_SUBSCRIBED_ENTITIES, [])
             )
             return self.async_create_entry(
@@ -545,7 +560,7 @@ class SeeedHAOptionsFlow(config_entries.OptionsFlow):
 
         # 显示实体选择表单 | Show entity selection form
         return self.async_show_form(
-            step_id="init",
+            step_id="wifi_entities",
             data_schema=vol.Schema(
                 {
                     vol.Optional(
@@ -563,5 +578,108 @@ class SeeedHAOptionsFlow(config_entries.OptionsFlow):
             ),
             description_placeholders={
                 "device_name": self.config_entry.title,
+            },
+        )
+
+    async def async_step_ble_entities(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """
+        BLE 设备的实体选择界面
+        Entity selection interface for BLE devices.
+        
+        BLE 设备需要按索引配置实体，最多支持 16 个。
+        BLE devices need entities configured by index, up to 16.
+        """
+        # 注意：不再严格检查 CONF_BLE_CONTROL，因为 128 位 UUID 可能在发现时未被检测到
+        # 如果设备实际不支持，推送会静默失败，不会影响其他功能
+        # Note: No longer strictly checking CONF_BLE_CONTROL as 128-bit UUID may not be detected during discovery
+        # If device doesn't actually support it, push will fail silently without affecting other features
+        _LOGGER.debug(
+            "BLE entity config for %s, control flag: %s",
+            self.config_entry.title,
+            self.config_entry.data.get(CONF_BLE_CONTROL, "not set")
+        )
+
+        if user_input is not None:
+            # 将选择的实体列表转换为索引映射
+            # Convert selected entity list to index mapping
+            entities = user_input.get(CONF_BLE_SUBSCRIBED_ENTITIES, [])
+            entity_map = {}
+            for i, entity_id in enumerate(entities[:BLE_MAX_SUBSCRIBED_ENTITIES]):
+                if entity_id:  # 跳过空值 | Skip empty values
+                    entity_map[str(i)] = entity_id
+
+            _LOGGER.info(
+                "User selected entities to subscribe (BLE): %s",
+                entity_map
+            )
+
+            # 同时更新 data 和 options
+            # Update both data and options
+            # 注意：BLE 订阅实体存储在 data 中，因为需要在设备管理器初始化时使用
+            # Note: BLE subscribed entities stored in data because needed at manager init
+            new_data = dict(self.config_entry.data)
+            new_data[CONF_BLE_SUBSCRIBED_ENTITIES] = entity_map
+            # 如果用户配置了实体，说明设备应该支持控制
+            # If user configured entities, device should support control
+            if entity_map:
+                new_data[CONF_BLE_CONTROL] = True
+            self.hass.config_entries.async_update_entry(
+                self.config_entry,
+                data=new_data,
+            )
+
+            # 更新 data 后需要手动触发重载，因为 options 监听器不会响应 data 变化
+            # After updating data, need to manually trigger reload since options listener doesn't respond to data changes
+            entry_id = self.config_entry.entry_id
+            _LOGGER.info("Scheduling delayed reload for BLE entry %s after entity config", entry_id)
+            
+            async def delayed_reload():
+                """延迟重载以避免中断正在进行的操作"""
+                _LOGGER.info("Waiting 3s before reload to ensure config is persisted...")
+                await asyncio.sleep(3.0)  # Wait for config persistence and old instance cleanup
+                _LOGGER.info("Now reloading entry %s", entry_id)
+                await self.hass.config_entries.async_reload(entry_id)
+            
+            self.hass.async_create_task(delayed_reload())
+
+            return self.async_create_entry(
+                title="",
+                data={
+                    CONF_BLE_SUBSCRIBED_ENTITIES: entity_map,
+                },
+            )
+
+        # 获取当前已选择的实体 | Get currently selected entities
+        current_map = self.config_entry.data.get(CONF_BLE_SUBSCRIBED_ENTITIES, {})
+        # 转换为列表格式（按索引排序） | Convert to list format (sorted by index)
+        current_entities = []
+        for i in range(BLE_MAX_SUBSCRIBED_ENTITIES):
+            entity_id = current_map.get(str(i), "")
+            if entity_id:
+                current_entities.append(entity_id)
+
+        # 显示实体选择表单 | Show entity selection form
+        return self.async_show_form(
+            step_id="ble_entities",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_BLE_SUBSCRIBED_ENTITIES,
+                        default=current_entities,
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(
+                            # 允许选择多个实体 | Allow multiple selection
+                            multiple=True,
+                            # 可以选择的实体域 | Allowed entity domains
+                            domain=["sensor", "binary_sensor", "switch", "light", "climate", "weather"],
+                        )
+                    ),
+                }
+            ),
+            description_placeholders={
+                "device_name": self.config_entry.title,
+                "max_entities": str(BLE_MAX_SUBSCRIBED_ENTITIES),
             },
         )

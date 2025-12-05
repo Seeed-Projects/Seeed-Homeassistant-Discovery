@@ -15,17 +15,21 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import struct
 from typing import Any
 
 from bleak import BleakClient, BleakError
 from bleak.backends.device import BLEDevice
 
+from homeassistant.const import EVENT_STATE_CHANGED
+
 from homeassistant.components import bluetooth
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant, callback, CALLBACK_TYPE
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_track_state_change_event
 
 from .const import (
     DOMAIN,
@@ -33,9 +37,11 @@ from .const import (
     CONF_BLE_ADDRESS,
     CONF_DEVICE_ID,
     CONF_MODEL,
+    CONF_BLE_SUBSCRIBED_ENTITIES,
     SEEED_CONTROL_SERVICE_UUID,
     SEEED_CONTROL_COMMAND_CHAR_UUID,
     SEEED_CONTROL_STATE_CHAR_UUID,
+    SEEED_HA_STATE_CHAR_UUID,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -73,7 +79,12 @@ class SeeedBLEDeviceManager:
         self._connected = False
         self._switches: list[SeeedBLESwitch] = []
         self._reconnect_task: asyncio.Task | None = None
+        self._push_task: asyncio.Task | None = None  # Push task | 推送任务
         self._lock = asyncio.Lock()
+        
+        # HA state subscription | HA 状态订阅
+        self._subscribed_entities: dict[int, str] = {}  # index -> entity_id
+        self._state_listener_unsub: Any = None
 
     @property
     def connected(self) -> bool:
@@ -135,6 +146,15 @@ class SeeedBLEDeviceManager:
                 # 读取初始状态 | Read initial state
                 await self._read_initial_state()
 
+                # Setup HA state listener if we have subscribed entities
+                # 如果有订阅的实体，设置 HA 状态监听器
+                if self._subscribed_entities:
+                    self._setup_state_listener()
+                    # Push initial states after a short delay
+                    # Save task reference for cancellation on disconnect
+                    # 延迟推送初始状态，保存任务引用以便断开连接时取消
+                    self._push_task = asyncio.create_task(self._delayed_push_initial_states())
+
                 return True
 
             except asyncio.TimeoutError:
@@ -155,9 +175,23 @@ class SeeedBLEDeviceManager:
         断开连接
         Disconnect.
         """
+        # 取消推送任务 | Cancel push task
+        if self._push_task and not self._push_task.done():
+            self._push_task.cancel()
+            try:
+                await self._push_task
+            except asyncio.CancelledError:
+                pass
+            self._push_task = None
+
         if self._reconnect_task:
             self._reconnect_task.cancel()
             self._reconnect_task = None
+
+        # Remove state listener | 移除状态监听器
+        if self._state_listener_unsub:
+            self._state_listener_unsub()
+            self._state_listener_unsub = None
 
         if self._client:
             try:
@@ -167,6 +201,187 @@ class SeeedBLEDeviceManager:
             self._client = None
 
         self._connected = False
+
+    # =========================================================================
+    # HA State Subscription | HA 状态订阅
+    # =========================================================================
+
+    def set_subscribed_entities(self, entities: dict[int, str]) -> None:
+        """
+        设置订阅的 HA 实体
+        Set subscribed HA entities.
+        
+        @param entities: dict of index -> entity_id
+        """
+        self._subscribed_entities = entities
+        _LOGGER.info("BLE device %s subscribes to %d entities", self._address, len(entities))
+
+    def _setup_state_listener(self) -> None:
+        """
+        设置状态变化监听器
+        Setup state change listener.
+        """
+        if self._state_listener_unsub:
+            return  # Already setup
+
+        @callback
+        def _state_changed_listener(event):
+            """Handle state changed events."""
+            entity_id = event.data.get("entity_id")
+            if entity_id in self._subscribed_entities.values():
+                new_state = event.data.get("new_state")
+                if new_state is not None:
+                    # Find the index for this entity | 查找此实体的索引
+                    for index, eid in self._subscribed_entities.items():
+                        if eid == entity_id:
+                            asyncio.create_task(
+                                self._async_push_ha_state(index, entity_id, new_state.state)
+                            )
+                            break
+
+        self._state_listener_unsub = self._hass.bus.async_listen(
+            EVENT_STATE_CHANGED, _state_changed_listener
+        )
+        _LOGGER.debug("State change listener setup for BLE device %s", self._address)
+
+    async def _async_push_ha_state(self, entity_index: int, entity_id: str, state: str) -> bool:
+        """
+        推送 HA 实体状态到 BLE 设备
+        Push HA entity state to BLE device.
+        
+        Binary protocol format (v2 - includes entity_id):
+        二进制协议格式（v2 - 包含实体 ID）:
+        [1 byte: entity_index]
+        [1 byte: entity_id_length]
+        [N bytes: entity_id_string (max 48)]
+        [1 byte: state_length]
+        [M bytes: state_string (max 30)]
+        [4 bytes: numeric_value as int32 (value * 100)]
+        """
+        if not self.connected:
+            return False
+
+        try:
+            # Try to parse state as numeric value | 尝试将状态解析为数值
+            try:
+                numeric_value = float(state)
+            except (ValueError, TypeError):
+                numeric_value = 0.0
+
+            # Encode entity_id (max 48 chars) | 编码实体 ID（最大 48 字符）
+            entity_id_bytes = entity_id[:48].encode('utf-8')
+            entity_id_len = len(entity_id_bytes)
+
+            # Encode state string (max 30 chars) | 编码状态字符串（最大 30 字符）
+            state_bytes = state[:30].encode('utf-8')
+            state_len = len(state_bytes)
+
+            # Encode numeric value as int32 (value * 100) | 编码数值为 int32（值 * 100）
+            numeric_int = int(numeric_value * 100)
+            
+            # Build binary packet (v2 format with entity_id) | 构建二进制包（v2 格式，包含实体 ID）
+            data = (
+                bytes([entity_index, entity_id_len]) + 
+                entity_id_bytes + 
+                bytes([state_len]) + 
+                state_bytes + 
+                struct.pack('<i', numeric_int)
+            )
+
+            _LOGGER.debug(
+                "Pushing HA state to BLE: %s[%d] = %s (%.2f), packet_len=%d",
+                entity_id, entity_index, state, numeric_value, len(data)
+            )
+
+            # Use response=True for reliable delivery (waits for ACK)
+            # 使用 response=True 确保可靠传输（等待确认）
+            await self._client.write_gatt_char(
+                SEEED_HA_STATE_CHAR_UUID,
+                data,
+                response=True,
+            )
+
+            return True
+
+        except BleakError as err:
+            _LOGGER.warning("Failed to push HA state via BLE (packet_len=%d): %s", len(data), err)
+            return False
+        except Exception as err:
+            _LOGGER.exception("Error pushing HA state: %s", err)
+            return False
+
+    async def _async_clear_device_states(self) -> bool:
+        """
+        发送清除命令，让设备清空所有 HA 状态缓存
+        Send clear command to device to clear all cached HA states.
+        
+        Protocol: Single byte 0xFF = clear all states
+        """
+        if not self.connected:
+            return False
+        
+        try:
+            # Send clear command (0xFF) | 发送清除命令 (0xFF)
+            await self._client.write_gatt_char(
+                SEEED_HA_STATE_CHAR_UUID,
+                bytes([0xFF]),
+                response=True,
+            )
+            _LOGGER.debug("Sent clear states command to device")
+            return True
+        except Exception as err:
+            _LOGGER.warning("Failed to send clear command: %s", err)
+            return False
+
+    async def async_push_all_subscribed_states(self) -> None:
+        """
+        推送所有订阅实体的当前状态
+        Push current state of all subscribed entities.
+        """
+        if not self.connected or not self._subscribed_entities:
+            _LOGGER.debug("Cannot push states: connected=%s, entities=%d", 
+                         self.connected, len(self._subscribed_entities))
+            return
+
+        # 先清除设备上的旧状态缓存
+        # First clear old state cache on device
+        await self._async_clear_device_states()
+        await asyncio.sleep(0.3)  # Wait for device to process
+        
+        _LOGGER.info("Pushing %d subscribed entity states", len(self._subscribed_entities))
+        
+        success_count = 0
+        for index, entity_id in self._subscribed_entities.items():
+            state = self._hass.states.get(entity_id)
+            if state is not None:
+                _LOGGER.debug("Pushing state %d: %s = %s", index, entity_id, state.state)
+                result = await self._async_push_ha_state(index, entity_id, state.state)
+                if result:
+                    success_count += 1
+                    _LOGGER.debug("Successfully pushed state %d", index)
+                else:
+                    _LOGGER.warning("Failed to push state %d: %s", index, entity_id)
+                # Long delay between pushes - nRF52840 uses polling, needs time to process
+                # nRF52840 使用轮询模式，需要足够时间处理每次写入
+                await asyncio.sleep(0.8)
+            else:
+                _LOGGER.warning("Entity %s not found in HA states", entity_id)
+        
+        _LOGGER.info("Pushed %d/%d entity states successfully", 
+                    success_count, len(self._subscribed_entities))
+
+    async def _delayed_push_initial_states(self) -> None:
+        """
+        延迟推送初始状态
+        Delayed push of initial states.
+        """
+        try:
+            _LOGGER.info("Waiting 2s before pushing initial states...")
+            await asyncio.sleep(2.0)  # Wait longer for connection to fully stabilize
+            await self.async_push_all_subscribed_states()
+        except asyncio.CancelledError:
+            _LOGGER.debug("Push initial states task was cancelled")
+            raise
 
     async def async_send_command(self, switch_index: int, state: bool) -> bool:
         """
@@ -245,15 +460,73 @@ class SeeedBLEDeviceManager:
         """
         解析状态数据
         Parse state data.
+        
+        Format:
+        - Switch state: [switch_count][sw0_state][sw1_state]...
+        - Subscription info: [0xFF][entity_count][idx][id_len][entity_id]...
         """
         if len(data) < 1:
             return
 
+        # Check if this is subscription info (starts with 0xFF)
+        # 检查是否是订阅信息（以 0xFF 开头）
+        if data[0] == 0xFF:
+            self._parse_subscription_info(data[1:])
+            return
+
+        # Regular switch state data
         switch_count = data[0]
         for i in range(min(switch_count, len(self._switches))):
             if i + 1 < len(data):
                 state = data[i + 1] != 0
                 self._switches[i].update_state(state)
+
+    def _parse_subscription_info(self, data: bytes | bytearray) -> None:
+        """
+        解析设备发送的订阅信息
+        Parse subscription info from device.
+        
+        Format: [count][idx][id_len][entity_id]...
+        """
+        if len(data) < 1:
+            return
+
+        entity_count = data[0]
+        offset = 1
+        subscribed: dict[int, str] = {}
+
+        for _ in range(entity_count):
+            if offset + 2 > len(data):
+                break
+            
+            idx = data[offset]
+            id_len = data[offset + 1]
+            offset += 2
+
+            if offset + id_len > len(data):
+                break
+
+            entity_id = data[offset:offset + id_len].decode('utf-8', errors='ignore')
+            offset += id_len
+            subscribed[idx] = entity_id
+
+        if subscribed:
+            _LOGGER.info(
+                "BLE device reported %d subscribed entities: %s (ignored - HA config is source of truth)",
+                len(subscribed), subscribed
+            )
+            # 不再用设备报告覆盖 HA 配置！HA 配置才是真相来源
+            # Don't overwrite HA config with device report! HA config is source of truth
+            # self._subscribed_entities = subscribed  # REMOVED - was causing the bug!
+            
+            # 如果 HA 没有配置订阅实体，但设备报告了，作为后备使用
+            # If HA has no subscribed entities but device reported some, use as fallback
+            if not self._subscribed_entities and subscribed:
+                _LOGGER.info("Using device-reported entities as fallback (HA has none configured)")
+                self._subscribed_entities = subscribed
+                # Setup listener and push states | 设置监听器并推送状态
+                self._setup_state_listener()
+                self._push_task = asyncio.create_task(self._delayed_push_initial_states())
 
     def _on_disconnect(self, client: BleakClient) -> None:
         """
@@ -420,6 +693,19 @@ async def async_setup_ble_switches(
 
     # 创建设备管理器 | Create device manager
     manager = SeeedBLEDeviceManager(hass, ble_address, device_id)
+
+    # 设置订阅的实体 | Set subscribed entities
+    subscribed_entities = entry.data.get(CONF_BLE_SUBSCRIBED_ENTITIES, {})
+    _LOGGER.info("Raw subscribed_entities from entry.data: %s (type: %s)", 
+                subscribed_entities, type(subscribed_entities))
+    if subscribed_entities:
+        # Convert string keys to int if needed (JSON stores keys as strings)
+        # 将字符串键转换为整数（JSON 将键存储为字符串）
+        int_keyed = {int(k): v for k, v in subscribed_entities.items()}
+        manager.set_subscribed_entities(int_keyed)
+        _LOGGER.info("BLE device subscribes to %d entities: %s", len(int_keyed), int_keyed)
+    else:
+        _LOGGER.warning("No subscribed entities found in entry.data!")
 
     # 从设备数据中获取开关配置 | Get switch configs from device data
     # 通过 binary 传感器的数量推测开关数量

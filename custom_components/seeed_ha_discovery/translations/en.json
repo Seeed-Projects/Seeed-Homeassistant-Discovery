@@ -27,5 +27,34 @@
       "already_configured": "This device is already configured.",
       "not_supported": "Device type not supported."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure Entity Subscription",
+        "description": "Select Home Assistant entities to push to **{device_name}**.\n\nThe selected entities' states will be sent to your Arduino device in real-time, allowing your device to display or use these values.",
+        "data": {
+          "subscribed_entities": "Entities to subscribe"
+        }
+      },
+      "wifi_entities": {
+        "title": "Configure Entity Subscription",
+        "description": "Select Home Assistant entities to push to **{device_name}**.\n\nThe selected entities' states will be sent to your Arduino device in real-time, allowing your device to display or use these values.",
+        "data": {
+          "subscribed_entities": "Entities to subscribe"
+        }
+      },
+      "ble_entities": {
+        "title": "Configure BLE Entity Subscription",
+        "description": "Select Home Assistant entities to push to **{device_name}** via Bluetooth.\n\n⚠️ **Note:** BLE has limited bandwidth. Maximum **{max_entities}** entities can be subscribed.\n\nThe entities will be assigned indices 0, 1, 2... in the order you select them. Make sure your Arduino code subscribes to the same indices.",
+        "data": {
+          "ble_subscribed_entities": "Entities to subscribe (max 16)"
+        }
+      }
+    },
+    "abort": {
+      "ble_not_supported": "BLE devices do not support entity subscription. This feature is only available for WiFi devices.",
+      "ble_control_not_supported": "This BLE device does not support bidirectional communication. Entity subscription requires a device with GATT control service enabled."
+    }
   }
 }

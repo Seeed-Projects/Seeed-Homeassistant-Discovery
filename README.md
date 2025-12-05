@@ -28,7 +28,7 @@ With just a few lines of code in **Arduino IDE** or **PlatformIO** for your **XI
 | 📤 **Report Sensor Data** | Device → HA | ✅ | ✅ |
 | 📥 **Receive Control Commands** | HA → Device | ✅ | ✅ (GATT) |
 | 📷 **Camera Streaming** | Device → HA | ✅ (ESP32-S3) | ❌ |
-| 🔄 **Get HA States** | HA → Device | ✅ (v2.3 New) | ❌ |
+| 🔄 **Get HA States** | HA → Device | ✅ (v2.3 New) | ✅ (v2.4 New) |
 | 🔋 **Ultra-Low Power** | - | ❌ | ✅ (Broadcast Mode) |
 
 ### 💡 No Complex Configuration
@@ -65,6 +65,7 @@ Click the button below to add this integration to your Home Assistant:
 - 📱 **Support nRF52840** - Not limited to ESP32, also supports XIAO nRF52840
 - 🔘 **Event Support** - Support for button single click, double click, long press, and other events
 - 🔄 **Bidirectional Control** - Support for GATT bidirectional communication, remote switch control
+- 📥 **HA State Subscription** - BLE devices can receive HA entity states, ideal for display applications (v2.4 New)
 
 ## 🤔 Why Not Use ESPHome?
 
@@ -412,7 +413,7 @@ void loop() {
 
 ### 5. Configure HA State Subscription (v2.3 New)
 
-WiFi devices can subscribe to Home Assistant entity states, which is particularly useful for display devices.
+Both WiFi and BLE devices can subscribe to Home Assistant entity states, which is particularly useful for display devices.
 
 **Configuration Steps:**
 1. Go to **Settings** → **Devices & Services** → **Seeed HA Discovery**
@@ -426,11 +427,16 @@ WiFi devices can subscribe to Home Assistant entity states, which is particularl
 - switch
 - light
 - climate
+- weather
 
 **How It Works:**
 - When entity state changes, HA **automatically pushes** to the device
 - Subscriptions are **automatically restored** after device reconnection
 - After modifying subscription config, device **immediately receives** new entity states
+
+**BLE Device Limitations:**
+- Maximum 16 entities supported (limited by BLE bandwidth)
+- Requires GATT bidirectional mode (`ble.begin("Device Name", true)`)
 
 ---
 
@@ -501,6 +507,10 @@ WiFi devices can subscribe to Home Assistant entity states, which is particularl
 | `advertise()` | Send BLE broadcast |
 | `loop()` | Handle GATT events (must call when GATT enabled) |
 | `stop()` | Stop BLE |
+| `onHAState(callback)` | Register HA state change callback (v2.4 New) |
+| `getHAState(index)` | Get HA state object by index (v2.4 New) |
+| `getSubscribedEntityCount()` | Get number of received entities (v2.4 New) |
+| `isConnected()` | Check GATT connection status |
 
 ### BLE Library - SeeedBLESensor Class
 
@@ -517,6 +527,17 @@ WiFi devices can subscribe to Home Assistant entity states, which is particularl
 | `onStateChange(callback)` | Register state change callback (receive HA commands) |
 | `setState(state)` | Set switch state (sync to HA) |
 | `getState()` | Get current state |
+
+### BLE Library - SeeedBLEHAState Class (v2.4 New)
+
+| Method | Description |
+|--------|-------------|
+| `getEntityId()` | Get HA entity ID |
+| `getString()` | Get state as string |
+| `getFloat()` | Get state as float value |
+| `getInt()` | Get state as integer value |
+| `getBool()` | Get state as boolean |
+| `hasValue()` | Check if has valid value |
 
 ### BLE Button Event Types
 
@@ -579,7 +600,8 @@ seeed-ha-discovery/
 │       ├── examples/
 │       │   ├── TemperatureBLE/       # Temperature/Humidity sensor example (passive broadcast)
 │       │   ├── ButtonBLE/            # Button switch example (GATT bidirectional)
-│       │   └── LEDSwitchBLE/         # LED switch example (GATT bidirectional)
+│       │   ├── LEDSwitchBLE/         # LED switch example (GATT bidirectional)
+│       │   └── HAStateSubscribeBLE/  # HA state subscription example (v2.4 New)
 │       ├── library.json
 │       └── library.properties
 ├── hacs.json

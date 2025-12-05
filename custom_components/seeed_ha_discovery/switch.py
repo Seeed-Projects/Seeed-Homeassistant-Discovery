@@ -48,6 +48,7 @@ from .const import (
     CONF_MODEL,
     CONF_CONNECTION_TYPE,
     CONF_BLE_CONTROL,
+    CONF_BLE_SUBSCRIBED_ENTITIES,
     CONNECTION_TYPE_BLE,
     CONNECTION_TYPE_WIFI,
 )
@@ -70,9 +71,19 @@ async def async_setup_entry(
 
     if connection_type == CONNECTION_TYPE_BLE:
         # BLE 设备开关设置
+        # 如果启用了控制或者配置了订阅实体，都需要创建 BLE 管理器
+        # Create BLE manager if control is enabled OR subscribed entities are configured
         ble_control = entry.data.get(CONF_BLE_CONTROL, False)
-        if ble_control:
+        ble_subscribed = entry.data.get(CONF_BLE_SUBSCRIBED_ENTITIES, {})
+        
+        if ble_control or ble_subscribed:
+            _LOGGER.info(
+                "Setting up BLE manager: control=%s, subscribed_entities=%d",
+                ble_control, len(ble_subscribed)
+            )
             await _async_setup_ble_switches(hass, entry, async_add_entities)
+        else:
+            _LOGGER.debug("BLE device has no control or subscribed entities, skipping manager")
     else:
         # WiFi 设备开关设置
         await _async_setup_wifi_switches(hass, entry, async_add_entities)

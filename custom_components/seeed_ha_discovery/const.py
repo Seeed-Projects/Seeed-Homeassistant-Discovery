@@ -149,6 +149,11 @@ BTHOME_SERVICE_UUID: Final = "0000fcd2-0000-1000-8000-00805f9b34fb"
 SEEED_CONTROL_SERVICE_UUID: Final = "5eed0001-b5a3-f393-e0a9-e50e24dcca9e"
 SEEED_CONTROL_COMMAND_CHAR_UUID: Final = "5eed0002-b5a3-f393-e0a9-e50e24dcca9e"
 SEEED_CONTROL_STATE_CHAR_UUID: Final = "5eed0003-b5a3-f393-e0a9-e50e24dcca9e"
+SEEED_HA_STATE_CHAR_UUID: Final = "5eed0004-b5a3-f393-e0a9-e50e24dcca9e"
+
+# BLE HA State subscription configuration
+# BLE HA 状态订阅配置
+CONF_BLE_SUBSCRIBED_ENTITIES: Final = "ble_subscribed_entities"
 
 # 连接类型 | Connection type
 CONF_CONNECTION_TYPE: Final = "connection_type"

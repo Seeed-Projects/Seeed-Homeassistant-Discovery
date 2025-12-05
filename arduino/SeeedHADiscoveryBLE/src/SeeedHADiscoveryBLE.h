@@ -66,7 +66,7 @@
 // Version and Constants | 版本和常量
 // =============================================================================
 
-#define SEEED_BLE_VERSION "1.5.0"
+#define SEEED_BLE_VERSION "1.6.0"
 
 // Seeed Manufacturer ID (0x5EED = "SEED")
 #define SEEED_MANUFACTURER_ID 0x5EED
@@ -82,6 +82,10 @@
 #define SEEED_CONTROL_SERVICE_UUID        "5eed0001-b5a3-f393-e0a9-e50e24dcca9e"
 #define SEEED_CONTROL_COMMAND_CHAR_UUID   "5eed0002-b5a3-f393-e0a9-e50e24dcca9e"
 #define SEEED_CONTROL_STATE_CHAR_UUID     "5eed0003-b5a3-f393-e0a9-e50e24dcca9e"
+#define SEEED_HA_STATE_CHAR_UUID          "5eed0004-b5a3-f393-e0a9-e50e24dcca9e"
+
+// Maximum subscribed HA entities | 最大订阅 HA 实体数量
+#define SEEED_BLE_MAX_HA_ENTITIES 16
 
 // BTHome Device Info Flags | BTHome 设备信息标志
 #define BTHOME_DEVICE_INFO_ENCRYPT  0x01
@@ -169,6 +173,11 @@ class SeeedBLESwitch;
 // Switch state change callback | 开关状态变化回调
 typedef std::function<void(bool state)> BLESwitchCallback;
 
+// HA state change callback | HA 状态变化回调
+// Called when Home Assistant pushes entity state to device
+// 当 Home Assistant 推送实体状态到设备时调用
+typedef std::function<void(uint8_t entityIndex, const char* entityId, const char* state, float numericValue)> BLEHAStateCallback;
+
 // =============================================================================
 // SeeedBLESensor - BLE Sensor Class | BLE 传感器类
 // =============================================================================
@@ -194,6 +203,118 @@ private:
     int32_t _rawValue;
     bool _hasValue;
     float _getMultiplier() const;
+};
+
+// =============================================================================
+// SeeedBLEHAState - BLE HA Entity State Class | BLE HA 实体状态类
+// =============================================================================
+
+/**
+ * HA Entity State class - stores state of a subscribed Home Assistant entity
+ * HA 实体状态类 - 存储订阅的 Home Assistant 实体的状态
+ *
+ * This class receives and stores states pushed from Home Assistant via BLE.
+ * 这个类接收和存储通过 BLE 从 Home Assistant 推送的状态。
+ *
+ * Usage | 使用方法:
+ * ```cpp
+ * // Subscribe to entities
+ * ble.subscribeEntity(0, "sensor.temperature");
+ * ble.subscribeEntity(1, "switch.light");
+ *
+ * // Register callback
+ * ble.onHAState([](uint8_t index, const char* entityId, const char* state, float value) {
+ *     Serial.printf("Entity %s = %s (%.2f)\n", entityId, state, value);
+ * });
+ *
+ * // Or access states directly
+ * SeeedBLEHAState* temp = ble.getHAState(0);
+ * if (temp && temp->hasValue()) {
+ *     Serial.printf("Temperature: %.1f\n", temp->getFloat());
+ * }
+ * ```
+ */
+class SeeedBLEHAState {
+public:
+    /**
+     * Constructor | 构造函数
+     * @param entityIndex Index of the entity | 实体索引
+     */
+    SeeedBLEHAState(uint8_t entityIndex);
+
+    // =========================================================================
+    // Value Getters | 值获取方法
+    // =========================================================================
+
+    /**
+     * Check if value has been received
+     * 检查是否已接收到值
+     */
+    bool hasValue() const { return _hasValue; }
+
+    /**
+     * Get state as string | 获取字符串形式的状态
+     */
+    const char* getString() const { return _state; }
+
+    /**
+     * Get state as float | 获取浮点数形式的状态
+     * Useful for numeric sensors like temperature, humidity.
+     */
+    float getFloat() const { return _numericValue; }
+
+    /**
+     * Get state as integer | 获取整数形式的状态
+     */
+    int getInt() const { return (int)_numericValue; }
+
+    /**
+     * Get state as boolean | 获取布尔形式的状态
+     * Returns true for "on", "true", "1", "home", etc.
+     */
+    bool getBool() const;
+
+    // =========================================================================
+    // Attribute Getters | 属性获取方法
+    // =========================================================================
+
+    /**
+     * Get entity index | 获取实体索引
+     */
+    uint8_t getEntityIndex() const { return _entityIndex; }
+
+    /**
+     * Get entity ID | 获取实体 ID
+     */
+    const char* getEntityId() const { return _entityId; }
+
+    /**
+     * Get last update timestamp (millis) | 获取最后更新时间戳
+     */
+    unsigned long getLastUpdate() const { return _lastUpdate; }
+
+    // =========================================================================
+    // Internal Methods | 内部方法
+    // =========================================================================
+
+    /**
+     * Set entity ID | 设置实体 ID
+     */
+    void setEntityId(const char* entityId);
+
+    /**
+     * Update state from HA (internal use)
+     * 从 HA 更新状态（内部使用）
+     */
+    void _updateState(const char* state, float numericValue);
+
+private:
+    uint8_t _entityIndex;       // Entity index | 实体索引
+    char _entityId[64];         // HA entity ID | HA 实体 ID
+    char _state[32];            // Current state string | 当前状态字符串
+    float _numericValue;        // Numeric value | 数值
+    bool _hasValue;             // Whether value is set | 是否已设置值
+    unsigned long _lastUpdate;  // Last update time | 最后更新时间
 };
 
 // =============================================================================
@@ -338,6 +459,70 @@ public:
     SeeedBLESwitch* addSwitch(const char* id, const char* name);
 
     // =========================================================================
+    // HA State Subscription | HA 状态订阅
+    // =========================================================================
+
+    /**
+     * Subscribe to a Home Assistant entity
+     * 订阅 Home Assistant 实体
+     *
+     * Call this in setup() before begin() to specify which HA entities to receive.
+     * 在 setup() 中、begin() 之前调用，指定要接收哪些 HA 实体。
+     *
+     * @param entityIndex Index for this entity (0 to SEEED_BLE_MAX_HA_ENTITIES-1)
+     *                    此实体的索引（0 到 SEEED_BLE_MAX_HA_ENTITIES-1）
+     * @param entityId HA entity ID (e.g., "sensor.temperature")
+     *                 HA 实体 ID（如 "sensor.temperature"）
+     * @return Pointer to SeeedBLEHAState object | SeeedBLEHAState 对象指针
+     *
+     * Example | 示例:
+     * ```cpp
+     * ble.subscribeEntity(0, "sensor.living_room_temperature");
+     * ble.subscribeEntity(1, "sensor.humidity");
+     * ble.subscribeEntity(2, "switch.light");
+     * ```
+     */
+    SeeedBLEHAState* subscribeEntity(uint8_t entityIndex, const char* entityId);
+
+    /**
+     * Register callback for HA state changes
+     * 注册 HA 状态变化回调
+     *
+     * This callback is invoked when Home Assistant pushes entity state updates.
+     * 当 Home Assistant 推送实体状态更新时，此回调会被调用。
+     *
+     * @param callback Callback function receiving entity index, ID, state, and numeric value
+     *                 回调函数，接收实体索引、ID、状态和数值
+     *
+     * Example | 示例:
+     * ```cpp
+     * ble.onHAState([](uint8_t index, const char* entityId, const char* state, float value) {
+     *     Serial.printf("HA[%d] %s = %s", index, entityId, state);
+     *     if (value != 0) Serial.printf(" (%.2f)", value);
+     *     Serial.println();
+     * });
+     * ```
+     */
+    void onHAState(BLEHAStateCallback callback);
+
+    /**
+     * Get HA entity state by index
+     * 通过索引获取 HA 实体状态
+     *
+     * @param entityIndex Index of the subscribed entity
+     *                    订阅实体的索引
+     * @return Pointer to SeeedBLEHAState object, or nullptr if not found
+     *         SeeedBLEHAState 对象指针，如果未找到则返回 nullptr
+     */
+    SeeedBLEHAState* getHAState(uint8_t entityIndex);
+
+    /**
+     * Get subscribed entity count
+     * 获取订阅的实体数量
+     */
+    uint8_t getSubscribedEntityCount() const { return _haStateCount; }
+
+    // =========================================================================
     // Broadcasting | 广播
     // =========================================================================
 
@@ -358,7 +543,9 @@ public:
     // =========================================================================
 
     void _handleCommand(const uint8_t* data, size_t length);
+    void _handleHAState(const uint8_t* data, size_t length);
     void _notifyStateChange();
+    void _sendSubscriptionInfo();
     void _onConnect();
     void _onDisconnect();
 
@@ -377,6 +564,11 @@ private:
     std::vector<SeeedBLESensor*> _sensors;
     std::vector<SeeedBLESwitch*> _switches;
 
+    // HA state subscription | HA 状态订阅
+    SeeedBLEHAState* _haStates[SEEED_BLE_MAX_HA_ENTITIES];
+    uint8_t _haStateCount;
+    BLEHAStateCallback _haStateCallback;
+
     // Advertise data buffer | 广播数据缓冲区
     uint8_t _advData[31];
     uint8_t _advDataLen;
@@ -387,11 +579,13 @@ private:
     NimBLEService* _pControlService;
     NimBLECharacteristic* _pCommandChar;
     NimBLECharacteristic* _pStateChar;
+    NimBLECharacteristic* _pHAStateChar;
     NimBLEAdvertising* _pAdvertising;
 #elif defined(SEEED_BLE_MBED_NRF52840)
     BLEService* _pControlService;
     BLECharacteristic* _pCommandChar;
     BLECharacteristic* _pStateChar;
+    BLECharacteristic* _pHAStateChar;
 #endif
 
     // Internal methods | 内部方法
