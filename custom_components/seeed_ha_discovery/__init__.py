@@ -228,7 +228,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # 卸载所有平台
     try:
-        unload_ok = await hass.config_entries.async_unload_platforms(entry, platforms_to_unload)
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, platforms_to_unload)
     except ValueError as err:
         # 平台可能从未加载，记录警告但继续
         # Platform might never have been loaded, log warning but continue

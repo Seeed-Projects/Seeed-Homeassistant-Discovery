@@ -92,8 +92,11 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         
         用于让用户配置要订阅的 HA 实体。
         Used to let users configure HA entities to subscribe.
+        
+        注意：新版 HA 会自动设置 config_entry，不需要传参。
+        Note: New HA versions auto-set config_entry, no need to pass it.
         """
-        return SeeedHAOptionsFlow(config_entry)
+        return SeeedHAOptionsFlow()
 
     def __init__(self) -> None:
         """
@@ -507,12 +510,8 @@ class SeeedHAOptionsFlow(config_entries.OptionsFlow):
     Allows users to select HA entities to push to the device.
     """
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """
-        初始化选项配置流程
-        Initialize options flow.
-        """
-        self.config_entry = config_entry
+    # 注意：不需要 __init__ 方法，父类 OptionsFlow 会自动设置 self.config_entry
+    # Note: No __init__ needed, parent OptionsFlow automatically sets self.config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
