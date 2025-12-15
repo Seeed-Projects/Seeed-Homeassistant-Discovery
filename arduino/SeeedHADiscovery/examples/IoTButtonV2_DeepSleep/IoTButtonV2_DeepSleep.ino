@@ -20,6 +20,8 @@
  *    智能休眠超时：HA 连接后 5 秒，连接前 3 分钟
  * 7. Dev mode (triple click): 3 minute timeout for firmware upload
  *    开发模式（三击）：3 分钟超时，便于上传固件
+ * 8. Seamless wake-up: wake-up press counts as first click in sequence
+ *    无缝唤醒：唤醒按键作为序列中的第一次点击
  *
  * Hardware Platform:
  * 硬件平台：
@@ -113,7 +115,7 @@ const char* WIFI_PASSWORD = "Your_WiFi_Password";  // Your WiFi password | 你�
 
 // Button Detection Parameters | 按钮检测参数
 #define LONG_PRESS_MIN_TIME     1000   // Long press minimum (ms) | 长按最小时间（毫秒）
-#define LONG_PRESS_MAX_TIME     2000   // Long press maximum (ms) | 长按最大时间（毫秒）
+#define LONG_PRESS_MAX_TIME     5000   // Long press maximum (ms) | 长按最大时间（毫秒）- 增加到5秒
 #define SINGLE_CLICK_MAX_TIME   1000   // Single click max press time (ms) | 单击最大按下时间（毫秒）
 #define SINGLE_CLICK_WAIT_TIME  500    // Wait time for single click confirmation (ms) | 单击确认等待时间（毫秒）
 #define DOUBLE_CLICK_GAP_TIME   1000   // Double click max release gap (ms) | 双击最大释放间隔（毫秒）
@@ -132,8 +134,8 @@ const char* WIFI_PASSWORD = "Your_WiFi_Password";  // Your WiFi password | 你�
 #define INACTIVITY_TIMEOUT_DEV_MODE    180000  // Dev mode sleep timeout (ms) | 开发模式休眠超时（毫秒）
 
 // Triple Click Parameters | 三击参数
-#define TRIPLE_CLICK_GAP_TIME   500    // Triple click max release gap (ms) | 三击最大释放间隔（毫秒）
-#define TRIPLE_CLICK_MAX_PRESS  500    // Triple click max press time (ms) | 三击单次最大按下时间（毫秒）
+#define TRIPLE_CLICK_GAP_TIME   800    // Triple click max release gap (ms) | 三击最大释放间隔（毫秒）
+#define TRIPLE_CLICK_MAX_PRESS  800    // Triple click max press time (ms) | 三击单次最大按下时间（毫秒）
 
 // RGB LED Effect Duration | RGB LED 灯效持续时间
 #define RGB_EFFECT_DURATION     1000   // Effect duration (ms) | 灯效持续时间（毫秒）
@@ -197,6 +199,10 @@ bool haStatesSynced = false;  // Whether states have been synced to HA after boo
 
 // Development mode | 开发模式
 bool devModeEnabled = false;  // Dev mode for extended sleep timeout | 开发模式，延长休眠超时
+
+// Wake-up button event handling | 唤醒按键事件处理
+ButtonEvent pendingWakeupEvent = BUTTON_NONE;  // Event detected during boot | 启动时检测到的事件
+bool wakeupEventProcessed = false;             // Whether wake-up event has been processed | 唤醒事件是否已处理
 
 // RGB LED effect variables | RGB LED 灯效变量
 RGBEffect currentEffect = RGB_EFFECT_NONE;
@@ -420,11 +426,17 @@ float calculateBatteryPercentage(float voltage) {
  */
 void updateBatteryReadings() {
     float voltage = readBatteryVoltage();
+    
+    // Round voltage to 2 decimal places | 电压四舍五入到2位小数
+    voltage = round(voltage * 100.0f) / 100.0f;
     batteryVoltageSensor->setValue(voltage);
     
     float percentage = calculateBatteryPercentage(voltage);
     
     if (!isnan(percentage)) {
+        // Round to integer | 四舍五入到整数
+        percentage = round(percentage);
+        
         // Anti-jump: if increase < 5%, keep old value
         // 防跳变：如果增量 < 5%，保持旧值
         if (percentage > last_battery_percentage && 
@@ -491,18 +503,20 @@ ButtonEvent detectButtonEvent() {
         
         // Determine press type | 判断按键类型
         if (pressDuration >= LONG_PRESS_MIN_TIME && pressDuration <= LONG_PRESS_MAX_TIME) {
-            // Long press detected (1-2 seconds)
-            // 检测到长按（1-2秒）
+            // Long press detected (1-5 seconds)
+            // 检测到长按（1-5秒）
             event = BUTTON_LONG;
             clickCount = 0;
             lastReleaseTime = 0;
             Serial.println("Long press detected");
-        } else if (pressDuration <= TRIPLE_CLICK_MAX_PRESS) {
-            // Very short press (≤ 0.5s), could be part of triple click
-            // 非常短的按下（≤ 0.5秒），可能是三击的一部分
-            if (clickCount >= 1 && (now - lastReleaseTime) <= TRIPLE_CLICK_GAP_TIME) {
+        } else if (pressDuration <= SINGLE_CLICK_MAX_TIME) {
+            // Short press (≤ 1s), could be part of multi-click sequence
+            // 短按（≤ 1秒），可能是多击序列的一部分
+            if (clickCount >= 1 && (now - lastReleaseTime) <= DOUBLE_CLICK_GAP_TIME) {
+                // Continue click sequence | 继续点击序列
                 clickCount++;
                 lastReleaseTime = now;
+                
                 if (clickCount >= 3) {
                     // Triple click detected! | 检测到三击！
                     event = BUTTON_TRIPLE;
@@ -510,24 +524,10 @@ ButtonEvent detectButtonEvent() {
                     lastReleaseTime = 0;
                     Serial.println("Triple click detected - Dev mode!");
                 }
+                // If clickCount == 2, wait to see if it becomes triple click
+                // 如果 clickCount == 2，等待看是否变成三击
             } else {
                 // First click or gap too long | 第一次点击或间隔太长
-                clickCount = 1;
-                lastReleaseTime = now;
-            }
-        } else if (pressDuration <= SINGLE_CLICK_MAX_TIME) {
-            // Short press (0.5s < duration ≤ 1s), check for double click
-            // 短按（0.5秒 < 持续时间 ≤ 1秒），检查是否双击
-            if (clickCount == 1 && (now - lastReleaseTime) <= DOUBLE_CLICK_GAP_TIME) {
-                // Second valid short press within gap time - double click!
-                // 在间隔时间内的第二次有效短按 - 双击！
-                event = BUTTON_DOUBLE;
-                clickCount = 0;
-                lastReleaseTime = 0;
-                Serial.println("Double click detected");
-            } else {
-                // First short press or too long gap - start single click candidate
-                // 第一次短按或间隔太长 - 开始单击候选
                 clickCount = 1;
                 lastReleaseTime = now;
             }
@@ -555,6 +555,141 @@ ButtonEvent detectButtonEvent() {
     
     lastButtonState = currentState;
     return event;
+}
+
+/**
+ * Detect button event during boot (for deep sleep wake-up)
+ * 在启动过程中检测按键事件（用于深度睡眠唤醒）
+ * 
+ * This function is called during setup() when waking from deep sleep.
+ * It counts the wake-up press as the first press in a click sequence.
+ * 此函数在从深度睡眠唤醒时的 setup() 中调用。
+ * 它将唤醒按键作为点击序列中的第一次按键。
+ * 
+ * Blocking function - waits until event is detected or timeout.
+ * 阻塞函数 - 等待直到检测到事件或超时。
+ * 
+ * @return Detected button event | 检测到的按键事件
+ */
+ButtonEvent detectButtonEventDuringBoot() {
+    // The button is already pressed (that's why we woke up)
+    // Record the boot time as press start time
+    // 按钮已经被按下（这就是我们唤醒的原因）
+    // 将启动时间记录为按下开始时间
+    uint32_t bootTime = millis();
+    uint32_t pressStartTime = bootTime;
+    uint8_t localClickCount = 0;
+    uint32_t localLastReleaseTime = 0;
+    
+    // Maximum time to wait for complete button sequence | 等待完整按键序列的最大时间
+    const uint32_t MAX_DETECTION_TIME = 6000;  // 6 seconds (to allow 5s long press) | 6秒（允许5秒长按）
+    
+    Serial.println("  Waiting for button release (first press)...");
+    
+    // Wait for first button release | 等待第一次按键释放
+    while (digitalRead(PIN_BUTTON) == LOW) {
+        delay(10);
+        // Timeout check | 超时检查
+        if (millis() - bootTime > MAX_DETECTION_TIME) {
+            Serial.println("  Button held too long, timeout");
+            return BUTTON_NONE;
+        }
+    }
+    
+    uint32_t firstRelease = millis();
+    uint32_t firstPressDuration = firstRelease - pressStartTime;
+    Serial.printf("  First press duration: %lu ms\n", firstPressDuration);
+    
+    // Check if it's a long press | 检查是否是长按
+    if (firstPressDuration >= LONG_PRESS_MIN_TIME && firstPressDuration <= LONG_PRESS_MAX_TIME) {
+        Serial.println("  Long press detected!");
+        return BUTTON_LONG;
+    }
+    
+    // Check if press is valid for click sequence | 检查按下是否有效
+    if (firstPressDuration > SINGLE_CLICK_MAX_TIME) {
+        // Too long but not a valid long press, ignore | 太长但不是有效的长按，忽略
+        Serial.println("  Press too long, not valid");
+        return BUTTON_NONE;
+    }
+    
+    // Valid short press - count as first click | 有效的短按 - 计为第一次点击
+    localClickCount = 1;
+    localLastReleaseTime = firstRelease;
+    
+    // Now wait for potential additional clicks | 现在等待可能的额外点击
+    Serial.println("  Waiting for additional clicks...");
+    
+    bool wasPressed = false;  // Track button state for edge detection | 跟踪按钮状态用于边沿检测
+    
+    while (millis() - bootTime < MAX_DETECTION_TIME) {
+        uint32_t now = millis();
+        bool buttonPressed = (digitalRead(PIN_BUTTON) == LOW);
+        
+        // Check for single click timeout | 检查单击超时
+        if (localClickCount >= 1 && !buttonPressed && 
+            (now - localLastReleaseTime >= SINGLE_CLICK_WAIT_TIME)) {
+            
+            if (localClickCount == 1) {
+                Serial.println("  Single click confirmed!");
+                return BUTTON_SINGLE;
+            } else if (localClickCount == 2) {
+                Serial.println("  Double click confirmed!");
+                return BUTTON_DOUBLE;
+            }
+        }
+        
+        // Detect new press (button just pressed) | 检测新的按下（按钮刚被按下）
+        if (buttonPressed && !wasPressed) {
+            // New press detected | 检测到新的按下
+            pressStartTime = now;
+        }
+        
+        // Detect release (button just released) | 检测释放（按钮刚被释放）
+        if (!buttonPressed && wasPressed) {
+            uint32_t pressDuration = now - pressStartTime;
+            
+            Serial.printf("  Additional press duration: %lu ms, gap: %lu ms\n", 
+                         pressDuration, now - localLastReleaseTime);
+            
+            // Check if this is part of a click sequence | 检查是否是点击序列的一部分
+            // Use more generous timing for multi-click detection | 使用更宽松的时间检测多击
+            if (pressDuration <= SINGLE_CLICK_MAX_TIME && 
+                (now - localLastReleaseTime) <= DOUBLE_CLICK_GAP_TIME) {
+                // Valid click for multi-click sequence | 有效的多击序列点击
+                localClickCount++;
+                localLastReleaseTime = now;
+                Serial.printf("  Click count: %d\n", localClickCount);
+                
+                if (localClickCount >= 3) {
+                    Serial.println("  Triple click detected!");
+                    return BUTTON_TRIPLE;
+                }
+                // Continue waiting for more clicks | 继续等待更多点击
+            } else if (pressDuration >= LONG_PRESS_MIN_TIME && 
+                       pressDuration <= LONG_PRESS_MAX_TIME) {
+                Serial.println("  Long press detected!");
+                return BUTTON_LONG;
+            } else {
+                // Invalid click timing, reset | 无效的点击时序，重置
+                Serial.println("  Invalid timing, resetting click count");
+                localClickCount = 1;
+                localLastReleaseTime = now;
+            }
+        }
+        
+        wasPressed = buttonPressed;  // Update state for next iteration | 更新状态用于下次迭代
+        delay(10);
+    }
+    
+    // Timeout - return whatever we have | 超时 - 返回我们有的
+    if (localClickCount == 1) {
+        return BUTTON_SINGLE;
+    } else if (localClickCount == 2) {
+        return BUTTON_DOUBLE;
+    }
+    
+    return BUTTON_NONE;
 }
 
 // =============================================================================
@@ -957,8 +1092,8 @@ void initPersistentStorage() {
     preferences.begin("iot_button", false);
     
     // Load last battery percentage | 加载上次电池百分比
-    last_battery_percentage = preferences.getFloat("last_batt_pct", 100.0f);
-    Serial.printf("Loaded last_battery_percentage: %.1f%%\n", last_battery_percentage);
+    last_battery_percentage = round(preferences.getFloat("last_batt_pct", 100.0f));
+    Serial.printf("Loaded last_battery_percentage: %.0f%%\n", last_battery_percentage);
     
     // Load switch states | 加载开关状态
     // This will be done after switches are created in setup()
@@ -969,9 +1104,40 @@ void initPersistentStorage() {
 // =============================================================================
 
 void setup() {
-    // Initialize serial | 初始化串口
-    Serial.begin(115200);
-    delay(500);
+    // =========================================================================
+    // CRITICAL: Initialize button pin FIRST for accurate detection
+    // 关键：首先初始化按钮引脚以确保准确检测
+    // =========================================================================
+    pinMode(PIN_BUTTON, INPUT_PULLUP);
+    
+    // Check wake-up reason BEFORE any delays | 在任何延迟之前检查唤醒原因
+    bool wokeFromDeepSleep = isWakeFromDeepSleep();
+    
+    // If woke from deep sleep, detect button event IMMEDIATELY
+    // 如果从深度睡眠唤醒，立即检测按键事件
+    // This must happen before Serial.begin() delay to catch fast double/triple clicks
+    // 必须在 Serial.begin() 延迟之前，以捕获快速的双击/三击
+    if (wokeFromDeepSleep) {
+        // Minimal serial init for debug (no delay) | 最小串口初始化用于调试（无延迟）
+        Serial.begin(115200);
+        Serial.println("\n[Wake-up] Detecting button event...");
+        
+        pendingWakeupEvent = detectButtonEventDuringBoot();
+        
+        if (pendingWakeupEvent != BUTTON_NONE) {
+            Serial.printf("[Wake-up] Detected: %s\n", 
+                pendingWakeupEvent == BUTTON_SINGLE ? "SINGLE" :
+                pendingWakeupEvent == BUTTON_DOUBLE ? "DOUBLE" :
+                pendingWakeupEvent == BUTTON_TRIPLE ? "TRIPLE" :
+                pendingWakeupEvent == BUTTON_LONG ? "LONG" : "UNKNOWN");
+        } else {
+            Serial.println("[Wake-up] No valid event detected");
+        }
+    } else {
+        // Fresh boot - can have delay for serial | 全新启动 - 可以等待串口
+        Serial.begin(115200);
+        delay(500);
+    }
     
     Serial.println();
     Serial.println("============================================");
@@ -979,8 +1145,6 @@ void setup() {
     Serial.println("  Deep Sleep Mode Example");
     Serial.println("============================================");
     
-    // Check wake-up reason | 检查唤醒原因
-    bool wokeFromDeepSleep = isWakeFromDeepSleep();
     Serial.printf("Boot reason: %s\n", getWakeupReasonString());
     
     if (wokeFromDeepSleep) {
@@ -994,7 +1158,7 @@ void setup() {
     initPersistentStorage();
     
     // =========================================================================
-    // Initialize pins | 初始化引脚
+    // Initialize other pins | 初始化其他引脚
     // =========================================================================
     
     // Output pins | 输出引脚
@@ -1003,22 +1167,8 @@ void setup() {
     pinMode(PIN_BLUE_LED, OUTPUT);
     pinMode(PIN_LED_STRIP_EN, OUTPUT);
     
-    // Input pins | 输入引脚
-    pinMode(PIN_BUTTON, INPUT_PULLUP);
-    
     // ADC configuration | ADC 配置
     analogSetAttenuation(ADC_11db);  // 12dB attenuation for full range | 12dB 衰减以获得完整范围
-    
-    // If woke from deep sleep, wait for button release to avoid immediate re-detection
-    // 如果从深度睡眠唤醒，等待按钮释放以避免立即重新检测
-    if (wokeFromDeepSleep) {
-        Serial.println("Waiting for button release...");
-        while (digitalRead(PIN_BUTTON) == LOW) {
-            delay(10);
-        }
-        Serial.println("Button released, continuing initialization...");
-        delay(50);  // Debounce | 防抖
-    }
     
     // =========================================================================
     // Boot initialization sequence | 启动初始化序列
@@ -1216,6 +1366,22 @@ void loop() {
     
     // Check HA connection and sync states if needed | 检查 HA 连接并在需要时同步状态
     checkHAConnectionAndSync();
+    
+    // Process pending wake-up event after HA is connected | 在 HA 连接后处理待处理的唤醒事件
+    if (pendingWakeupEvent != BUTTON_NONE && !wakeupEventProcessed && ha.isHAConnected()) {
+        Serial.println("Processing pending wake-up event...");
+        ButtonEvent eventToProcess = pendingWakeupEvent;
+        pendingWakeupEvent = BUTTON_NONE;
+        wakeupEventProcessed = true;
+        
+        switch (eventToProcess) {
+            case BUTTON_SINGLE: handleSwitch1Toggle(); break;
+            case BUTTON_DOUBLE: handleSwitch2Toggle(); break;
+            case BUTTON_TRIPLE: handleDevModeToggle(); break;
+            case BUTTON_LONG:   handleSwitch3Toggle(); break;
+            default: break;
+        }
+    }
     
     // Detect and handle button events | 检测和处理按钮事件
     ButtonEvent event = detectButtonEvent();
