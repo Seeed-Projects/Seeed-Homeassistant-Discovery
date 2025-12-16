@@ -316,8 +316,15 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         _LOGGER.info("Device ID: %s, Name: %s, Model: %s, MAC: %s", 
                     device_id, device_name, model, mac_address)
 
-        # 设置唯一 ID，如果设备已配置则更新其地址 | Set unique ID, update address if configured
+        # 设置唯一 ID，如果另一个流程已在处理同一设备则中止
+        # Set unique ID, abort if another flow is already handling the same device
         await self.async_set_unique_id(device_id)
+        
+        # 检查是否已有相同设备的流程正在进行中（防止重复卡片）
+        # Check if another flow for same device is in progress (prevent duplicate cards)
+        self._abort_if_unique_id_in_progress()
+        
+        # 如果设备已配置则更新其地址 | Update address if device already configured
         self._abort_if_unique_id_configured(updates={CONF_HOST: host})
 
         # 保存发现的设备信息 | Save discovered device info
@@ -429,6 +436,12 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         # 设置唯一 ID | Set unique ID
         await self.async_set_unique_id(device_id)
+        
+        # 检查是否已有相同设备的流程正在进行中（防止重复卡片）
+        # Check if another flow for same device is in progress (prevent duplicate cards)
+        self._abort_if_unique_id_in_progress()
+        
+        # 如果设备已配置则中止 | Abort if device already configured
         self._abort_if_unique_id_configured()
 
         # 保存发现的设备信息 | Save discovered device info
