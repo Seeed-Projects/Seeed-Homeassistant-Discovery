@@ -34,11 +34,59 @@ env:
 
 jobs:
   # ============================================================================
+  # DETECT CHANGES | 检测文件变化
+  # ============================================================================
+  
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      library: ${{ steps.filter.outputs.library }}
+      iot-button: ${{ steps.filter.outputs.iot-button }}
+      camera-stream: ${{ steps.filter.outputs.camera-stream }}
+      reterminal-e1001: ${{ steps.filter.outputs.reterminal-e1001 }}
+      reterminal-e1002: ${{ steps.filter.outputs.reterminal-e1002 }}
+      wifi-provisioning: ${{ steps.filter.outputs.wifi-provisioning }}
+      button-switch: ${{ steps.filter.outputs.button-switch }}
+      led-switch: ${{ steps.filter.outputs.led-switch }}
+      ha-state-subscribe: ${{ steps.filter.outputs.ha-state-subscribe }}
+      temp-humidity: ${{ steps.filter.outputs.temp-humidity }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            library:
+              - 'arduino/SeeedHADiscovery/src/**'
+              - 'arduino/SeeedHADiscovery/library.*'
+              - '.github/workflows/build-firmware.yml'
+            iot-button:
+              - 'arduino/SeeedHADiscovery/examples/IoTButtonV2_DeepSleep/**'
+            camera-stream:
+              - 'arduino/SeeedHADiscovery/examples/CameraStream/**'
+            reterminal-e1001:
+              - 'arduino/SeeedHADiscovery/examples/reTerminal_E1001_HASubscribe_Display/**'
+            reterminal-e1002:
+              - 'arduino/SeeedHADiscovery/examples/reTerminal_E1002_HASubscribe_Display/**'
+            wifi-provisioning:
+              - 'arduino/SeeedHADiscovery/examples/WiFiProvisioning/**'
+            button-switch:
+              - 'arduino/SeeedHADiscovery/examples/ButtonSwitch/**'
+            led-switch:
+              - 'arduino/SeeedHADiscovery/examples/LEDSwitch/**'
+            ha-state-subscribe:
+              - 'arduino/SeeedHADiscovery/examples/HAStateSubscribe/**'
+            temp-humidity:
+              - 'arduino/SeeedHADiscovery/examples/TemperatureHumidity/**'
+
+  # ============================================================================
   # SEEED-SPECIFIC FIRMWARE | SEEED 专用固件
   # ============================================================================
 
   # IoT Button V2 - XIAO ESP32-C6 only
   build-iot-button:
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.library == 'true' || needs.detect-changes.outputs.iot-button == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -81,6 +129,8 @@ jobs:
 
   # Camera Stream - XIAO ESP32-S3 Sense only
   build-camera-stream:
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.library == 'true' || needs.detect-changes.outputs.camera-stream == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -121,6 +171,8 @@ jobs:
 
   # reTerminal E1001 - ESP32-S3 based
   build-reterminal-e1001:
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.library == 'true' || needs.detect-changes.outputs.reterminal-e1001 == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -164,6 +216,8 @@ jobs:
 
   # reTerminal E1002 - ESP32-S3 based
   build-reterminal-e1002:
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.library == 'true' || needs.detect-changes.outputs.reterminal-e1002 == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -211,6 +265,8 @@ jobs:
 
   # WiFi Provisioning - Universal (using XIAO boards for D-pin compatibility)
   build-wifi-provisioning:
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.library == 'true' || needs.detect-changes.outputs.wifi-provisioning == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -259,6 +315,8 @@ jobs:
 
   # Button Switch - Universal (using XIAO boards for D-pin compatibility)
   build-button-switch:
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.library == 'true' || needs.detect-changes.outputs.button-switch == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -308,6 +366,8 @@ jobs:
   # LED Switch - Universal (using XIAO boards for LED_BUILTIN compatibility)
   # Note: XIAO ESP32-C3 has no user LED, so C3 is excluded
   build-led-switch:
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.library == 'true' || needs.detect-changes.outputs.led-switch == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -353,6 +413,8 @@ jobs:
 
   # HA State Subscribe - Universal (using XIAO boards)
   build-ha-state-subscribe:
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.library == 'true' || needs.detect-changes.outputs.ha-state-subscribe == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -401,6 +463,8 @@ jobs:
 
   # Temperature Humidity - Universal (using XIAO boards)
   build-temp-humidity:
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.library == 'true' || needs.detect-changes.outputs.temp-humidity == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -452,8 +516,8 @@ jobs:
   # ============================================================================
 
   combine:
-    needs: [build-iot-button, build-camera-stream, build-wifi-provisioning, build-button-switch, build-led-switch, build-ha-state-subscribe, build-temp-humidity]
-    if: always()
+    needs: [detect-changes, build-iot-button, build-camera-stream, build-reterminal-e1001, build-reterminal-e1002, build-wifi-provisioning, build-button-switch, build-led-switch, build-ha-state-subscribe, build-temp-humidity]
+    if: always() && !cancelled()
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
