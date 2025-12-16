@@ -11,6 +11,7 @@ on:
     branches: [main, master]
     paths:
       - 'custom_components/seeed_ha_discovery/manifest.json'
+  workflow_dispatch:  # 允许手动触发 | Allow manual trigger
 
 jobs:
   release:
