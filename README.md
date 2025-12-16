@@ -48,6 +48,34 @@ Click the button below to add this integration to your Home Assistant:
 
 > **Prerequisites**: Your Home Assistant must have [HACS](https://hacs.xyz/) installed
 
+## 🔌 Web Firmware Flasher
+
+**Don't want to set up Arduino IDE?** Use our web-based firmware flasher to program your device directly from the browser!
+
+🌐 **[Open Web Flasher](https://limengdu.github.io/Seeed-Homeassistant-Discovery/)**
+
+| Feature | Description |
+|---------|-------------|
+| 🖥️ **No Software Required** | Flash directly from Chrome/Edge browser |
+| 🔍 **Auto Chip Detection** | Automatically detects ESP32-C3/C5/C6/S3 |
+| 📦 **Pre-built Firmware** | Ready-to-use examples for quick start |
+| 🌍 **Bilingual** | English and Chinese interface |
+
+**Available Firmware:**
+
+| Category | Firmware | Supported Chips |
+|----------|----------|-----------------|
+| 🏷️ **Seeed Products** | IoT Button V2 | ESP32-C6 |
+| 🏷️ **Seeed Products** | CameraStream | ESP32-S3 Sense |
+| 🏷️ **Seeed Products** | reTerminal E1001/E1002 | ESP32-S3 |
+| 🔧 **Universal** | WiFi Provisioning | C3/C5/C6/S3 |
+| 🔧 **Universal** | Button Switch | C3/C5/C6/S3 |
+| 🔧 **Universal** | LED Switch | C5/C6/S3 |
+| 🔧 **Universal** | HA State Subscribe | C3/C5/C6/S3 |
+| 🔧 **Universal** | Temperature & Humidity | C3/C5/C6/S3 |
+
+> 💡 **Tip**: Universal firmware supports auto chip detection - just connect your XIAO board and click flash!
+
 ## ✨ Features
 
 ### WiFi Version
