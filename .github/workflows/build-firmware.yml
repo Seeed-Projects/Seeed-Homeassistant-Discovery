@@ -51,9 +51,10 @@ jobs:
           arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
           arduino-cli core update-index
           arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }}
-          arduino-cli lib install "ArduinoJson@${{ env.ARDUINOJSON_VERSION }}"
-          arduino-cli lib install "WebSockets@${{ env.WEBSOCKETS_VERSION }}"
-          arduino-cli lib install "Adafruit NeoPixel@${{ env.NEOPIXEL_VERSION }}"
+          # Install libraries with retry mechanism for network issues
+          for i in 1 2 3; do arduino-cli lib install "ArduinoJson@${{ env.ARDUINOJSON_VERSION }}" && break || sleep 10; done
+          for i in 1 2 3; do arduino-cli lib install "WebSockets@${{ env.WEBSOCKETS_VERSION }}" && break || sleep 10; done
+          for i in 1 2 3; do arduino-cli lib install "Adafruit NeoPixel@${{ env.NEOPIXEL_VERSION }}" && break || sleep 10; done
           mkdir -p ~/Arduino/libraries && cp -r arduino/SeeedHADiscovery ~/Arduino/libraries/
       - name: Compile
         run: |
