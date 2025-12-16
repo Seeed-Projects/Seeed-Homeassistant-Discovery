@@ -208,7 +208,7 @@ jobs:
   # UNIVERSAL FIRMWARE (Multi-chip) | 通用固件（多芯片）
   # ============================================================================
 
-  # WiFi Provisioning - Universal
+  # WiFi Provisioning - Universal (using XIAO boards for D-pin compatibility)
   build-wifi-provisioning:
     runs-on: ubuntu-latest
     strategy:
@@ -216,16 +216,16 @@ jobs:
       matrix:
         include:
           - chip: C3
-            fqbn: "esp32:esp32:esp32c3:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C3:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C3"
           - chip: C5
-            fqbn: "esp32:esp32:esp32c5:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C5:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C5"
           - chip: C6
-            fqbn: "esp32:esp32:esp32c6:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C6:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C6"
           - chip: S3
-            fqbn: "esp32:esp32:esp32s3:CDCOnBoot=cdc,PartitionScheme=huge_app,USBMode=hwcdc,FlashMode=qio,FlashSize=8M,PSRAM=opi"
+            fqbn: "esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,PartitionScheme=default,USBMode=hwcdc,FlashMode=qio,FlashSize=8M,PSRAM=opi"
             family: "ESP32-S3"
     steps:
       - uses: actions/checkout@v4
@@ -256,7 +256,7 @@ jobs:
           name: firmware-WiFiProvisioning-${{ matrix.chip }}
           path: build/WiFiProvisioning/${{ matrix.chip }}/
 
-  # Button Switch - Universal
+  # Button Switch - Universal (using XIAO boards for D-pin compatibility)
   build-button-switch:
     runs-on: ubuntu-latest
     strategy:
@@ -264,16 +264,16 @@ jobs:
       matrix:
         include:
           - chip: C3
-            fqbn: "esp32:esp32:esp32c3:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C3:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C3"
           - chip: C5
-            fqbn: "esp32:esp32:esp32c5:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C5:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C5"
           - chip: C6
-            fqbn: "esp32:esp32:esp32c6:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C6:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C6"
           - chip: S3
-            fqbn: "esp32:esp32:esp32s3:CDCOnBoot=cdc,PartitionScheme=huge_app,USBMode=hwcdc,FlashMode=qio,FlashSize=8M,PSRAM=opi"
+            fqbn: "esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,PartitionScheme=default,USBMode=hwcdc,FlashMode=qio,FlashSize=8M,PSRAM=opi"
             family: "ESP32-S3"
     steps:
       - uses: actions/checkout@v4
@@ -304,7 +304,7 @@ jobs:
           name: firmware-ButtonSwitch-${{ matrix.chip }}
           path: build/ButtonSwitch/${{ matrix.chip }}/
 
-  # LED Switch - Universal
+  # LED Switch - Universal (using XIAO boards for LED_BUILTIN compatibility)
   build-led-switch:
     runs-on: ubuntu-latest
     strategy:
@@ -312,16 +312,16 @@ jobs:
       matrix:
         include:
           - chip: C3
-            fqbn: "esp32:esp32:esp32c3:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C3:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C3"
           - chip: C5
-            fqbn: "esp32:esp32:esp32c5:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C5:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C5"
           - chip: C6
-            fqbn: "esp32:esp32:esp32c6:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C6:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C6"
           - chip: S3
-            fqbn: "esp32:esp32:esp32s3:CDCOnBoot=cdc,PartitionScheme=huge_app,USBMode=hwcdc,FlashMode=qio,FlashSize=8M,PSRAM=opi"
+            fqbn: "esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,PartitionScheme=default,USBMode=hwcdc,FlashMode=qio,FlashSize=8M,PSRAM=opi"
             family: "ESP32-S3"
     steps:
       - uses: actions/checkout@v4
@@ -352,7 +352,7 @@ jobs:
           name: firmware-LEDSwitch-${{ matrix.chip }}
           path: build/LEDSwitch/${{ matrix.chip }}/
 
-  # HA State Subscribe - Universal
+  # HA State Subscribe - Universal (using XIAO boards)
   build-ha-state-subscribe:
     runs-on: ubuntu-latest
     strategy:
@@ -360,16 +360,16 @@ jobs:
       matrix:
         include:
           - chip: C3
-            fqbn: "esp32:esp32:esp32c3:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C3:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C3"
           - chip: C5
-            fqbn: "esp32:esp32:esp32c5:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C5:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C5"
           - chip: C6
-            fqbn: "esp32:esp32:esp32c6:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C6:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C6"
           - chip: S3
-            fqbn: "esp32:esp32:esp32s3:CDCOnBoot=cdc,PartitionScheme=huge_app,USBMode=hwcdc,FlashMode=qio,FlashSize=8M,PSRAM=opi"
+            fqbn: "esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,PartitionScheme=default,USBMode=hwcdc,FlashMode=qio,FlashSize=8M,PSRAM=opi"
             family: "ESP32-S3"
     steps:
       - uses: actions/checkout@v4
@@ -400,7 +400,7 @@ jobs:
           name: firmware-HAStateSubscribe-${{ matrix.chip }}
           path: build/HAStateSubscribe/${{ matrix.chip }}/
 
-  # Temperature Humidity - Universal
+  # Temperature Humidity - Universal (using XIAO boards)
   build-temp-humidity:
     runs-on: ubuntu-latest
     strategy:
@@ -408,16 +408,16 @@ jobs:
       matrix:
         include:
           - chip: C3
-            fqbn: "esp32:esp32:esp32c3:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C3:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C3"
           - chip: C5
-            fqbn: "esp32:esp32:esp32c5:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C5:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C5"
           - chip: C6
-            fqbn: "esp32:esp32:esp32c6:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C6:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C6"
           - chip: S3
-            fqbn: "esp32:esp32:esp32s3:CDCOnBoot=cdc,PartitionScheme=huge_app,USBMode=hwcdc,FlashMode=qio,FlashSize=8M,PSRAM=opi"
+            fqbn: "esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,PartitionScheme=default,USBMode=hwcdc,FlashMode=qio,FlashSize=8M,PSRAM=opi"
             family: "ESP32-S3"
     steps:
       - uses: actions/checkout@v4
