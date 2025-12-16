@@ -26,6 +26,7 @@ on:
 
 env:
   ARDUINO_CLI_VERSION: "0.35.3"
+  ESP32_CORE_VERSION: "3.3.4"  # Lock ESP32 Core version for build consistency | 锁定 ESP32 Core 版本以确保构建一致性
 
 jobs:
   build:
@@ -76,9 +77,11 @@ jobs:
           arduino-cli config init
           arduino-cli config add board_manager.additional_urls "${{ matrix.platform_url }}"
           
-          # Update index and install platform | 更新索引并安装平台
+          # Update index and install platform with locked version | 更新索引并安装锁定版本的平台
           arduino-cli core update-index
-          arduino-cli core install ${{ matrix.platform }}
+          arduino-cli core install ${{ matrix.platform }}@${{ env.ESP32_CORE_VERSION }}
+          
+          echo "Installed ESP32 Core version: ${{ env.ESP32_CORE_VERSION }}"
           
           # Install required libraries | 安装所需库
           arduino-cli lib install "ArduinoJson"
@@ -120,6 +123,27 @@ jobs:
             fi
           done
           
+          # Copy boot_app0.bin from ESP32 Core (required for OTA boot selection)
+          # 从 ESP32 Core 复制 boot_app0.bin（OTA 启动选择所需）
+          # This file is at offset 0xe000 and is needed for proper boot sequence
+          # 此文件在偏移地址 0xe000，正确启动序列所需
+          ESP32_CORE_PATH=$(find ~/.arduino15/packages/esp32/hardware/esp32 -maxdepth 1 -type d -name "${{ env.ESP32_CORE_VERSION }}" | head -1)
+          if [ -n "$ESP32_CORE_PATH" ] && [ -f "$ESP32_CORE_PATH/tools/partitions/boot_app0.bin" ]; then
+            cp "$ESP32_CORE_PATH/tools/partitions/boot_app0.bin" ./boot_app0.bin
+            echo "✓ Copied boot_app0.bin from ESP32 Core"
+          else
+            echo "⚠ Warning: boot_app0.bin not found, trying alternative path..."
+            # Alternative search | 备选搜索路径
+            BOOT_APP0=$(find ~/.arduino15/packages/esp32 -name "boot_app0.bin" -type f | head -1)
+            if [ -n "$BOOT_APP0" ]; then
+              cp "$BOOT_APP0" ./boot_app0.bin
+              echo "✓ Copied boot_app0.bin from: $BOOT_APP0"
+            else
+              echo "✗ Error: boot_app0.bin not found!"
+              exit 1
+            fi
+          fi
+          
           # List final files | 列出最终文件
           echo "Final firmware files:"
           ls -la
@@ -135,6 +159,7 @@ jobs:
           CHIP_FAMILY="ESP32-C6"
           BOOTLOADER_OFFSET=0
           PARTITIONS_OFFSET=32768   # 0x8000
+          BOOT_APP0_OFFSET=57344    # 0xe000 - OTA boot selection | OTA 启动选择
           FIRMWARE_OFFSET=65536     # 0x10000
           
           if [[ "${{ matrix.board }}" == *"esp32s3"* ]] || [[ "${{ matrix.board }}" == *"XIAO_ESP32S3"* ]]; then
@@ -159,8 +184,11 @@ jobs:
           
           echo "Chip Family: ${CHIP_FAMILY}"
           echo "Bootloader Offset: ${BOOTLOADER_OFFSET}"
+          echo "Boot App0 Offset: ${BOOT_APP0_OFFSET}"
           
-          # Create manifest.json | 创建 manifest.json
+          # Create manifest.json with all 4 binary files | 创建包含所有 4 个二进制文件的 manifest.json
+          # Flash layout: bootloader -> partitions -> boot_app0 -> firmware
+          # Flash 布局：bootloader -> partitions -> boot_app0 -> firmware
           cat > manifest.json << EOF
           {
             "name": "${{ matrix.firmware }}",
@@ -175,6 +203,7 @@ jobs:
                 "parts": [
                   { "path": "bootloader.bin", "offset": ${BOOTLOADER_OFFSET} },
                   { "path": "partitions.bin", "offset": ${PARTITIONS_OFFSET} },
+                  { "path": "boot_app0.bin", "offset": ${BOOT_APP0_OFFSET} },
                   { "path": "firmware.bin", "offset": ${FIRMWARE_OFFSET} }
                 ]
               }
@@ -265,6 +294,26 @@ jobs:
           VERSION=$(date +'%Y.%m.%d')-$(git rev-parse --short HEAD)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Package firmware for release
+        run: |
+          # Create zip files for each firmware to avoid filename conflicts
+          # 为每个固件创建 zip 文件以避免文件名冲突
+          cd firmware
+          
+          for dir in */; do
+            firmware_name="${dir%/}"
+            echo "Packaging $firmware_name..."
+            zip -r "${firmware_name}.zip" "$dir"
+          done
+          
+          # Also create a combined zip with all firmware | 同时创建包含所有固件的合并 zip
+          cd ..
+          zip -r "all-firmware.zip" firmware/
+          mv all-firmware.zip firmware/
+          
+          echo "Created packages:"
+          ls -la firmware/*.zip
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -277,14 +326,20 @@ jobs:
             
             ### How to Flash | 如何烧录
             
-            Visit our [Web Flasher](https://your-github-username.github.io/hacs-devolop/flasher/) to flash firmware directly from your browser.
+            Visit our [Web Flasher](https://limengdu.github.io/Seeed-Homeassistant-Discovery/flasher/) to flash firmware directly from your browser.
             
-            Or download the files and use ESP Web Tools manually.
+            Or download the zip files and use ESP Web Tools manually.
             
             ### Included Firmware | 包含的固件
             
             - IoTButtonV2_DeepSleep (ESP32-C6)
             - WiFiProvisioning (ESP32-C6)
+            
+            ### Downloads | 下载
+            
+            - `all-firmware.zip` - All firmware in one package | 所有固件合集
+            - `IoTButtonV2_DeepSleep.zip` - IoT Button V2 firmware only
+            - `WiFiProvisioning.zip` - WiFi Provisioning demo only
           files: |
-            firmware/**/*
+            firmware/*.zip
 

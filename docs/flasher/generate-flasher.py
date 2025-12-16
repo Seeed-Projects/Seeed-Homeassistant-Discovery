@@ -21,35 +21,42 @@ from pathlib import Path
 
 # ESP32 chip family flash offsets | ESP32 芯片系列的 Flash 偏移地址
 # Different chips have different memory layouts | 不同芯片有不同的内存布局
+# boot_app0.bin at 0xe000 is required for OTA boot selection | 0xe000 处的 boot_app0.bin 是 OTA 启动选择所需
 CHIP_OFFSETS = {
     "ESP32": {
         "bootloader": 0x1000,
         "partitions": 0x8000,
+        "boot_app0": 0xe000,
         "firmware": 0x10000
     },
     "ESP32-S2": {
         "bootloader": 0x1000,
         "partitions": 0x8000,
+        "boot_app0": 0xe000,
         "firmware": 0x10000
     },
     "ESP32-S3": {
         "bootloader": 0x0,
         "partitions": 0x8000,
+        "boot_app0": 0xe000,
         "firmware": 0x10000
     },
     "ESP32-C3": {
         "bootloader": 0x0,
         "partitions": 0x8000,
+        "boot_app0": 0xe000,
         "firmware": 0x10000
     },
     "ESP32-C6": {
         "bootloader": 0x0,
         "partitions": 0x8000,
+        "boot_app0": 0xe000,
         "firmware": 0x10000
     },
     "ESP32-H2": {
         "bootloader": 0x0,
         "partitions": 0x8000,
+        "boot_app0": 0xe000,
         "firmware": 0x10000
     }
 }
@@ -79,6 +86,7 @@ def generate_manifest(firmware: dict, output_dir: str) -> None:
                 "parts": [
                     {"path": "bootloader.bin", "offset": offsets['bootloader']},
                     {"path": "partitions.bin", "offset": offsets['partitions']},
+                    {"path": "boot_app0.bin", "offset": offsets['boot_app0']},
                     {"path": "firmware.bin", "offset": offsets['firmware']}
                 ]
             }

@@ -137,6 +137,21 @@ build_firmware() {
     # Clean up extra files | 清理多余文件
     rm -f *.elf *.map 2>/dev/null || true
     
+    # Copy boot_app0.bin from ESP32 Core (required for OTA boot selection)
+    # 从 ESP32 Core 复制 boot_app0.bin（OTA 启动选择所需）
+    local boot_app0_src=$(find "$HOME/Library/Arduino15/packages/esp32/hardware/esp32" -name "boot_app0.bin" -type f 2>/dev/null | head -1)
+    if [ -z "$boot_app0_src" ]; then
+        # Try Linux path | 尝试 Linux 路径
+        boot_app0_src=$(find "$HOME/.arduino15/packages/esp32/hardware/esp32" -name "boot_app0.bin" -type f 2>/dev/null | head -1)
+    fi
+    
+    if [ -n "$boot_app0_src" ]; then
+        cp "$boot_app0_src" ./boot_app0.bin
+        echo -e "${GREEN}  ✓ Copied boot_app0.bin${NC}"
+    else
+        echo -e "${YELLOW}  ⚠ Warning: boot_app0.bin not found${NC}"
+    fi
+    
     # Determine bootloader offset | 确定 bootloader 偏移
     local bootloader_offset=0
     case "$chip_family" in
@@ -148,7 +163,7 @@ build_firmware() {
             ;;
     esac
     
-    # Create manifest.json | 创建 manifest.json
+    # Create manifest.json with boot_app0.bin | 创建包含 boot_app0.bin 的 manifest.json
     cat > manifest.json << EOF
 {
   "name": "$name",
@@ -163,6 +178,7 @@ build_firmware() {
       "parts": [
         { "path": "bootloader.bin", "offset": $bootloader_offset },
         { "path": "partitions.bin", "offset": 32768 },
+        { "path": "boot_app0.bin", "offset": 57344 },
         { "path": "firmware.bin", "offset": 65536 }
       ]
     }
