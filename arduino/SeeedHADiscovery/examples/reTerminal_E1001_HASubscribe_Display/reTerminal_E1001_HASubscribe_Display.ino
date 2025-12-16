@@ -647,13 +647,6 @@ void drawProvisioningScreen() {
     epaper.drawString("Select your WiFi network and enter password", centerX - 230, boxY + boxHeight + 20);
     epaper.drawString("to complete the setup.", centerX - 120, boxY + boxHeight + 45);
     
-    // Reset hint at bottom | 底部重置提示
-    int footerY = SCREEN_HEIGHT - 50;
-    epaper.fillRect(0, footerY, SCREEN_WIDTH, 50, COLOR_DARK);
-    epaper.setTextColor(COLOR_WHITE);
-    epaper.setTextSize(2);
-    epaper.drawString("Long press GPIO3 (6s, LED flashes) to reset WiFi", centerX - 250, footerY + 15);
-    
     epaper.update();
 #endif
 }
