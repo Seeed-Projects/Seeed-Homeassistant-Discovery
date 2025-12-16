@@ -253,11 +253,31 @@ jobs:
           path: build/IoTButtonV2_DeepSleep/
           retention-days: 30
 
-  # Build WiFiProvisioning firmware | 构建 WiFiProvisioning 固件
+  # Build WiFiProvisioning firmware for multiple ESP32 chips | 为多种 ESP32 芯片构建 WiFiProvisioning 固件
+  # This is a generic example that works on all ESP32 variants | 这是一个适用于所有 ESP32 系列的通用示例
   build-wifi-provisioning:
     needs: detect-changes
     if: needs.detect-changes.outputs.build_wifi_provisioning == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ESP32-C3 (XIAO ESP32C3) | ESP32-C3（XIAO ESP32C3）
+          - chip: "C3"
+            fqbn: "esp32:esp32:esp32c3:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M,UploadSpeed=921600"
+            chip_family: "ESP32-C3"
+            bootloader_offset: 0
+          # ESP32-C6 (XIAO ESP32C6) | ESP32-C6（XIAO ESP32C6）
+          - chip: "C6"
+            fqbn: "esp32:esp32:esp32c6:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M,UploadSpeed=921600"
+            chip_family: "ESP32-C6"
+            bootloader_offset: 0
+          # ESP32-S3 (XIAO ESP32S3) | ESP32-S3（XIAO ESP32S3）
+          - chip: "S3"
+            fqbn: "esp32:esp32:esp32s3:CDCOnBoot=cdc,PartitionScheme=huge_app,USBMode=hwcdc,FlashMode=qio,FlashSize=8M,UploadSpeed=921600,PSRAM=opi"
+            chip_family: "ESP32-S3"
+            bootloader_offset: 0
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -285,72 +305,60 @@ jobs:
           mkdir -p ~/Arduino/libraries
           cp -r arduino/SeeedHADiscovery ~/Arduino/libraries/
 
-      - name: Compile WiFiProvisioning
+      - name: Compile WiFiProvisioning for ${{ matrix.chip }}
         run: |
-          mkdir -p build/WiFiProvisioning
+          FIRMWARE_NAME="WiFiProvisioning-${{ matrix.chip }}"
+          mkdir -p build/${FIRMWARE_NAME}
+          
+          echo "Compiling for ${{ matrix.chip_family }}..."
           arduino-cli compile \
-            --fqbn "esp32:esp32:esp32c6:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M,UploadSpeed=921600" \
-            --output-dir "build/WiFiProvisioning" \
+            --fqbn "${{ matrix.fqbn }}" \
+            --output-dir "build/${FIRMWARE_NAME}" \
             --export-binaries \
             "arduino/SeeedHADiscovery/examples/WiFiProvisioning/WiFiProvisioning.ino"
           
           echo "Compiled files:"
-          ls -la build/WiFiProvisioning/
+          ls -la build/${FIRMWARE_NAME}/
 
-      - name: Prepare firmware files
+      - name: Prepare firmware files for ${{ matrix.chip }}
         run: |
-          cd build/WiFiProvisioning
+          # Create chip-specific subfolder | 创建芯片特定的子文件夹
+          # Structure: WiFiProvisioning/C3/, WiFiProvisioning/C6/, WiFiProvisioning/S3/
+          # ESP Web Tools will auto-detect chip and use correct subfolder
+          # ESP Web Tools 会自动检测芯片并使用正确的子文件夹
           
+          CHIP_DIR="build/WiFiProvisioning/${{ matrix.chip }}"
+          mkdir -p ${CHIP_DIR}
+          
+          # Move and rename binaries to chip subfolder | 移动并重命名二进制文件到芯片子文件夹
+          cd build/WiFiProvisioning-${{ matrix.chip }}
           for f in *.bin; do
             if [[ "$f" == *".ino.bin" ]]; then
-              mv "$f" "firmware.bin"
+              cp "$f" "../WiFiProvisioning/${{ matrix.chip }}/firmware.bin"
             elif [[ "$f" == *".bootloader.bin" ]]; then
-              mv "$f" "bootloader.bin"
+              cp "$f" "../WiFiProvisioning/${{ matrix.chip }}/bootloader.bin"
             elif [[ "$f" == *".partitions.bin" ]]; then
-              mv "$f" "partitions.bin"
+              cp "$f" "../WiFiProvisioning/${{ matrix.chip }}/partitions.bin"
             fi
           done
           
-          # Copy boot_app0.bin
+          # Copy boot_app0.bin to chip subfolder
           ESP32_CORE_PATH=$(find ~/.arduino15/packages/esp32/hardware/esp32 -maxdepth 1 -type d -name "${{ env.ESP32_CORE_VERSION }}" | head -1)
           if [ -n "$ESP32_CORE_PATH" ] && [ -f "$ESP32_CORE_PATH/tools/partitions/boot_app0.bin" ]; then
-            cp "$ESP32_CORE_PATH/tools/partitions/boot_app0.bin" ./boot_app0.bin
+            cp "$ESP32_CORE_PATH/tools/partitions/boot_app0.bin" "../WiFiProvisioning/${{ matrix.chip }}/boot_app0.bin"
           else
             BOOT_APP0=$(find ~/.arduino15/packages/esp32 -name "boot_app0.bin" -type f | head -1)
-            cp "$BOOT_APP0" ./boot_app0.bin
+            cp "$BOOT_APP0" "../WiFiProvisioning/${{ matrix.chip }}/boot_app0.bin"
           fi
           
-          # Create manifest.json
-          cat > manifest.json << 'EOF'
-          {
-            "name": "WiFiProvisioning",
-            "version": "1.0.0",
-            "home_assistant_domain": "seeed_ha_discovery",
-            "funding_url": "https://www.seeedstudio.com/",
-            "new_install_prompt_erase": true,
-            "new_install_improv_wait_time": 0,
-            "builds": [
-              {
-                "chipFamily": "ESP32-C6",
-                "parts": [
-                  { "path": "bootloader.bin", "offset": 0 },
-                  { "path": "partitions.bin", "offset": 32768 },
-                  { "path": "boot_app0.bin", "offset": 57344 },
-                  { "path": "firmware.bin", "offset": 65536 }
-                ]
-              }
-            ]
-          }
-          EOF
-          
-          echo "Final files:"
-          ls -la
+          echo "Files for ${{ matrix.chip_family }}:"
+          ls -la ../WiFiProvisioning/${{ matrix.chip }}/
 
-      - name: Upload firmware artifact
+      - name: Upload firmware artifact for ${{ matrix.chip }}
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-WiFiProvisioning
-          path: build/WiFiProvisioning/
+          name: firmware-WiFiProvisioning-${{ matrix.chip }}
+          path: build/WiFiProvisioning/${{ matrix.chip }}/
           retention-days: 30
 
   # Combine all built firmware | 合并所有构建的固件
@@ -377,16 +385,110 @@ jobs:
           mkdir -p combined-firmware
           
           if [ -d "all-firmware" ]; then
-            for dir in all-firmware/firmware-*; do
-              if [ -d "$dir" ]; then
-                firmware_name=$(basename "$dir" | sed 's/firmware-//')
-                echo "Adding firmware: $firmware_name"
-                cp -r "$dir" "combined-firmware/$firmware_name"
+            # Handle IoTButtonV2_DeepSleep (single chip) | 处理 IoTButtonV2_DeepSleep（单芯片）
+            if [ -d "all-firmware/firmware-IoTButtonV2_DeepSleep" ]; then
+              echo "Adding IoTButtonV2_DeepSleep..."
+              cp -r "all-firmware/firmware-IoTButtonV2_DeepSleep" "combined-firmware/IoTButtonV2_DeepSleep"
+            fi
+            
+            # Handle WiFiProvisioning (multi-chip) | 处理 WiFiProvisioning（多芯片）
+            # Merge all chip variants into one folder with subfolders
+            # 将所有芯片变体合并到一个带有子文件夹的目录中
+            mkdir -p combined-firmware/WiFiProvisioning
+            
+            for chip in C3 C6 S3; do
+              if [ -d "all-firmware/firmware-WiFiProvisioning-${chip}" ]; then
+                echo "Adding WiFiProvisioning/${chip}..."
+                mkdir -p "combined-firmware/WiFiProvisioning/${chip}"
+                cp -r "all-firmware/firmware-WiFiProvisioning-${chip}/"* "combined-firmware/WiFiProvisioning/${chip}/"
               fi
             done
+            
+            # Create multi-build manifest.json for WiFiProvisioning
+            # 为 WiFiProvisioning 创建多芯片 manifest.json
+            # ESP Web Tools will auto-detect connected chip and use correct build
+            # ESP Web Tools 会自动检测连接的芯片并使用正确的构建
+            if [ -d "combined-firmware/WiFiProvisioning" ] && [ "$(ls -A combined-firmware/WiFiProvisioning 2>/dev/null)" ]; then
+              echo "Creating multi-build manifest.json for WiFiProvisioning..."
+              
+              # Start manifest | 开始 manifest
+              cat > combined-firmware/WiFiProvisioning/manifest.json << 'MANIFEST_START'
+{
+  "name": "WiFiProvisioning",
+  "version": "1.0.0",
+  "home_assistant_domain": "seeed_ha_discovery",
+  "funding_url": "https://www.seeedstudio.com/",
+  "new_install_prompt_erase": true,
+  "new_install_improv_wait_time": 0,
+  "builds": [
+MANIFEST_START
+              
+              # Add builds for each available chip | 为每个可用芯片添加构建
+              FIRST_BUILD=true
+              
+              if [ -d "combined-firmware/WiFiProvisioning/C3" ]; then
+                if [ "$FIRST_BUILD" = false ]; then echo "," >> combined-firmware/WiFiProvisioning/manifest.json; fi
+                FIRST_BUILD=false
+                cat >> combined-firmware/WiFiProvisioning/manifest.json << 'BUILD_C3'
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        { "path": "C3/bootloader.bin", "offset": 0 },
+        { "path": "C3/partitions.bin", "offset": 32768 },
+        { "path": "C3/boot_app0.bin", "offset": 57344 },
+        { "path": "C3/firmware.bin", "offset": 65536 }
+      ]
+    }
+BUILD_C3
+              fi
+              
+              if [ -d "combined-firmware/WiFiProvisioning/C6" ]; then
+                if [ "$FIRST_BUILD" = false ]; then echo "," >> combined-firmware/WiFiProvisioning/manifest.json; fi
+                FIRST_BUILD=false
+                cat >> combined-firmware/WiFiProvisioning/manifest.json << 'BUILD_C6'
+    {
+      "chipFamily": "ESP32-C6",
+      "parts": [
+        { "path": "C6/bootloader.bin", "offset": 0 },
+        { "path": "C6/partitions.bin", "offset": 32768 },
+        { "path": "C6/boot_app0.bin", "offset": 57344 },
+        { "path": "C6/firmware.bin", "offset": 65536 }
+      ]
+    }
+BUILD_C6
+              fi
+              
+              if [ -d "combined-firmware/WiFiProvisioning/S3" ]; then
+                if [ "$FIRST_BUILD" = false ]; then echo "," >> combined-firmware/WiFiProvisioning/manifest.json; fi
+                FIRST_BUILD=false
+                cat >> combined-firmware/WiFiProvisioning/manifest.json << 'BUILD_S3'
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        { "path": "S3/bootloader.bin", "offset": 0 },
+        { "path": "S3/partitions.bin", "offset": 32768 },
+        { "path": "S3/boot_app0.bin", "offset": 57344 },
+        { "path": "S3/firmware.bin", "offset": 65536 }
+      ]
+    }
+BUILD_S3
+              fi
+              
+              # Close manifest | 关闭 manifest
+              cat >> combined-firmware/WiFiProvisioning/manifest.json << 'MANIFEST_END'
+  ]
+}
+MANIFEST_END
+              
+              echo "Generated manifest.json:"
+              cat combined-firmware/WiFiProvisioning/manifest.json
+            fi
           fi
           
+          echo ""
+          echo "=========================="
           echo "Combined firmware structure:"
+          echo "=========================="
           find combined-firmware -type f 2>/dev/null || echo "No firmware files"
 
       - name: Upload combined firmware
@@ -474,14 +576,37 @@ jobs:
         run: |
           CHANGELOG=$(cat changelog.txt)
           
-          # List which firmware was built | 列出构建了哪些固件
-          BUILT_FIRMWARE=""
+          # Generate firmware table | 生成固件表格
+          # Categorize firmware by type | 按类型分类固件
+          echo "| Firmware | Chip | Description |" > firmware_table.md
+          echo "|----------|------|-------------|" >> firmware_table.md
+          
           for dir in firmware/*/; do
             firmware_name=$(basename "$dir")
             if [ "$firmware_name" != "*.zip" ]; then
-              BUILT_FIRMWARE="$BUILT_FIRMWARE\n- $firmware_name"
+              # Determine chip and description based on firmware name
+              # 根据固件名称确定芯片和描述
+              case "$firmware_name" in
+                "IoTButtonV2_DeepSleep")
+                  echo "| $firmware_name | ESP32-C6 | IoT Button with deep sleep (XIAO ESP32C6 only) |" >> firmware_table.md
+                  ;;
+                "WiFiProvisioning-C3")
+                  echo "| $firmware_name | ESP32-C3 | WiFi provisioning demo (XIAO ESP32C3) |" >> firmware_table.md
+                  ;;
+                "WiFiProvisioning-C6")
+                  echo "| $firmware_name | ESP32-C6 | WiFi provisioning demo (XIAO ESP32C6) |" >> firmware_table.md
+                  ;;
+                "WiFiProvisioning-S3")
+                  echo "| $firmware_name | ESP32-S3 | WiFi provisioning demo (XIAO ESP32S3) |" >> firmware_table.md
+                  ;;
+                *)
+                  echo "| $firmware_name | - | - |" >> firmware_table.md
+                  ;;
+              esac
             fi
           done
+          
+          FIRMWARE_TABLE=$(cat firmware_table.md)
           
           cat > release_body.md << ENDOFHEADER
           ## 🚀 Firmware Release
@@ -496,7 +621,11 @@ jobs:
           访问 [网页烧录器](https://limengdu.github.io/Seeed-Homeassistant-Discovery/flasher/) 直接从浏览器烧录。
           
           ### 📦 Firmware in this release | 本次发布的固件
-          $(echo -e "$BUILT_FIRMWARE")
+          
+          $FIRMWARE_TABLE
+          
+          > **Note:** WiFiProvisioning is available for multiple ESP32 chips. Choose the variant matching your hardware.
+          > **注意：** WiFiProvisioning 提供多种 ESP32 芯片版本，请选择与您硬件匹配的版本。
           
           ### 📝 Changelog | 更新日志
           

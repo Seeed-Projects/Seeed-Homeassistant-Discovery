@@ -531,22 +531,26 @@
                     </div>
                 </div>
                 
-                <!-- WiFi Provisioning Example -->
+                <!-- WiFi Provisioning Example (Multi-chip) | WiFi 配网示例（多芯片） -->
                 <div class="firmware-card">
                     <div class="card-header">
                         <div class="card-icon">📶</div>
                         <div>
                             <div class="card-title">WiFi Provisioning Demo</div>
-                            <span class="card-chip">ESP32-C6</span>
+                            <div style="display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.25rem;">
+                                <span class="card-chip">ESP32-C3</span>
+                                <span class="card-chip">ESP32-C6</span>
+                                <span class="card-chip">ESP32-S3</span>
+                            </div>
                         </div>
                     </div>
-                    <p class="card-description" data-en="Simple WiFi provisioning example demonstrating web-based network configuration. Use this to test the WiFi setup flow." data-zh="简单的 WiFi 配网示例，演示基于网页的网络配置。用于测试 WiFi 设置流程。">
-                        Simple WiFi provisioning example demonstrating web-based network configuration. Use this to test the WiFi setup flow.
+                    <p class="card-description" data-en="Simple WiFi provisioning example. Auto-detects your chip and flashes the correct firmware." data-zh="简单的 WiFi 配网示例。自动检测芯片并烧录正确的固件。">
+                        Simple WiFi provisioning example. Auto-detects your chip and flashes the correct firmware.
                     </p>
                     <div class="card-features">
+                        <span class="feature-tag" data-en="Auto Chip Detect" data-zh="自动芯片检测">Auto Chip Detect</span>
                         <span class="feature-tag" data-en="Web Provisioning" data-zh="网页配网">Web Provisioning</span>
                         <span class="feature-tag" data-en="Captive Portal" data-zh="强制门户">Captive Portal</span>
-                        <span class="feature-tag" data-en="Auto-connect" data-zh="自动连接">Auto-connect</span>
                     </div>
                     
                     <esp-web-install-button manifest="./firmware/WiFiProvisioning/manifest.json">
