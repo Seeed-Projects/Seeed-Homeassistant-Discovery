@@ -16,6 +16,10 @@
       "bluetooth_confirm": {
         "title": "Bluetooth Device Discovered",
         "description": "A Seeed HA Bluetooth device was discovered:\n\n**Device Name:** {name}\n**Model:** {model}\n**Bluetooth Address:** {address}\n**Current Sensors:** {sensors}\n**Supports Control:** {control}\n\nDo you want to add this device?"
+      },
+      "confirm_already_connected": {
+        "title": "⚠️ Device Already Connected",
+        "description": "**Warning:** This device is already connected to another Home Assistant instance.\n\n**Device Name:** {name}\n**Address:** {host}\n\nAdding this device may cause conflicts or unexpected behavior. The device can only maintain one active connection at a time.\n\nAre you sure you want to add this device anyway?"
       }
     },
     "error": {

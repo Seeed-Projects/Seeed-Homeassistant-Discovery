@@ -16,6 +16,10 @@
       "bluetooth_confirm": {
         "title": "发现蓝牙设备",
         "description": "发现了一个 Seeed HA 蓝牙设备:\n\n**设备名称:** {name}\n**型号:** {model}\n**蓝牙地址:** {address}\n**当前传感器:** {sensors}\n**支持控制:** {control}\n\n是否添加此设备？"
+      },
+      "confirm_already_connected": {
+        "title": "⚠️ 设备已被连接",
+        "description": "**警告:** 此设备已连接到另一个 Home Assistant 实例。\n\n**设备名称:** {name}\n**地址:** {host}\n\n添加此设备可能会导致冲突或意外行为。设备同一时间只能维持一个活动连接。\n\n确定要添加此设备吗？"
       }
     },
     "error": {

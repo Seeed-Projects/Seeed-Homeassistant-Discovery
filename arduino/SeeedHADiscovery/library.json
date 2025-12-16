@@ -1,6 +1,6 @@
 {
   "name": "Seeed Home Assistant Discovery",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "Connect ESP32 devices to Home Assistant via WiFi. A lightweight library for ESP32-C3/C5/C6/S3 with mDNS auto-discovery, WebSocket real-time communication, sensor data reporting, HA entity state subscription, and camera streaming (ESP32-S3 Sense). ESP32-C5 supports 2.4GHz and 5GHz dual-band WiFi.",
   "keywords": [
     "homeassistant",

@@ -736,6 +736,9 @@ void SeeedHADiscovery::_handleHTTPInfo() {
     doc["ip"] = WiFi.localIP().toString();
     doc["mac"] = WiFi.macAddress();
     doc["rssi"] = WiFi.RSSI();
+    // Add connection status - indicates if device is already connected to an HA instance
+    // 添加连接状态 - 表示设备是否已连接到某个 HA 实例
+    doc["connected"] = _wsClientConnected;
 
     String response;
     serializeJson(doc, response);

@@ -179,6 +179,23 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     _LOGGER.info("Device info retrieved: %s (device_id=%s, mac=%s)", 
                                 device_info, device_id, mac_address)
 
+                    # 检查设备是否已被其他 HA 实例连接
+                    # Check if device is already connected to another HA instance
+                    is_connected = device_info.get("connected", False)
+                    if is_connected:
+                        # 设备已被其他 HA 连接，保存信息并跳转到确认步骤
+                        # Device already connected, save info and go to confirm step
+                        _LOGGER.warning(
+                            "Device %s is already connected to another HA instance",
+                            host
+                        )
+                        self._host = host
+                        self._port = port
+                        self._device_id = device_id
+                        self._device_name = device_info.get("name", f"Seeed HA ({host})")
+                        self._model = device_info.get("model", "ESP32")
+                        return await self.async_step_confirm_already_connected()
+
                     # 创建配置入口 | Create config entry
                     return self.async_create_entry(
                         title=device_info.get("name", f"Seeed HA ({host})"),
@@ -216,6 +233,42 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+        )
+
+    async def async_step_confirm_already_connected(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """
+        确认添加已连接到其他 HA 的设备
+        Confirm adding a device that is already connected to another HA.
+
+        当设备已被其他 HA 实例连接时，显示警告并让用户确认。
+        Shows warning when device is already connected to another HA instance.
+        """
+        if user_input is not None:
+            # 用户确认添加 | User confirmed to add
+            _LOGGER.info(
+                "User confirmed adding already-connected device: %s",
+                self._device_name
+            )
+            return self.async_create_entry(
+                title=self._device_name,
+                data={
+                    CONF_HOST: self._host,
+                    CONF_PORT: self._port,
+                    CONF_DEVICE_ID: self._device_id,
+                    CONF_MODEL: self._model,
+                    CONF_CONNECTION_TYPE: CONNECTION_TYPE_WIFI,
+                },
+            )
+
+        # 显示警告确认表单 | Show warning confirmation form
+        return self.async_show_form(
+            step_id="confirm_already_connected",
+            description_placeholders={
+                "name": self._device_name,
+                "host": self._host,
+            },
         )
 
     async def async_step_zeroconf(
@@ -298,7 +351,22 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             FlowResult: 创建配置入口或显示确认表单 | Create entry or show confirm form
         """
         if user_input is not None:
-            # 用户点击了确认，创建配置入口 | User confirmed, create config entry
+            # 用户点击了确认，检查设备是否已被其他 HA 连接
+            # User confirmed, check if device is already connected to another HA
+            try:
+                device_info = await self._async_get_device_info(self._host)
+                if device_info and device_info.get("connected", False):
+                    # 设备已被其他 HA 连接，跳转到警告确认步骤
+                    # Device already connected, go to warning confirm step
+                    _LOGGER.warning(
+                        "Discovered device %s is already connected to another HA",
+                        self._host
+                    )
+                    return await self.async_step_confirm_already_connected()
+            except Exception as err:
+                _LOGGER.debug("Could not check connection status: %s", err)
+
+            # 创建配置入口 | Create config entry
             _LOGGER.info("User confirmed adding WiFi device: %s", self._device_name)
 
             return self.async_create_entry(
