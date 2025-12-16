@@ -954,6 +954,32 @@ void loop() {
     // Check reset button and provide LED feedback | 检查重置按钮并提供 LED 反馈
     checkResetButtonFeedback();
     
+    // Detect if we entered AP mode due to reset button press
+    // 检测是否因按下重置按钮而进入了 AP 模式
+    if (!wifiProvisioningMode && ha.isProvisioningActive()) {
+        Serial1.println();
+        Serial1.println("============================================");
+        Serial1.println("  Entered AP Mode (WiFi Reset Triggered)!");
+        Serial1.println("  已进入 AP 模式（WiFi 重置已触发）！");
+        Serial1.println("============================================");
+        Serial1.println("  Connect to AP: " + String(AP_SSID));
+        Serial1.println("  Then visit: http://192.168.4.1");
+        Serial1.println();
+        
+        wifiProvisioningMode = true;
+        
+        // Reset display state | 重置显示状态
+        initialRefreshDone = false;
+        dataReceived = false;
+        lastEntityCount = 0;
+        
+#ifdef EPAPER_ENABLE
+        // Show provisioning screen on E-Paper | 在墨水屏上显示配网界面
+        Serial1.println("Updating E-Paper to show provisioning screen...");
+        drawProvisioningScreen();
+#endif
+    }
+    
     // If in provisioning mode, handle it specially | 如果处于配网模式，特殊处理
     if (wifiProvisioningMode) {
         // Check if WiFi got connected (user completed provisioning)

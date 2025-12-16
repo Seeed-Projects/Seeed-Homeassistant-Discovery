@@ -1,17 +1,19 @@
 /**
  * ============================================================================
- * reTerminal E1002 - HA State Subscribe with E-Paper Display
- * reTerminal E1002 - HA 状态订阅墨水屏显示示例
+ * reTerminal E1002 - HA State Subscribe with E-Paper Display (6-Color)
+ * reTerminal E1002 - HA 状态订阅墨水屏显示示例（六色）
  * ============================================================================
  *
  * This example demonstrates how to:
  * 本示例展示如何：
- * 1. Subscribe to Home Assistant entity states
+ * 1. Web-based WiFi provisioning (captive portal)
+ *    网页配网（强制门户）
+ * 2. Subscribe to Home Assistant entity states
  *    订阅 Home Assistant 实体状态
- * 2. Display the states on a 6-color E-Paper display (800x480)
+ * 3. Display the states on a 6-color E-Paper display (800x480)
  *    在六色墨水屏上显示状态（800x480）
- * 3. Create a beautiful dashboard UI
- *    创建美观的仪表板界面
+ * 4. Create a beautiful colorful dashboard UI
+ *    创建美观的彩色仪表板界面
  *
  * Hardware:
  * 硬件：
@@ -19,6 +21,10 @@
  *   reTerminal E1002 带六色墨水屏
  * - Display resolution: 800x480
  *   显示分辨率：800x480
+ * - GPIO3: Reset button (long press 6s to reset WiFi)
+ *   GPIO3：重置按钮（长按6秒重置WiFi）
+ * - GPIO6: Status LED (active LOW, provides visual feedback)
+ *   GPIO6：状态 LED（低电平点亮，提供视觉反馈）
  *
  * Supported Colors (6 colors only):
  * 支持的颜色（仅6色）：
@@ -34,12 +40,25 @@
  * - Seeed_GFX: https://github.com/Seeed-Studio/Seeed_GFX
  * - SeeedHADiscovery
  *
+ * WiFi Provisioning:
+ * WiFi 配网：
+ * - On first boot (no saved credentials), device creates AP
+ *   首次启动（无保存凭据）时，设备创建 AP
+ * - Connect to AP and open http://192.168.4.1 in browser
+ *   连接到 AP 并在浏览器中打开 http://192.168.4.1
+ * - Select WiFi network and enter password
+ *   选择 WiFi 网络并输入密码
+ * - Credentials are saved and used on subsequent boots
+ *   凭据被保存并在后续启动时使用
+ * - Long press GPIO3 (6+ seconds) to clear credentials and restart
+ *   长按 GPIO3（6秒以上）清除凭据并重启
+ *
  * Setup Steps:
  * 设置步骤：
- * 1. Configure WiFi credentials below
- *    配置下方的 WiFi 凭据
- * 2. Upload to reTerminal E1002
+ * 1. Upload to reTerminal E1002
  *    上传到 reTerminal E1002
+ * 2. Configure WiFi via captive portal (or use hardcoded credentials)
+ *    通过强制门户配置 WiFi（或使用硬编码凭据）
  * 3. In Home Assistant, find your device and click "Configure"
  *    在 Home Assistant 中找到设备并点击"配置"
  * 4. Subscribe to entities (e.g., temperature, humidity sensors)
@@ -48,7 +67,7 @@
  *    显示屏将自动更新
  *
  * @author Seeed Studio
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 #include <SeeedHADiscovery.h>
@@ -58,9 +77,29 @@
 // Configuration | 配置
 // =============================================================================
 
-// WiFi credentials | WiFi 凭据
+// WiFi Provisioning Configuration | WiFi 配网配置
+// Set to true to enable web-based WiFi provisioning (recommended)
+// Set to false to use hardcoded credentials below
+// 设置为 true 启用网页配网（推荐）
+// 设置为 false 使用下面的硬编码凭据
+#define USE_WIFI_PROVISIONING true
+
+// AP hotspot name for WiFi provisioning | 配网时的 AP 热点名称
+const char* AP_SSID = "reTerminal_E1002_AP";
+
+// Fallback WiFi credentials (only used if USE_WIFI_PROVISIONING is false)
+// 备用 WiFi 凭据（仅在 USE_WIFI_PROVISIONING 为 false 时使用）
 const char* WIFI_SSID = "your-wifi-ssid";
 const char* WIFI_PASSWORD = "your-wifi-password";
+
+// Reset button pin (long press 6s to reset WiFi) | 重置按钮引脚（长按6秒重置WiFi）
+#define PIN_RESET_BUTTON 3
+
+// Status LED pin (active LOW) | 状态 LED 引脚（低电平点亮）
+#define PIN_STATUS_LED 6
+
+// WiFi reset hold time (ms) | WiFi 重置按住时间（毫秒）
+#define WIFI_RESET_HOLD_TIME 6000
 
 // Display refresh interval (ms) - E-Paper refresh is slow, don't update too often
 // 显示刷新间隔（毫秒）- 墨水屏刷新较慢，不要太频繁
@@ -112,6 +151,14 @@ unsigned long configChangeTime = 0;  // Time when config change was detected | �
 // HA connection status tracking | HA 连接状态跟踪
 bool lastHAConnected = false;  // Previous HA connection state | 上次 HA 连接状态
 
+// WiFi provisioning mode tracking | WiFi 配网模式跟踪
+bool wifiProvisioningMode = false;
+
+// Reset button state tracking | 重置按钮状态跟踪
+uint32_t resetButtonPressTime = 0;
+bool resetButtonPressed = false;
+bool resetFeedbackGiven = false;
+
 // Entity data structure | 实体数据结构
 struct EntityDisplay {
     String entityId;
@@ -126,6 +173,68 @@ struct EntityDisplay {
 const int MAX_DISPLAY_ENTITIES = 6;
 EntityDisplay displayEntities[MAX_DISPLAY_ENTITIES];
 int entityCount = 0;
+
+// =============================================================================
+// LED Control Functions | LED 控制函数
+// =============================================================================
+
+/**
+ * Set status LED state | 设置状态 LED 状态
+ * Active LOW: LOW = ON, HIGH = OFF
+ * 低电平有效：LOW = 点亮，HIGH = 熄灭
+ */
+void setStatusLED(bool on) {
+    digitalWrite(PIN_STATUS_LED, on ? LOW : HIGH);
+}
+
+/**
+ * Check reset button and provide visual feedback
+ * 检查重置按钮并提供视觉反馈
+ */
+void checkResetButtonFeedback() {
+    bool currentState = (digitalRead(PIN_RESET_BUTTON) == LOW);
+    uint32_t now = millis();
+    
+    // Button just pressed | 按钮刚被按下
+    if (currentState && !resetButtonPressed) {
+        resetButtonPressed = true;
+        resetButtonPressTime = now;
+        resetFeedbackGiven = false;
+        Serial1.println("Reset button pressed...");
+    }
+    
+    // Button held - check for 6 second threshold | 按钮保持按下 - 检查6秒阈值
+    if (currentState && resetButtonPressed && !resetFeedbackGiven) {
+        uint32_t holdTime = now - resetButtonPressTime;
+        
+        if (holdTime >= WIFI_RESET_HOLD_TIME) {
+            resetFeedbackGiven = true;
+            Serial1.println();
+            Serial1.println("=========================================");
+            Serial1.println("  WiFi Reset threshold reached (6s)!");
+            Serial1.println("  WiFi 重置阈值已达到（6秒）！");
+            Serial1.println("=========================================");
+            
+            // Visual feedback: LED rapid blink | 视觉反馈：LED 快速闪烁
+            for (int i = 0; i < 5; i++) {
+                setStatusLED(true);
+                delay(80);
+                setStatusLED(false);
+                delay(80);
+            }
+            setStatusLED(true);
+        }
+    }
+    
+    // Button released | 按钮释放
+    if (!currentState && resetButtonPressed) {
+        resetButtonPressed = false;
+        if (resetFeedbackGiven) {
+            setStatusLED(false);
+        }
+        resetFeedbackGiven = false;
+    }
+}
 
 // =============================================================================
 // UI Drawing Functions | UI 绘制函数
@@ -408,6 +517,147 @@ void drawStartupScreen(const char* status, const char* ip = nullptr) {
 #endif
 }
 
+/**
+ * Draw WiFi provisioning screen (Colorful 6-color version)
+ * 绘制 WiFi 配网界面（六色彩色版）
+ */
+void drawProvisioningScreen() {
+#ifdef EPAPER_ENABLE
+    epaper.fillScreen(TFT_WHITE);
+    
+    int centerX = SCREEN_WIDTH / 2;
+    
+    // Colorful header bar with gradient effect | 彩色标题栏带渐变效果
+    epaper.fillRect(0, 0, SCREEN_WIDTH, 80, TFT_BLUE);
+    epaper.fillRect(0, 70, SCREEN_WIDTH, 10, TFT_GREEN);
+    
+    epaper.setTextColor(TFT_WHITE);
+    epaper.setTextSize(3);
+    epaper.drawString("WiFi Setup Required", centerX - 180, 25);
+    
+    // WiFi icon with colors | 彩色 WiFi 图标
+    int iconX = centerX;
+    int iconY = 150;
+    epaper.drawCircle(iconX, iconY + 30, 60, TFT_BLUE);
+    epaper.drawCircle(iconX, iconY + 30, 58, TFT_BLUE);
+    epaper.drawCircle(iconX, iconY + 30, 45, TFT_GREEN);
+    epaper.drawCircle(iconX, iconY + 30, 43, TFT_GREEN);
+    epaper.drawCircle(iconX, iconY + 30, 30, TFT_YELLOW);
+    epaper.drawCircle(iconX, iconY + 30, 28, TFT_YELLOW);
+    epaper.fillCircle(iconX, iconY + 30, 12, TFT_RED);
+    // Mask bottom half | 遮住下半部分
+    epaper.fillRect(iconX - 70, iconY + 30, 140, 70, TFT_WHITE);
+    
+    // Main instruction box with colored border | 带彩色边框的说明框
+    int boxY = 220;
+    int boxHeight = 180;
+    epaper.fillRect(50, boxY, SCREEN_WIDTH - 100, boxHeight, TFT_WHITE);
+    epaper.drawRect(50, boxY, SCREEN_WIDTH - 100, boxHeight, TFT_BLUE);
+    epaper.drawRect(51, boxY + 1, SCREEN_WIDTH - 102, boxHeight - 2, TFT_BLUE);
+    epaper.drawRect(52, boxY + 2, SCREEN_WIDTH - 104, boxHeight - 4, TFT_GREEN);
+    
+    // Step 1 with colored number | 带彩色数字的步骤1
+    epaper.fillCircle(100, boxY + 40, 18, TFT_RED);
+    epaper.setTextColor(TFT_WHITE);
+    epaper.setTextSize(2);
+    epaper.drawString("1", 94, boxY + 32);
+    
+    epaper.setTextColor(TFT_BLACK);
+    epaper.drawString("Connect to WiFi hotspot:", 130, boxY + 32);
+    epaper.setTextSize(3);
+    epaper.setTextColor(TFT_BLUE);
+    epaper.drawString(AP_SSID, 130, boxY + 58);
+    
+    // Separator line | 分隔线
+    epaper.drawLine(80, boxY + 95, SCREEN_WIDTH - 80, boxY + 95, TFT_GREEN);
+    
+    // Step 2 with colored number | 带彩色数字的步骤2
+    epaper.fillCircle(100, boxY + 130, 18, TFT_YELLOW);
+    epaper.setTextColor(TFT_BLACK);
+    epaper.setTextSize(2);
+    epaper.drawString("2", 94, boxY + 122);
+    
+    epaper.drawString("Open browser and visit:", 130, boxY + 115);
+    epaper.setTextSize(3);
+    epaper.setTextColor(TFT_RED);
+    epaper.drawString("http://192.168.4.1", 130, boxY + 140);
+    
+    // Bottom instruction | 底部说明
+    epaper.setTextColor(TFT_BLACK);
+    epaper.setTextSize(2);
+    epaper.drawString("Select your WiFi network and enter password", centerX - 230, boxY + boxHeight + 20);
+    
+    // Colorful footer bar | 彩色底部条
+    int barWidth = SCREEN_WIDTH / 6;
+    epaper.fillRect(0 * barWidth, SCREEN_HEIGHT - 30, barWidth, 30, TFT_RED);
+    epaper.fillRect(1 * barWidth, SCREEN_HEIGHT - 30, barWidth, 30, TFT_GREEN);
+    epaper.fillRect(2 * barWidth, SCREEN_HEIGHT - 30, barWidth, 30, TFT_BLUE);
+    epaper.fillRect(3 * barWidth, SCREEN_HEIGHT - 30, barWidth, 30, TFT_YELLOW);
+    epaper.fillRect(4 * barWidth, SCREEN_HEIGHT - 30, barWidth, 30, TFT_BLACK);
+    epaper.fillRect(5 * barWidth, SCREEN_HEIGHT - 30, barWidth, 30, TFT_WHITE);
+    epaper.drawRect(5 * barWidth, SCREEN_HEIGHT - 30, barWidth, 30, TFT_BLACK);
+    
+    epaper.update();
+#endif
+}
+
+/**
+ * Draw WiFi connected screen (Colorful version)
+ * 绘制 WiFi 已连接界面（彩色版）
+ */
+void drawWiFiConnectedScreen(const char* ip) {
+#ifdef EPAPER_ENABLE
+    epaper.fillScreen(TFT_WHITE);
+    
+    int centerX = SCREEN_WIDTH / 2;
+    int centerY = SCREEN_HEIGHT / 2 - 20;
+    
+    // Success header with green | 绿色成功标题
+    epaper.fillRect(0, 0, SCREEN_WIDTH, 80, TFT_GREEN);
+    epaper.setTextColor(TFT_WHITE);
+    epaper.setTextSize(3);
+    epaper.drawString("WiFi Connected!", centerX - 130, 25);
+    
+    // Large checkmark icon with colors | 彩色大对勾图标
+    int checkX = centerX;
+    int checkY = 170;
+    epaper.fillCircle(checkX, checkY, 55, TFT_GREEN);
+    epaper.fillCircle(checkX, checkY, 45, TFT_WHITE);
+    epaper.fillCircle(checkX, checkY, 40, TFT_GREEN);
+    // Draw checkmark | 绘制对勾
+    for (int i = 0; i < 4; i++) {
+        epaper.drawLine(checkX - 25 + i, checkY, checkX - 5 + i, checkY + 20, TFT_WHITE);
+        epaper.drawLine(checkX - 5 + i, checkY + 20, checkX + 30 + i, checkY - 20, TFT_WHITE);
+    }
+    
+    // IP address display with blue box | 蓝色框显示 IP 地址
+    int ipBoxY = 260;
+    epaper.fillRect(centerX - 180, ipBoxY, 360, 60, TFT_BLUE);
+    epaper.setTextColor(TFT_WHITE);
+    epaper.setTextSize(2);
+    epaper.drawString("Device IP Address:", centerX - 100, ipBoxY + 8);
+    epaper.setTextSize(3);
+    epaper.drawString(ip, centerX - 100, ipBoxY + 30);
+    
+    // Instructions box | 说明框
+    int boxY = 350;
+    epaper.fillRect(100, boxY, SCREEN_WIDTH - 200, 70, TFT_YELLOW);
+    epaper.drawRect(100, boxY, SCREEN_WIDTH - 200, 70, TFT_BLACK);
+    
+    epaper.setTextColor(TFT_BLACK);
+    epaper.setTextSize(2);
+    epaper.drawString("Add this device in Home Assistant:", centerX - 180, boxY + 12);
+    epaper.drawString("Settings -> Devices & Services", centerX - 160, boxY + 40);
+    
+    // Footer | 底部
+    epaper.setTextColor(TFT_BLACK);
+    epaper.setTextSize(1);
+    epaper.drawString("Waiting for Home Assistant connection...", centerX - 130, SCREEN_HEIGHT - 40);
+    
+    epaper.update();
+#endif
+}
+
 // =============================================================================
 // HA State Management | HA 状态管理
 // =============================================================================
@@ -452,6 +702,7 @@ void setup() {
     Serial1.println();
     Serial1.println("============================================");
     Serial1.println("  reTerminal E1002 - HA Display Dashboard");
+    Serial1.println("  (6-Color E-Paper)");
     Serial1.println("============================================");
     
 #ifdef EPAPER_ENABLE
@@ -459,24 +710,40 @@ void setup() {
     Serial1.println("Initializing E-Paper display...");
     epaper.begin();
     
-    // Page 1: Show startup screen immediately with "Connecting to WiFi..."
-    // 页面1：立即显示启动画面，状态为"正在连接 WiFi..."
+    // Page 1: Show startup screen immediately with "Initializing..."
+    // 页面1：立即显示启动画面，状态为"正在初始化..."
     Serial1.println("Displaying startup screen...");
-    drawStartupScreen("Connecting to WiFi...");
+    drawStartupScreen("Initializing...");
     
 #else
     Serial1.println("WARNING: EPAPER_ENABLE not defined!");
     Serial1.println("Make sure to enable E-Paper in User_Setup.h");
 #endif
     
+    // Initialize GPIO pins | 初始化 GPIO 引脚
+    Serial1.println("Initializing GPIO pins...");
+    pinMode(PIN_STATUS_LED, OUTPUT);
+    digitalWrite(PIN_STATUS_LED, HIGH);  // LED off (active LOW)
+    pinMode(PIN_RESET_BUTTON, INPUT_PULLUP);
+    Serial1.println("  - Status LED (GPIO6): Initialized");
+    Serial1.println("  - Reset Button (GPIO3): Initialized");
+    
+    // Brief LED blink to indicate boot | 短暂 LED 闪烁指示启动
+    for (int i = 0; i < 2; i++) {
+        setStatusLED(true);
+        delay(100);
+        setStatusLED(false);
+        delay(100);
+    }
+    
     // Enable debug | 启用调试
     ha.enableDebug(true);
     
     // Set device info | 设置设备信息
     ha.setDeviceInfo(
-        "HA Display",      // Device name | 设备名称
+        "HA Display",       // Device name | 设备名称
         "reTerminal E1002", // Model | 型号
-        "1.0.0"            // Version | 版本
+        "1.1.0"             // Version | 版本
     );
     
     // Register HA state callback | 注册 HA 状态回调
@@ -516,7 +783,55 @@ void setup() {
     });
     
     // Connect to WiFi | 连接 WiFi
+    Serial1.println();
+    
+#if USE_WIFI_PROVISIONING
+    // Use web-based WiFi provisioning | 使用网页配网
+    Serial1.println("Starting with WiFi provisioning...");
+    Serial1.print("  AP Name (if needed): ");
+    Serial1.println(AP_SSID);
+    
+    bool wifiConnected = ha.beginWithProvisioning(AP_SSID);
+    
+    // Enable reset button | 启用重置按钮
+    ha.enableResetButton(PIN_RESET_BUTTON);
+    
+    if (!wifiConnected) {
+        // Device is in AP mode for WiFi configuration
+        // 设备处于 AP 模式进行 WiFi 配置
+        Serial1.println();
+        Serial1.println("============================================");
+        Serial1.println("  WiFi Provisioning Mode Active!");
+        Serial1.println("============================================");
+        Serial1.println();
+        Serial1.println("To configure WiFi:");
+        Serial1.println("  1. Connect to WiFi: " + String(AP_SSID));
+        Serial1.println("  2. Open browser: http://192.168.4.1");
+        Serial1.println("  3. Select network and enter password");
+        Serial1.println();
+        
+        wifiProvisioningMode = true;
+        
+        // LED slow blink to indicate provisioning mode | LED 慢闪指示配网模式
+        for (int i = 0; i < 3; i++) {
+            setStatusLED(true);
+            delay(300);
+            setStatusLED(false);
+            delay(300);
+        }
+        
+#ifdef EPAPER_ENABLE
+        Serial1.println("Displaying provisioning screen on E-Paper...");
+        drawProvisioningScreen();
+#endif
+        return;
+    }
+#else
+    // Use hardcoded credentials | 使用硬编码凭据
     Serial1.println("Connecting to WiFi...");
+    Serial1.print("  SSID: ");
+    Serial1.println(WIFI_SSID);
+    
     if (!ha.begin(WIFI_SSID, WIFI_PASSWORD)) {
         Serial1.println("WiFi connection failed!");
 #ifdef EPAPER_ENABLE
@@ -524,16 +839,25 @@ void setup() {
 #endif
         while (1) delay(1000);
     }
+#endif
     
     Serial1.println("WiFi connected!");
     Serial1.print("IP: ");
     Serial1.println(ha.getLocalIP());
     
+    // LED quick blinks to indicate WiFi connected | LED 快闪指示 WiFi 已连接
+    for (int i = 0; i < 3; i++) {
+        setStatusLED(true);
+        delay(100);
+        setStatusLED(false);
+        delay(100);
+    }
+    
 #ifdef EPAPER_ENABLE
     // Update startup screen with IP and waiting for HA status
     // 更新启动画面，显示 IP 和等待 HA 状态
     Serial1.println("Updating startup screen with IP...");
-    drawStartupScreen("Waiting for Home Assistant...", ha.getLocalIP().toString().c_str());
+    drawWiFiConnectedScreen(ha.getLocalIP().toString().c_str());
 #endif
     
     Serial1.println();
@@ -546,14 +870,87 @@ void setup() {
     Serial1.println("2. Find this device and click Configure");
     Serial1.println("3. Select entities to subscribe");
     Serial1.println();
-    
-    // Initial dashboard will be drawn after first data received
-    // 初始仪表板将在收到第一批数据后绘制
 }
 
 void loop() {
     // Handle HA communication | 处理 HA 通信
     ha.handle();
+    
+    // Check reset button and provide LED feedback | 检查重置按钮并提供 LED 反馈
+    checkResetButtonFeedback();
+    
+    // Detect if we entered AP mode due to reset button press
+    // 检测是否因按下重置按钮而进入了 AP 模式
+    if (!wifiProvisioningMode && ha.isProvisioningActive()) {
+        Serial1.println();
+        Serial1.println("============================================");
+        Serial1.println("  Entered AP Mode (WiFi Reset Triggered)!");
+        Serial1.println("============================================");
+        Serial1.println("  Connect to AP: " + String(AP_SSID));
+        Serial1.println("  Then visit: http://192.168.4.1");
+        Serial1.println();
+        
+        wifiProvisioningMode = true;
+        
+        // Reset display state | 重置显示状态
+        initialRefreshDone = false;
+        dataReceived = false;
+        lastEntityCount = 0;
+        
+#ifdef EPAPER_ENABLE
+        Serial1.println("Updating E-Paper to show provisioning screen...");
+        drawProvisioningScreen();
+#endif
+    }
+    
+    // If in provisioning mode, handle it specially | 如果处于配网模式，特殊处理
+    if (wifiProvisioningMode) {
+        // Check if WiFi got connected (user completed provisioning)
+        // 检查 WiFi 是否已连接（用户完成了配网）
+        if (ha.isWiFiConnected()) {
+            Serial1.println();
+            Serial1.println("============================================");
+            Serial1.println("  WiFi Connected via Provisioning!");
+            Serial1.println("============================================");
+            Serial1.print("IP: ");
+            Serial1.println(ha.getLocalIP());
+            
+            wifiProvisioningMode = false;
+            
+            // LED quick blinks to indicate WiFi connected | LED 快闪指示 WiFi 已连接
+            for (int i = 0; i < 5; i++) {
+                setStatusLED(true);
+                delay(100);
+                setStatusLED(false);
+                delay(100);
+            }
+            
+#ifdef EPAPER_ENABLE
+            Serial1.println("Updating E-Paper to show connected status...");
+            drawWiFiConnectedScreen(ha.getLocalIP().toString().c_str());
+#endif
+            
+            Serial1.println();
+            Serial1.println("Now configure entity subscriptions in HA:");
+            Serial1.println("1. Go to Settings > Devices & Services");
+            Serial1.println("2. Find this device and click Configure");
+            Serial1.println("3. Select entities to subscribe");
+            Serial1.println();
+        }
+        
+        // Print status periodically in provisioning mode | 配网模式下定期打印状态
+        static unsigned long lastProvisioningStatus = 0;
+        unsigned long now = millis();
+        if (now - lastProvisioningStatus > 10000) {
+            lastProvisioningStatus = now;
+            Serial1.println("Status: WiFi Provisioning mode active...");
+            Serial1.println("  Connect to AP: " + String(AP_SSID));
+            Serial1.println("  Then visit: http://192.168.4.1");
+        }
+        
+        delay(100);
+        return;
+    }
     
     unsigned long now = millis();
     int currentEntityCount = ha.getHAStates().size();
