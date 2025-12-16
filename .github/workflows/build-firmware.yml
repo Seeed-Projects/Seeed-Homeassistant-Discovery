@@ -305,15 +305,13 @@ jobs:
           path: build/ButtonSwitch/${{ matrix.chip }}/
 
   # LED Switch - Universal (using XIAO boards for LED_BUILTIN compatibility)
+  # Note: XIAO ESP32-C3 has no user LED, so C3 is excluded
   build-led-switch:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - chip: C3
-            fqbn: "esp32:esp32:XIAO_ESP32C3:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
-            family: "ESP32-C3"
           - chip: C5
             fqbn: "esp32:esp32:XIAO_ESP32C5:CDCOnBoot=cdc,PartitionScheme=default_8MB,FlashMode=qio,FlashSize=8M"
             family: "ESP32-C5"
