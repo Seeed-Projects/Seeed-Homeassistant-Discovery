@@ -58,7 +58,7 @@ jobs:
       - name: Compile
         run: |
           mkdir -p build/IoTButtonV2_DeepSleep
-          arduino-cli compile --fqbn "esp32:esp32:esp32c6:CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M" \
+          arduino-cli compile --fqbn "esp32:esp32:XIAO_ESP32C6:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M" \
             --output-dir "build/IoTButtonV2_DeepSleep" --export-binaries \
             "arduino/SeeedHADiscovery/examples/IoTButtonV2_DeepSleep/IoTButtonV2_DeepSleep.ino"
       - name: Prepare firmware
@@ -139,7 +139,7 @@ jobs:
       - name: Compile
         run: |
           mkdir -p build/reTerminal_E1001
-          arduino-cli compile --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,PartitionScheme=huge_app,USBMode=hwcdc,PSRAM=opi,FlashMode=qio,FlashSize=8M" \
+          arduino-cli compile --fqbn "esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,PartitionScheme=default,USBMode=hwcdc,PSRAM=opi,FlashMode=qio,FlashSize=8M" \
             --output-dir "build/reTerminal_E1001" --export-binaries \
             "arduino/SeeedHADiscovery/examples/reTerminal_E1001_HASubscribe_Display/reTerminal_E1001_HASubscribe_Display.ino" || echo "Build may require Seeed_GFX library"
       - name: Prepare firmware
@@ -182,7 +182,7 @@ jobs:
       - name: Compile
         run: |
           mkdir -p build/reTerminal_E1002
-          arduino-cli compile --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,PartitionScheme=huge_app,USBMode=hwcdc,PSRAM=opi,FlashMode=qio,FlashSize=8M" \
+          arduino-cli compile --fqbn "esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,PartitionScheme=default,USBMode=hwcdc,PSRAM=opi,FlashMode=qio,FlashSize=8M" \
             --output-dir "build/reTerminal_E1002" --export-binaries \
             "arduino/SeeedHADiscovery/examples/reTerminal_E1002_HASubscribe_Display/reTerminal_E1002_HASubscribe_Display.ino" || echo "Build may require Seeed_GFX library"
       - name: Prepare firmware
