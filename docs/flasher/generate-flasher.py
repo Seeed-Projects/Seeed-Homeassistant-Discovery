@@ -47,6 +47,12 @@ CHIP_OFFSETS = {
         "boot_app0": 0xe000,
         "firmware": 0x10000
     },
+    "ESP32-C5": {
+        "bootloader": 0x2000,  # ESP32-C5 uses 0x2000 | ESP32-C5 使用 0x2000
+        "partitions": 0x8000,
+        "boot_app0": 0xe000,
+        "firmware": 0x10000
+    },
     "ESP32-C6": {
         "bootloader": 0x0,
         "partitions": 0x8000,

@@ -156,7 +156,10 @@ build_firmware() {
     local bootloader_offset=0
     case "$chip_family" in
         "ESP32"|"ESP32-S2")
-            bootloader_offset=4096
+            bootloader_offset=4096   # 0x1000
+            ;;
+        "ESP32-C5")
+            bootloader_offset=8192   # 0x2000 - ESP32-C5 specific
             ;;
         *)
             bootloader_offset=0

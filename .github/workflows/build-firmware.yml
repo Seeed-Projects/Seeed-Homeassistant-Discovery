@@ -168,6 +168,10 @@ jobs:
           elif [[ "${{ matrix.board }}" == *"esp32s2"* ]]; then
             CHIP_FAMILY="ESP32-S2"
             BOOTLOADER_OFFSET=4096  # 0x1000
+          elif [[ "${{ matrix.board }}" == *"esp32c5"* ]] || [[ "${{ matrix.board }}" == *"XIAO_ESP32C5"* ]]; then
+            # ESP32-C5 uses 0x2000 for bootloader | ESP32-C5 的 bootloader 偏移为 0x2000
+            CHIP_FAMILY="ESP32-C5"
+            BOOTLOADER_OFFSET=8192  # 0x2000
           elif [[ "${{ matrix.board }}" == *"esp32c3"* ]]; then
             CHIP_FAMILY="ESP32-C3"
             BOOTLOADER_OFFSET=0
