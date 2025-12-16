@@ -265,10 +265,11 @@ SeeedHADiscovery::SeeedHADiscovery() :
     _provisioning(nullptr),
     _haStateCallback(nullptr),
     _debug(false),
-    _lastHeartbeat(0)
+    _lastHeartbeat(0),
+    _deviceId("")  // Will be generated in begin() after WiFi init
 {
-    // Generate device ID | 生成设备 ID
-    _deviceId = _generateDeviceId();
+    // Device ID will be generated in begin() after WiFi is initialized
+    // 设备 ID 将在 begin() 中 WiFi 初始化后生成
 }
 
 SeeedHADiscovery::~SeeedHADiscovery() {
@@ -351,8 +352,13 @@ bool SeeedHADiscovery::begin(const char* ssid, const char* password) {
         return false;
     }
 
+    // Generate device ID after WiFi is initialized (MAC address is now valid)
+    // 在 WiFi 初始化后生成设备 ID（此时 MAC 地址有效）
+    _deviceId = _generateDeviceId();
+
     _log("WiFi connected!");
     _log("IP Address: " + WiFi.localIP().toString());
+    _log("MAC Address: " + WiFi.macAddress());
     _log("Device ID: " + _deviceId);
 
     // -------------------------------------------------------------------------
@@ -403,7 +409,13 @@ bool SeeedHADiscovery::beginWithProvisioning(const String& apSSID) {
     if (connected) {
         // WiFi connected, start HA services | WiFi 已连接，启动 HA 服务
         _log("WiFi connected via provisioning!");
+        
+        // Generate device ID after WiFi is initialized (MAC address is now valid)
+        // 在 WiFi 初始化后生成设备 ID（此时 MAC 地址有效）
+        _deviceId = _generateDeviceId();
+        
         _log("IP Address: " + WiFi.localIP().toString());
+        _log("MAC Address: " + WiFi.macAddress());
         _log("Device ID: " + _deviceId);
 
         // Start mDNS service | 启动 mDNS 服务
@@ -487,6 +499,9 @@ void SeeedHADiscovery::_setupMDNS() {
         MDNS.addServiceTxt("seeed_ha", "tcp", "name", _deviceName);
         MDNS.addServiceTxt("seeed_ha", "tcp", "model", _deviceModel);
         MDNS.addServiceTxt("seeed_ha", "tcp", "version", _deviceVersion);
+        // Add MAC address for reliable device identification
+        // 添加 MAC 地址用于可靠的设备识别
+        MDNS.addServiceTxt("seeed_ha", "tcp", "mac", WiFi.macAddress());
 
         _log("mDNS service started");
     } else {

@@ -159,14 +159,25 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
                 if device_info:
                     # 成功获取设备信息 | Successfully got device info
-                    device_id = device_info.get("device_id", host.replace(".", "_"))
+                    # 优先使用 MAC 地址生成唯一 ID，这是最可靠的设备标识
+                    # Prefer MAC address for unique ID as it's the most reliable identifier
+                    mac_address = device_info.get("mac", "")
+                    if mac_address:
+                        # 使用 MAC 地址作为设备 ID（移除冒号并转大写）
+                        # Use MAC address as device ID (remove colons and uppercase)
+                        device_id = mac_address.replace(":", "").upper()
+                    else:
+                        # 回退到 device_id 或 IP 地址
+                        # Fallback to device_id or IP address
+                        device_id = device_info.get("device_id", host.replace(".", "_"))
 
                     # 检查设备是否已存在 | Check if device already exists
                     await self.async_set_unique_id(device_id)
                     self._abort_if_unique_id_configured()
 
                     # 设备信息获取成功 | Device info retrieved successfully
-                    _LOGGER.info("Device info retrieved: %s", device_info)
+                    _LOGGER.info("Device info retrieved: %s (device_id=%s, mac=%s)", 
+                                device_info, device_id, mac_address)
 
                     # 创建配置入口 | Create config entry
                     return self.async_create_entry(
@@ -233,12 +244,24 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         # 从 mDNS TXT 记录中获取设备信息
         # Get device info from mDNS TXT records
-        device_id = properties.get("id", host.replace(".", "_"))
+        # 优先使用 MAC 地址作为设备 ID（最可靠）
+        # Prefer MAC address as device ID (most reliable)
+        mac_address = properties.get("mac", "")
+        if mac_address:
+            # 使用 MAC 地址作为设备 ID（移除冒号并转大写）
+            # Use MAC address as device ID (remove colons and uppercase)
+            device_id = mac_address.replace(":", "").upper()
+        else:
+            # 回退到 id 属性或 IP 地址
+            # Fallback to id property or IP address
+            device_id = properties.get("id", host.replace(".", "_"))
+        
         device_name = properties.get("name", f"Seeed HA ({host})")
         model = properties.get("model", "ESP32")
 
         # 设备信息 | Device info
-        _LOGGER.info("Device ID: %s, Name: %s, Model: %s", device_id, device_name, model)
+        _LOGGER.info("Device ID: %s, Name: %s, Model: %s, MAC: %s", 
+                    device_id, device_name, model, mac_address)
 
         # 设置唯一 ID，如果设备已配置则更新其地址 | Set unique ID, update address if configured
         await self.async_set_unique_id(device_id)
