@@ -9,6 +9,7 @@ Receive and display entity states from Home Assistant on your device. Perfect fo
 - Real-time state updates
 - Access to entity attributes (friendly name, unit, device class)
 - Dynamic entity configuration via HA interface
+- **WiFi Provisioning**: Web-based WiFi configuration (no hardcoded credentials needed)
 
 ## Use Cases
 
@@ -41,20 +42,40 @@ Install manually from [GitHub](https://github.com/limengdu/SeeedHADiscovery).
 
 ## Quick Start
 
-### 1. Configure WiFi
+### 1. WiFi Configuration
 
+**Option A: WiFi Provisioning (Recommended)**
+
+WiFi provisioning is enabled by default. On first boot:
+1. Device creates AP hotspot: `Seeed_StateDisplay_AP`
+2. Connect your phone/computer to this AP
+3. Browser opens automatically, or navigate to `http://192.168.4.1`
+4. Select your WiFi network and enter password
+5. Device restarts and connects to your WiFi
+
+**Option B: Hardcoded Credentials**
+
+To use hardcoded credentials instead:
 ```cpp
+#define USE_WIFI_PROVISIONING false
 const char* WIFI_SSID = "your-wifi-ssid";
 const char* WIFI_PASSWORD = "your-wifi-password";
 ```
 
-### 2. Upload and Connect
+### 2. ESP32-C5 5GHz WiFi (Optional)
+
+To force a specific WiFi band on ESP32-C5:
+```cpp
+#define WIFI_BAND_MODE WIFI_BAND_MODE_5G_ONLY  // or WIFI_BAND_MODE_2G_ONLY
+```
+
+### 3. Upload and Connect
 
 1. Upload the sketch to your device
 2. Open Serial Monitor (115200 baud)
 3. Add device in Home Assistant
 
-### 3. Configure Subscriptions in HA
+### 4. Configure Subscriptions in HA
 
 1. Find your device in **Settings** → **Devices & Services**
 2. Click **Configure** on your device
@@ -142,7 +163,10 @@ if (temp && temp->hasValue() && temp->getFloat() > 28.0) {
 - Verify HA WebSocket connection
 - Check if entities exist in HA
 
+### Can't access provisioning page
+- Make sure you're connected to the device's AP
+- Try navigating manually to `http://192.168.4.1`
+
 ## License
 
 Part of the SeeedHADiscovery library.
-

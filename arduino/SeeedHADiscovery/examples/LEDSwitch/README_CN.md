@@ -8,6 +8,7 @@
 - 实时状态反馈
 - 支持板载和外接 LED
 - 可配置 LED 极性（高电平/低电平有效）
+- **WiFi 配网**：网页配置 WiFi（无需硬编码凭据）
 
 ## 硬件要求
 
@@ -55,9 +56,22 @@ GPIO 引脚 ---[220Ω]--- LED (+) --- LED (-) --- GND
 
 ## 快速开始
 
-### 1. 配置 WiFi
+### 1. WiFi 配置
 
+**方式 A：WiFi 配网（推荐）**
+
+WiFi 配网默认启用。首次启动时：
+1. 设备创建 AP 热点：`Seeed_LED_AP`
+2. 将手机/电脑连接到此 AP
+3. 浏览器自动打开，或手动访问 `http://192.168.4.1`
+4. 选择你的 WiFi 网络并输入密码
+5. 设备重启并连接到你的 WiFi
+
+**方式 B：硬编码凭据**
+
+如需使用硬编码凭据：
 ```cpp
+#define USE_WIFI_PROVISIONING false
 const char* WIFI_SSID = "你的WiFi名称";
 const char* WIFI_PASSWORD = "你的WiFi密码";
 ```
@@ -78,7 +92,14 @@ const char* WIFI_PASSWORD = "你的WiFi密码";
 #define LED_ACTIVE_LOW true
 ```
 
-### 4. 上传并连接
+### 4. ESP32-C5 5GHz WiFi（可选）
+
+在 ESP32-C5 上强制使用特定 WiFi 频段：
+```cpp
+#define WIFI_BAND_MODE WIFI_BAND_MODE_5G_ONLY  // 或 WIFI_BAND_MODE_2G_ONLY
+```
+
+### 5. 上传并连接
 
 1. 选择开发板：**XIAO ESP32C6**（或你的开发板）
 2. 上传程序
@@ -114,7 +135,10 @@ const char* WIFI_PASSWORD = "你的WiFi密码";
 - 检查 WiFi 信号强度
 - 如果连接失败，LED 会闪烁
 
+### 无法访问配网页面
+- 确保已连接到设备的 AP
+- 尝试手动访问 `http://192.168.4.1`
+
 ## 许可证
 
 SeeedHADiscovery 库的一部分。
-

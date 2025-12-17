@@ -9,6 +9,7 @@
 - 实时状态更新
 - 访问实体属性（友好名称、单位、设备类别）
 - 通过 HA 界面动态配置实体
+- **WiFi 配网**：网页配置 WiFi（无需硬编码凭据）
 
 ## 使用场景
 
@@ -41,20 +42,40 @@
 
 ## 快速开始
 
-### 1. 配置 WiFi
+### 1. WiFi 配置
 
+**方式 A：WiFi 配网（推荐）**
+
+WiFi 配网默认启用。首次启动时：
+1. 设备创建 AP 热点：`Seeed_StateDisplay_AP`
+2. 将手机/电脑连接到此 AP
+3. 浏览器自动打开，或手动访问 `http://192.168.4.1`
+4. 选择你的 WiFi 网络并输入密码
+5. 设备重启并连接到你的 WiFi
+
+**方式 B：硬编码凭据**
+
+如需使用硬编码凭据：
 ```cpp
+#define USE_WIFI_PROVISIONING false
 const char* WIFI_SSID = "你的WiFi名称";
 const char* WIFI_PASSWORD = "你的WiFi密码";
 ```
 
-### 2. 上传并连接
+### 2. ESP32-C5 5GHz WiFi（可选）
+
+在 ESP32-C5 上强制使用特定 WiFi 频段：
+```cpp
+#define WIFI_BAND_MODE WIFI_BAND_MODE_5G_ONLY  // 或 WIFI_BAND_MODE_2G_ONLY
+```
+
+### 3. 上传并连接
 
 1. 上传程序到设备
 2. 打开串口监视器（115200 波特率）
 3. 在 Home Assistant 中添加设备
 
-### 3. 在 HA 中配置订阅
+### 4. 在 HA 中配置订阅
 
 1. 在 **设置** → **设备与服务** 中找到你的设备
 2. 点击设备上的 **配置**
@@ -142,7 +163,10 @@ if (temp && temp->hasValue() && temp->getFloat() > 28.0) {
 - 验证 HA WebSocket 连接
 - 检查实体是否存在于 HA 中
 
+### 无法访问配网页面
+- 确保已连接到设备的 AP
+- 尝试手动访问 `http://192.168.4.1`
+
 ## 许可证
 
 SeeedHADiscovery 库的一部分。
-

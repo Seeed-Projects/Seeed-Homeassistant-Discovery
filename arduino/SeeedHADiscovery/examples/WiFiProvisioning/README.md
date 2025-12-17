@@ -11,6 +11,7 @@ This example demonstrates the web-based WiFi provisioning feature of the SeeedHA
 - **Refresh Networks**: Click to rescan available networks
 - **Modern UI**: Beautiful, responsive web interface
 - **Reset Button**: Long press a button for 6 seconds to clear credentials and re-enter provisioning mode
+- **ESP32-C5 5GHz Support**: Configure band mode for dual-band WiFi
 
 ## How It Works
 
@@ -31,7 +32,9 @@ This example demonstrates the web-based WiFi provisioning feature of the SeeedHA
 
 ## Hardware Requirements
 
-- Any ESP32 board (ESP32, ESP32-C3, ESP32-C6, ESP32-S3, etc.)
+- Any ESP32 board (ESP32, ESP32-C3, ESP32-C5, ESP32-C6, ESP32-S3, etc.)
+
+> **Note**: XIAO ESP32-C5 supports both 2.4GHz and 5GHz dual-band WiFi
 
 ## Software Dependencies
 
@@ -83,6 +86,20 @@ void loop() {
 ```cpp
 // Use custom AP name
 ha.beginWithProvisioning("My_Custom_AP_Name");
+```
+
+### ESP32-C5 5GHz WiFi Configuration
+
+```cpp
+// Force specific band mode on ESP32-C5
+#define WIFI_BAND_MODE WIFI_BAND_MODE_5G_ONLY  // or WIFI_BAND_MODE_2G_ONLY or WIFI_BAND_MODE_AUTO
+
+// In setup(), before beginWithProvisioning:
+#if defined(WIFI_BAND_MODE) && defined(CONFIG_SOC_WIFI_SUPPORT_5G)
+    #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 2)
+        WiFi.setBandMode(WIFI_BAND_MODE);
+    #endif
+#endif
 ```
 
 ### Clear Saved Credentials
@@ -205,7 +222,12 @@ The captive portal provides a modern, responsive interface:
 - Check if the router is reachable
 - Try moving closer to the router
 
+### ESP32-C5 not finding 5GHz networks
+
+- Ensure `WIFI_BAND_MODE` is set correctly
+- Verify your router broadcasts on 5GHz band
+- Check if ESP-IDF version supports 5GHz (requires 5.4.2+)
+
 ## License
 
 MIT License - See LICENSE file for details.
-

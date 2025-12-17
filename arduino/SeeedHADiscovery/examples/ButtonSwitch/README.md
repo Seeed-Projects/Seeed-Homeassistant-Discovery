@@ -9,6 +9,7 @@ A multi-click button detection example that creates three independent switches i
 - **Long Press (>1s)**: Toggle Switch 3
 - Bidirectional control (button ↔ Home Assistant)
 - Real-time state synchronization
+- **WiFi Provisioning**: Web-based WiFi configuration (no hardcoded credentials needed)
 
 ## Hardware Requirements
 
@@ -43,9 +44,22 @@ Install manually from [GitHub](https://github.com/limengdu/SeeedHADiscovery).
 
 ## Quick Start
 
-### 1. Configure WiFi
+### 1. WiFi Configuration
 
+**Option A: WiFi Provisioning (Recommended)**
+
+WiFi provisioning is enabled by default. On first boot:
+1. Device creates AP hotspot: `Seeed_Button_AP`
+2. Connect your phone/computer to this AP
+3. Browser opens automatically, or navigate to `http://192.168.4.1`
+4. Select your WiFi network and enter password
+5. Device restarts and connects to your WiFi
+
+**Option B: Hardcoded Credentials**
+
+To use hardcoded credentials instead:
 ```cpp
+#define USE_WIFI_PROVISIONING false
 const char* WIFI_SSID = "Your_WiFi_SSID";
 const char* WIFI_PASSWORD = "Your_WiFi_Password";
 ```
@@ -56,7 +70,14 @@ const char* WIFI_PASSWORD = "Your_WiFi_Password";
 #define BUTTON_PIN D1  // Change if needed
 ```
 
-### 3. Upload and Connect
+### 3. ESP32-C5 5GHz WiFi (Optional)
+
+To force a specific WiFi band on ESP32-C5:
+```cpp
+#define WIFI_BAND_MODE WIFI_BAND_MODE_5G_ONLY  // or WIFI_BAND_MODE_2G_ONLY
+```
+
+### 4. Upload and Connect
 
 1. Select board: **XIAO ESP32C6** (or your board)
 2. Upload the sketch
@@ -105,8 +126,12 @@ const char* WIFI_PASSWORD = "Your_WiFi_Password";
 ### WiFi connection fails
 - Verify SSID and password
 - Check WiFi signal strength
+- If using provisioning, ensure device is in AP mode
+
+### Can't access provisioning page
+- Make sure you're connected to the device's AP
+- Try navigating manually to `http://192.168.4.1`
 
 ## License
 
 Part of the SeeedHADiscovery library.
-

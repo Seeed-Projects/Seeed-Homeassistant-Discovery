@@ -8,6 +8,7 @@ Control an LED from Home Assistant via WiFi. This example demonstrates basic swi
 - Real-time state feedback
 - Support for both onboard and external LEDs
 - Configurable LED polarity (active high/low)
+- **WiFi Provisioning**: Web-based WiFi configuration (no hardcoded credentials needed)
 
 ## Hardware Requirements
 
@@ -55,9 +56,22 @@ Install manually from [GitHub](https://github.com/limengdu/SeeedHADiscovery).
 
 ## Quick Start
 
-### 1. Configure WiFi
+### 1. WiFi Configuration
 
+**Option A: WiFi Provisioning (Recommended)**
+
+WiFi provisioning is enabled by default. On first boot:
+1. Device creates AP hotspot: `Seeed_LED_AP`
+2. Connect your phone/computer to this AP
+3. Browser opens automatically, or navigate to `http://192.168.4.1`
+4. Select your WiFi network and enter password
+5. Device restarts and connects to your WiFi
+
+**Option B: Hardcoded Credentials**
+
+To use hardcoded credentials instead:
 ```cpp
+#define USE_WIFI_PROVISIONING false
 const char* WIFI_SSID = "Your_WiFi_SSID";
 const char* WIFI_PASSWORD = "Your_WiFi_Password";
 ```
@@ -78,7 +92,14 @@ For XIAO ESP32-C3 or external LED:
 #define LED_ACTIVE_LOW true
 ```
 
-### 4. Upload and Connect
+### 4. ESP32-C5 5GHz WiFi (Optional)
+
+To force a specific WiFi band on ESP32-C5:
+```cpp
+#define WIFI_BAND_MODE WIFI_BAND_MODE_5G_ONLY  // or WIFI_BAND_MODE_2G_ONLY
+```
+
+### 5. Upload and Connect
 
 1. Select board: **XIAO ESP32C6** (or your board)
 2. Upload the sketch
@@ -112,9 +133,12 @@ Access device status at: `http://<device_ip>/`
 ### WiFi connection fails
 - Verify SSID and password
 - Check WiFi signal strength
-- Red LED will blink if connection fails
+- LED will blink if connection fails
+
+### Can't access provisioning page
+- Make sure you're connected to the device's AP
+- Try navigating manually to `http://192.168.4.1`
 
 ## License
 
 Part of the SeeedHADiscovery library.
-

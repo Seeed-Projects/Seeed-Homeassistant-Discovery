@@ -11,6 +11,7 @@
 - **刷新网络**: 点击刷新按钮重新扫描网络
 - **现代 UI**: 美观、响应式的网页界面
 - **重置按钮**: 长按按钮 6 秒清除凭据并重新进入配网模式
+- **ESP32-C5 5GHz 支持**: 配置双频 WiFi 的频段模式
 
 ## 工作原理
 
@@ -31,7 +32,9 @@
 
 ## 硬件要求
 
-- 任何 ESP32 开发板（ESP32、ESP32-C3、ESP32-C6、ESP32-S3 等）
+- 任何 ESP32 开发板（ESP32、ESP32-C3、ESP32-C5、ESP32-C6、ESP32-S3 等）
+
+> **注意**：XIAO ESP32-C5 支持 2.4GHz 和 5GHz 双频 WiFi
 
 ## 软件依赖
 
@@ -83,6 +86,20 @@ void loop() {
 ```cpp
 // 使用自定义 AP 名称
 ha.beginWithProvisioning("我的自定义_AP_名称");
+```
+
+### ESP32-C5 5GHz WiFi 配置
+
+```cpp
+// 在 ESP32-C5 上强制使用特定频段模式
+#define WIFI_BAND_MODE WIFI_BAND_MODE_5G_ONLY  // 或 WIFI_BAND_MODE_2G_ONLY 或 WIFI_BAND_MODE_AUTO
+
+// 在 setup() 中，beginWithProvisioning 之前：
+#if defined(WIFI_BAND_MODE) && defined(CONFIG_SOC_WIFI_SUPPORT_5G)
+    #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 2)
+        WiFi.setBandMode(WIFI_BAND_MODE);
+    #endif
+#endif
 ```
 
 ### 清除保存的凭据
@@ -205,7 +222,12 @@ void loop() {
 - 检查路由器是否可达
 - 尝试靠近路由器
 
+### ESP32-C5 找不到 5GHz 网络
+
+- 确保正确设置了 `WIFI_BAND_MODE`
+- 验证路由器在 5GHz 频段广播
+- 检查 ESP-IDF 版本是否支持 5GHz（需要 5.4.2+）
+
 ## 许可证
 
 MIT 许可证 - 详见 LICENSE 文件。
-
