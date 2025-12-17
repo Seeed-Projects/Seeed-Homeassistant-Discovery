@@ -4,17 +4,20 @@ Stream video from XIAO ESP32-S3 Sense camera to Home Assistant via MJPEG. Auto-d
 
 ## Features
 
+- **Web-based WiFi provisioning** (captive portal)
 - MJPEG video streaming
 - Still image capture
 - Web UI for camera preview
 - Home Assistant auto-discovery
 - Dual-core processing (camera on Core 0, HA on Core 1)
 - PSRAM support for high quality images
+- **WiFi reset button** (long press D1 for 6s)
 
 ## Hardware Requirements
 
 - **XIAO ESP32-S3 Sense** with OV2640 camera module
 - PSRAM must be enabled
+- D1 (GPIO2): Reset button (optional, for WiFi reset)
 
 > ⚠️ This example only works with XIAO ESP32-S3 Sense!
 
@@ -49,22 +52,24 @@ Install manually from [GitHub](https://github.com/limengdu/SeeedHADiscovery).
 
 ## Quick Start
 
-### 1. Configure WiFi
-
-```cpp
-const char* WIFI_SSID = "Your_WiFi_SSID";
-const char* WIFI_PASSWORD = "Your_WiFi_Password";
-```
-
-### 2. Upload
+### 1. Upload
 
 1. Select board: **XIAO_ESP32S3**
 2. Enable PSRAM: **Tools** → **PSRAM** → **OPI PSRAM**
 3. Upload the sketch
 
+### 2. WiFi Provisioning (First Boot)
+
+On first boot, the device will create a WiFi hotspot:
+
+1. Connect to WiFi: **XIAO_Camera_AP**
+2. Open browser: **http://192.168.4.1**
+3. Select your WiFi network and enter password
+4. Device will restart and connect to your WiFi
+
 ### 3. Access Camera
 
-After upload, check Serial Monitor for URLs:
+After WiFi is connected, check Serial Monitor for URLs:
 
 | URL | Description |
 |-----|-------------|
@@ -124,6 +129,8 @@ Core 1: Main Loop
 
 ## Pin Configuration
 
+### Camera Pins
+
 | Function | GPIO |
 |----------|------|
 | XCLK | 10 |
@@ -133,6 +140,23 @@ Core 1: Main Loop
 | VSYNC | 38 |
 | HREF | 47 |
 | PCLK | 13 |
+
+### WiFi Provisioning Pins
+
+| Function | GPIO | Description |
+|----------|------|-------------|
+| Reset Button | D1 (GPIO2) | Long press 6s to reset WiFi |
+| Status LED | Built-in LED | Visual feedback |
+
+## WiFi Reset
+
+To clear saved WiFi credentials and enter provisioning mode:
+
+1. **Long press D1 button for 6+ seconds**
+2. LED will blink rapidly when threshold is reached
+3. Release button to trigger reset
+4. Device restarts in AP mode
+5. Follow WiFi provisioning steps above
 
 ## Troubleshooting
 

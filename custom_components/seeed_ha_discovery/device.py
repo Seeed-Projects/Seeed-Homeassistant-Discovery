@@ -232,6 +232,21 @@ class SeeedHADevice:
             # 步骤 4: 请求设备发送实体信息
             await self.async_request_discovery()
 
+            # 步骤 5: 如果有订阅实体，推送当前状态（确保设备重启后能收到状态）
+            # Step 5: If there are subscribed entities, push current states
+            # (ensures device receives states after restart)
+            if self._subscribed_entities:
+                _LOGGER.info("Pushing %d subscribed entity states after connect", 
+                           len(self._subscribed_entities))
+                # 延迟一小段时间让设备准备好接收
+                await asyncio.sleep(0.5)
+                for entity_id in self._subscribed_entities:
+                    state = self.hass.states.get(entity_id)
+                    if state:
+                        await self._async_push_ha_state(entity_id, state)
+                    else:
+                        _LOGGER.warning("Entity not found: %s", entity_id)
+
             return True
 
         except Exception as err:
@@ -448,9 +463,8 @@ class SeeedHADevice:
         """
         while not self._connected:
             if await self.async_connect():
-                # 重连后恢复实体订阅 | Restore entity subscription after reconnect
-                if self._subscribed_entities:
-                    await self._async_restore_entity_subscription()
+                # 状态推送已在 async_connect 中完成，无需再次调用
+                # State push is already done in async_connect, no need to call again
                 break
             
             await asyncio.sleep(RECONNECT_INTERVAL)

@@ -153,6 +153,9 @@ unsigned long configChangeTime = 0;  // Time when config change was detected | �
 
 // HA connection status tracking | HA 连接状态跟踪
 bool lastHAConnected = false;  // Previous HA connection state | 上次 HA 连接状态
+unsigned long haStatusChangeTime = 0;  // Time when HA status changed | HA 状态变化时间
+bool haStatusPendingRefresh = false;  // Flag for pending refresh due to HA status change | HA 状态变化待刷新标志
+const unsigned long HA_STATUS_DEBOUNCE = 30000;  // 30 seconds debounce for HA status | HA 状态防抖时间30秒
 
 // WiFi provisioning mode tracking | WiFi 配网模式跟踪
 bool wifiProvisioningMode = false;
@@ -227,23 +230,25 @@ void resetButtonTask(void* parameter) {
                 Serial1.println();
                 Serial1.println("=========================================");
                 Serial1.println("  WiFi Reset threshold reached (6s)!");
-                Serial1.println("  WiFi 重置阈值已达到（6秒）！");
                 Serial1.println("  Release button to reset WiFi...");
-                Serial1.println("  松开按钮以重置 WiFi...");
                 Serial1.println("=========================================");
                 
                 // Audio + Visual feedback (on Core 0, won't block main loop)
                 // 声音 + 视觉反馈（在 Core 0，不会阻塞主循环）
                 for (int i = 0; i < 3; i++) {
-                    tone(PIN_BUZZER, 1500, 100);
+                    tone(PIN_BUZZER, 1500);
                     setStatusLED(true);
                     vTaskDelay(pdMS_TO_TICKS(100));
-                    tone(PIN_BUZZER, 1000, 100);
+                    noTone(PIN_BUZZER);
+                    tone(PIN_BUZZER, 1000);
                     setStatusLED(false);
                     vTaskDelay(pdMS_TO_TICKS(100));
+                    noTone(PIN_BUZZER);
                 }
                 setStatusLED(true);
-                tone(PIN_BUZZER, 2000, 200);
+                tone(PIN_BUZZER, 2000);
+                vTaskDelay(pdMS_TO_TICKS(200));
+                noTone(PIN_BUZZER);
             }
         }
         
@@ -258,10 +263,11 @@ void resetButtonTask(void* parameter) {
                 Serial1.println();
                 Serial1.println("=========================================");
                 Serial1.println("  WiFi Reset triggered!");
-                Serial1.println("  WiFi 重置已触发！");
                 Serial1.println("=========================================");
                 
-                tone(PIN_BUZZER, 800, 500);
+                tone(PIN_BUZZER, 800);
+                vTaskDelay(pdMS_TO_TICKS(500));
+                noTone(PIN_BUZZER);
                 setStatusLED(false);
                 
                 // Set flag for main loop (WiFi operations should be on main core)
@@ -598,7 +604,7 @@ void drawProvisioningScreen() {
     epaper.drawRect(51, boxY + 1, SCREEN_WIDTH - 102, boxHeight - 2, TFT_BLUE);
     epaper.drawRect(52, boxY + 2, SCREEN_WIDTH - 104, boxHeight - 4, TFT_GREEN);
     
-    // Step 1 with colored number | 带彩色数字的步骤1
+    // Step 1 with red number | 红色序号的步骤1
     epaper.fillCircle(100, boxY + 40, 18, TFT_RED);
     epaper.setTextColor(TFT_WHITE);
     epaper.setTextSize(2);
@@ -611,17 +617,18 @@ void drawProvisioningScreen() {
     epaper.drawString(AP_SSID, 130, boxY + 58);
     
     // Separator line | 分隔线
-    epaper.drawLine(80, boxY + 95, SCREEN_WIDTH - 80, boxY + 95, TFT_GREEN);
+    epaper.drawLine(80, boxY + 95, SCREEN_WIDTH - 80, boxY + 95, TFT_BLACK);
     
-    // Step 2 with colored number | 带彩色数字的步骤2
-    epaper.fillCircle(100, boxY + 130, 18, TFT_YELLOW);
-    epaper.setTextColor(TFT_BLACK);
+    // Step 2 with red number | 红色序号的步骤2
+    epaper.fillCircle(100, boxY + 130, 18, TFT_RED);
+    epaper.setTextColor(TFT_WHITE);
     epaper.setTextSize(2);
     epaper.drawString("2", 94, boxY + 122);
     
+    epaper.setTextColor(TFT_BLACK);
     epaper.drawString("Open browser and visit:", 130, boxY + 115);
     epaper.setTextSize(3);
-    epaper.setTextColor(TFT_RED);
+    epaper.setTextColor(TFT_GREEN);
     epaper.drawString("http://192.168.4.1", 130, boxY + 140);
     
     // Bottom instruction | 底部说明
@@ -937,7 +944,6 @@ void loop() {
     if (wifiResetRequested) {
         wifiResetRequested = false;
         Serial1.println("  Clearing credentials and restarting...");
-        Serial1.println("  正在清除凭据并重启...");
         ha.clearWiFiCredentials();
         Serial1.flush();
         delay(500);
@@ -1006,14 +1012,13 @@ void loop() {
         // Print status periodically in provisioning mode | 配网模式下定期打印状态
         static unsigned long lastProvisioningStatus = 0;
         unsigned long now = millis();
-        if (now - lastProvisioningStatus > 10000) {
+        if (now - lastProvisioningStatus > 30000) {
             lastProvisioningStatus = now;
             Serial1.println("Status: WiFi Provisioning mode active...");
             Serial1.println("  Connect to AP: " + String(AP_SSID));
             Serial1.println("  Then visit: http://192.168.4.1");
         }
         
-        delay(100);
         return;
     }
     
@@ -1032,19 +1037,41 @@ void loop() {
     // E-Paper refresh logic | 墨水屏刷新逻辑
     bool shouldRefresh = false;
     
-    // 0. HA connection status change - refresh when HA connects or disconnects
-    // 0. HA 连接状态变化 - 当 HA 上线或掉线时刷新
+    // 0. HA connection status change - with debounce to prevent flickering
+    // 0. HA 连接状态变化 - 带防抖防止频繁刷新
     bool currentHAConnected = ha.isHAConnected();
     if (initialRefreshDone && lastHAConnected != currentHAConnected) {
-        if (currentHAConnected) {
-            Serial1.println("HA connected! Refreshing display...");
-        } else {
-            Serial1.println("HA disconnected! Refreshing display...");
+        // Status changed, start debounce timer | 状态变化，开始防抖计时
+        if (!haStatusPendingRefresh) {
+            haStatusPendingRefresh = true;
+            haStatusChangeTime = now;
+            if (currentHAConnected) {
+                Serial1.println("HA connected! Waiting for stable connection...");
+            } else {
+                Serial1.println("HA disconnected! Waiting to confirm...");
+            }
         }
-        shouldRefresh = true;
-        lastDisplayUpdate = now;
     }
-    lastHAConnected = currentHAConnected;
+    
+    // Check if debounce period passed and status is stable | 检查防抖时间是否过去且状态稳定
+    if (haStatusPendingRefresh && (now - haStatusChangeTime >= HA_STATUS_DEBOUNCE)) {
+        // Status has been stable for debounce period | 状态已稳定超过防抖时间
+        if (currentHAConnected != lastHAConnected) {
+            if (currentHAConnected) {
+                Serial1.println("HA connection stable! Refreshing display...");
+            } else {
+                Serial1.println("HA disconnection confirmed! Refreshing display...");
+            }
+            shouldRefresh = true;
+            lastDisplayUpdate = now;
+            lastHAConnected = currentHAConnected;
+        }
+        haStatusPendingRefresh = false;
+    } else if (haStatusPendingRefresh && currentHAConnected == lastHAConnected) {
+        // Status reverted back, cancel pending refresh | 状态恢复，取消待刷新
+        Serial1.println("HA status reverted, canceling refresh.");
+        haStatusPendingRefresh = false;
+    }
     
     // 1. Initial refresh: wait for data collection period after first data
     // 1. 初始刷新：收到第一批数据后等待收集期结束

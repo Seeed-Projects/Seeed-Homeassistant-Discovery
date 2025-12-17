@@ -562,8 +562,18 @@ void SeeedWiFiProvisioning::_setupWebServer() {
 // =============================================================================
 
 void SeeedWiFiProvisioning::_handleRoot() {
-    String html = _generateMainPage();
-    _webServer->send(200, "text/html; charset=utf-8", html);
+    _log("HTTP Request: / (root page)");
+    
+    // Use chunked transfer to avoid large memory allocation
+    // 使用分块传输避免大内存分配
+    _webServer->setContentLength(CONTENT_LENGTH_UNKNOWN);
+    _webServer->send(200, "text/html; charset=utf-8", "");
+    
+    // Send HTML in chunks | 分块发送 HTML
+    _sendMainPageChunked();
+    
+    // End the response | 结束响应
+    _webServer->sendContent("");
 }
 
 void SeeedWiFiProvisioning::_handleScan() {
@@ -1300,6 +1310,162 @@ String SeeedWiFiProvisioning::_generateStatusJSON() {
     json += "\"ip\":\"" + (isWiFiConnected() ? WiFi.localIP().toString() : WiFi.softAPIP().toString()) + "\"";
     json += "}";
     return json;
+}
+
+// =============================================================================
+// Chunked HTML Sending | 分块 HTML 发送
+// =============================================================================
+
+void SeeedWiFiProvisioning::_sendMainPageChunked() {
+    // Send HTML head and CSS in smaller chunks to avoid memory allocation issues
+    // 分块发送 HTML 头部和 CSS 以避免内存分配问题
+    
+    // Chunk 1: HTML head start
+    _webServer->sendContent(F("<!DOCTYPE html><html lang=\"en\"><head>"
+        "<meta charset=\"UTF-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0,user-scalable=no\">"
+        "<title>Seeed WiFi Setup</title><style>"));
+    
+    // Chunk 2: CSS variables and base styles
+    _webServer->sendContent(F(
+        "*{margin:0;padding:0;box-sizing:border-box}"
+        ":root{--bg:#0a0a0f;--bg2:#1a1a24;--accent:#00ff9d;--text:#e8e8e8;--text2:#888;--border:#2a2a35}"
+        "body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px}"
+        ".container{max-width:420px;margin:0 auto}"
+        ".header{text-align:center;margin-bottom:30px;padding:20px}"
+        ".logo{font-size:2em;font-weight:700;color:var(--accent);margin-bottom:8px}"
+        ".subtitle{font-size:0.85em;color:var(--text2)}"
+    ));
+    
+    // Chunk 3: Card and network list styles
+    _webServer->sendContent(F(
+        ".card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}"
+        ".section-title{font-size:0.75em;color:var(--accent);letter-spacing:2px;margin-bottom:16px;text-transform:uppercase}"
+        ".network-list{max-height:280px;overflow-y:auto}"
+        ".network-item{display:flex;align-items:center;padding:14px 16px;margin-bottom:8px;background:var(--bg);border:1px solid transparent;border-radius:8px;cursor:pointer;transition:all 0.2s}"
+        ".network-item:hover,.network-item.selected{border-color:var(--accent);background:rgba(0,255,157,0.1)}"
+        ".network-info{flex:1}"
+        ".network-name{font-size:0.95em;margin-bottom:2px}"
+        ".network-meta{font-size:0.7em;color:var(--text2)}"
+    ));
+    
+    // Chunk 4: Signal bars and form styles
+    _webServer->sendContent(F(
+        ".signal-bars{display:flex;align-items:flex-end;gap:2px;height:16px;margin-right:14px}"
+        ".signal-bar{width:3px;background:var(--border);border-radius:1px}"
+        ".signal-bar.active{background:var(--accent)}"
+        ".signal-bar:nth-child(1){height:4px}.signal-bar:nth-child(2){height:8px}.signal-bar:nth-child(3){height:12px}.signal-bar:nth-child(4){height:16px}"
+        ".form-group{margin-bottom:20px}"
+        ".form-label{display:block;font-size:0.75em;color:var(--text2);margin-bottom:8px}"
+        ".form-input{width:100%;padding:14px 16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1em}"
+        ".form-input:focus{outline:none;border-color:var(--accent)}"
+    ));
+    
+    // Chunk 5: Button and status styles
+    _webServer->sendContent(F(
+        ".btn{width:100%;padding:16px;border:none;border-radius:8px;font-size:1em;font-weight:600;cursor:pointer;transition:all 0.2s}"
+        ".btn-primary{background:var(--accent);color:#000}"
+        ".btn-primary:hover{filter:brightness(1.1)}"
+        ".btn-primary:disabled{opacity:0.5;cursor:not-allowed}"
+        ".btn-secondary{background:transparent;border:1px solid var(--border);color:var(--text);margin-top:10px}"
+        ".status{text-align:center;padding:12px;border-radius:8px;margin-bottom:20px;font-size:0.85em}"
+        ".status.connecting{background:rgba(255,165,2,0.1);border:1px solid #ffa502;color:#ffa502}"
+        ".status.success{background:rgba(0,255,157,0.1);border:1px solid var(--accent);color:var(--accent)}"
+        ".status.error{background:rgba(255,71,87,0.1);border:1px solid #ff4757;color:#ff4757}"
+        ".lock-icon{margin-left:10px;opacity:0.6}"
+        ".spinner{display:inline-block;width:16px;height:16px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin 1s linear infinite;margin-right:8px}"
+        "@keyframes spin{to{transform:rotate(360deg)}}"
+        "</style></head>"
+    ));
+    
+    // Chunk 6: Body start and header
+    _webServer->sendContent(F(
+        "<body><div class=\"container\">"
+        "<div class=\"header\">"
+        "<div class=\"logo\">SEEED</div>"
+        "<div class=\"subtitle\">WiFi Configuration</div>"
+        "</div>"
+        "<div id=\"status\" class=\"status\" style=\"display:none\"></div>"
+        "<div class=\"card\">"
+        "<div class=\"section-title\">Available Networks</div>"
+        "<div id=\"networks\" class=\"network-list\"><div style=\"text-align:center;padding:20px;color:var(--text2)\">Scanning...</div></div>"
+        "<button class=\"btn btn-secondary\" onclick=\"scan()\">Refresh Networks</button>"
+        "</div>"
+    ));
+    
+    // Chunk 7: Password form
+    _webServer->sendContent(F(
+        "<div class=\"card\" id=\"connect-form\" style=\"display:none\">"
+        "<div class=\"section-title\">Connect to Network</div>"
+        "<div class=\"form-group\">"
+        "<label class=\"form-label\">SELECTED NETWORK</label>"
+        "<div id=\"selected-network\" style=\"padding:10px;background:var(--bg);border-radius:8px\"></div>"
+        "</div>"
+        "<div class=\"form-group\">"
+        "<label class=\"form-label\">PASSWORD</label>"
+        "<input type=\"password\" id=\"password\" class=\"form-input\" placeholder=\"Enter WiFi password\">"
+        "</div>"
+        "<button class=\"btn btn-primary\" id=\"connect-btn\" onclick=\"connect()\">Connect</button>"
+        "</div>"
+    ));
+    
+    // Chunk 8: JavaScript start
+    _webServer->sendContent(F(
+        "<script>"
+        "let selectedSSID='',selectedSecure=false;"
+        "function scan(){"
+        "document.getElementById('networks').innerHTML='<div style=\"text-align:center;padding:20px;color:var(--text2)\">Scanning...</div>';"
+        "fetch('/scan').then(r=>r.json()).then(d=>{"
+        "let html='';"
+        "d.networks.forEach(n=>{"
+        "let bars='';for(let i=1;i<=4;i++)bars+='<div class=\"signal-bar'+(i<=n.signal?' active':'')+'\"></div>';"
+        "html+='<div class=\"network-item\" onclick=\"select(\\''+n.ssid+'\\','+n.secure+')\">'+"
+        "'<div class=\"signal-bars\">'+bars+'</div>'+"
+        "'<div class=\"network-info\"><div class=\"network-name\">'+n.ssid+'</div>'+"
+        "'<div class=\"network-meta\">'+n.encryption+'</div></div>'+"
+        "(n.secure?'<span class=\"lock-icon\">🔒</span>':'')+'</div>';"
+        "});"
+        "document.getElementById('networks').innerHTML=html||'<div style=\"text-align:center;padding:20px;color:var(--text2)\">No networks found</div>';"
+        "}).catch(e=>{"
+        "document.getElementById('networks').innerHTML='<div style=\"text-align:center;padding:20px;color:#ff4757\">Scan failed</div>';"
+        "});"
+        "}"
+    ));
+    
+    // Chunk 9: JavaScript select and connect
+    _webServer->sendContent(F(
+        "function select(ssid,secure){"
+        "selectedSSID=ssid;selectedSecure=secure;"
+        "document.querySelectorAll('.network-item').forEach(el=>el.classList.remove('selected'));"
+        "event.currentTarget.classList.add('selected');"
+        "document.getElementById('selected-network').textContent=ssid;"
+        "document.getElementById('connect-form').style.display='block';"
+        "document.getElementById('password').style.display=secure?'block':'none';"
+        "document.getElementById('password').value='';"
+        "}"
+        "function connect(){"
+        "let btn=document.getElementById('connect-btn');"
+        "btn.disabled=true;btn.innerHTML='<span class=\"spinner\"></span>Connecting...';"
+        "showStatus('Connecting to '+selectedSSID+'...','connecting');"
+        "let data='ssid='+encodeURIComponent(selectedSSID);"
+        "if(selectedSecure)data+='&password='+encodeURIComponent(document.getElementById('password').value);"
+        "fetch('/connect',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data})"
+        ".then(r=>r.json()).then(d=>{"
+        "if(d.success){showStatus('Connected! Device will restart...','success');setTimeout(()=>location.reload(),5000);}"
+        "else{showStatus('Connection failed: '+d.error,'error');btn.disabled=false;btn.textContent='Connect';}"
+        "}).catch(e=>{showStatus('Error: '+e,'error');btn.disabled=false;btn.textContent='Connect';});"
+        "}"
+    ));
+    
+    // Chunk 10: JavaScript showStatus and init
+    _webServer->sendContent(F(
+        "function showStatus(msg,type){"
+        "let s=document.getElementById('status');"
+        "s.textContent=msg;s.className='status '+type;s.style.display='block';"
+        "}"
+        "scan();"
+        "</script></div></body></html>"
+    ));
 }
 
 // =============================================================================

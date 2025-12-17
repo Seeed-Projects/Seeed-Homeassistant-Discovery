@@ -346,13 +346,8 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         _LOGGER.info("Device ID: %s, Name: %s, Model: %s, MAC: %s", 
                     device_id, display_name, model, mac_address)
 
-        # 设置唯一 ID，如果另一个流程已在处理同一设备则中止
-        # Set unique ID, abort if another flow is already handling the same device
+        # 设置唯一 ID | Set unique ID
         await self.async_set_unique_id(device_id)
-        
-        # 检查是否已有相同设备的流程正在进行中（防止重复卡片）
-        # Check if another flow for same device is in progress (prevent duplicate cards)
-        self._abort_if_unique_id_in_progress()
         
         # 检查设备是否已配置（删除后应该可以重新发现）
         # Check if device is already configured (should be re-discoverable after deletion)
@@ -392,11 +387,20 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             FlowResult: 创建配置入口或显示确认表单 | Create entry or show confirm form
         """
         if user_input is not None:
-            # 用户点击了确认，检查设备是否已被其他 HA 连接
-            # User confirmed, check if device is already connected to another HA
+            # 用户点击了确认，验证设备是否可达
+            # User confirmed, verify device is reachable
             try:
                 device_info = await self._async_get_device_info(self._host)
-                if device_info and device_info.get("connected", False):
+                if device_info is None:
+                    # 设备不可达
+                    # Device not reachable
+                    _LOGGER.warning(
+                        "Device %s not reachable when user tried to add",
+                        self._host
+                    )
+                    return self.async_abort(reason="cannot_connect")
+                
+                if device_info.get("connected", False):
                     # 设备已被其他 HA 连接，跳转到警告确认步骤
                     # Device already connected, go to warning confirm step
                     _LOGGER.warning(
@@ -405,7 +409,10 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     )
                     return await self.async_step_confirm_already_connected()
             except Exception as err:
-                _LOGGER.debug("Could not check connection status: %s", err)
+                # 连接失败，设备可能已离线
+                # Connection failed, device may be offline
+                _LOGGER.warning("Cannot connect to device %s: %s", self._host, err)
+                return self.async_abort(reason="cannot_connect")
 
             # 创建配置入口 | Create config entry
             _LOGGER.info("User confirmed adding WiFi device: %s", self._device_name)
@@ -471,10 +478,6 @@ class SeeedHAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         # 设置唯一 ID | Set unique ID
         await self.async_set_unique_id(device_id)
-        
-        # 检查是否已有相同设备的流程正在进行中（防止重复卡片）
-        # Check if another flow for same device is in progress (prevent duplicate cards)
-        self._abort_if_unique_id_in_progress()
         
         # 如果设备已配置则中止 | Abort if device already configured
         self._abort_if_unique_id_configured()

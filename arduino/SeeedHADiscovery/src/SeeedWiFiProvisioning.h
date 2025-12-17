@@ -450,6 +450,7 @@ private:
 
     // Generate HTML pages | 生成 HTML 页面
     String _generateMainPage();
+    void _sendMainPageChunked();  // Send HTML in chunks to avoid memory issues | 分块发送 HTML 避免内存问题
     String _generateNetworkListJSON();
     String _generateStatusJSON();
 

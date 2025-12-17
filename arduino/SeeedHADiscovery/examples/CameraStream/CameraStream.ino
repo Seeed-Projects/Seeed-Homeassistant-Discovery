@@ -6,24 +6,39 @@
  *
  * This example demonstrates how to:
  * 本示例展示如何：
- * 1. Initialize the OV2640 camera on XIAO ESP32-S3 Sense
+ * 1. Web-based WiFi provisioning (captive portal)
+ *    网页配网（强制门户）
+ * 2. Initialize the OV2640 camera on XIAO ESP32-S3 Sense
  *    初始化 XIAO ESP32-S3 Sense 上的 OV2640 摄像头
- * 2. Stream camera video to Home Assistant via MJPEG
+ * 3. Stream camera video to Home Assistant via MJPEG
  *    通过 MJPEG 将摄像头视频流推送到 Home Assistant
- * 3. Register camera entity for auto-discovery
+ * 4. Register camera entity for auto-discovery
  *    注册摄像头实体以支持自动发现
  *
  * Hardware Requirements:
  * 硬件要求：
  * - XIAO ESP32-S3 Sense with OV2640 camera module
  *   带 OV2640 摄像头模块的 XIAO ESP32-S3 Sense
+ * - D1 (GPIO2): Reset button (long press 6s to reset WiFi)
+ *   D1 (GPIO2)：重置按钮（长按6秒重置WiFi）
  *
  * Camera Stream URL:
  * 摄像头流地址：
- * - Still image: http://<device_ip>/camera
- *   静态图片: http://<设备IP>/camera
- * - MJPEG stream: http://<device_ip>/stream
- *   MJPEG 视频流: http://<设备IP>/stream
+ * - Still image: http://<device_ip>:82/camera
+ *   静态图片: http://<设备IP>:82/camera
+ * - MJPEG stream: http://<device_ip>:82/stream
+ *   MJPEG 视频流: http://<设备IP>:82/stream
+ *
+ * WiFi Provisioning:
+ * WiFi 配网：
+ * - On first boot (no saved credentials), device creates AP
+ *   首次启动（无保存凭据）时，设备创建 AP
+ * - Connect to AP and open http://192.168.4.1 in browser
+ *   连接到 AP 并在浏览器中打开 http://192.168.4.1
+ * - Select WiFi network and enter password
+ *   选择 WiFi 网络并输入密码
+ * - Long press D1 (6+ seconds) to clear credentials and restart
+ *   长按 D1（6秒以上）清除凭据并重启
  *
  * Software Dependencies:
  * 软件依赖：
@@ -42,7 +57,7 @@
  *   PSRAM: "OPI PSRAM"
  *
  * @author limengdu
- * @version 1.2.0
+ * @version 1.3.0
  */
 
 #include <SeeedHADiscovery.h>
@@ -53,9 +68,29 @@
 // 配置区域 - 请根据你的环境修改
 // =============================================================================
 
-// WiFi Configuration | WiFi 配置
+// WiFi Provisioning Configuration | WiFi 配网配置
+// Set to true to enable web-based WiFi provisioning (recommended)
+// Set to false to use hardcoded credentials below
+// 设置为 true 启用网页配网（推荐）
+// 设置为 false 使用下面的硬编码凭据
+#define USE_WIFI_PROVISIONING true
+
+// AP hotspot name for WiFi provisioning | 配网时的 AP 热点名称
+const char* AP_SSID = "XIAO_Camera_AP";
+
+// Fallback WiFi credentials (only used if USE_WIFI_PROVISIONING is false)
+// 备用 WiFi 凭据（仅在 USE_WIFI_PROVISIONING 为 false 时使用）
 const char* WIFI_SSID = "Your_WiFi_SSID";      // Your WiFi SSID | 你的WiFi名称
 const char* WIFI_PASSWORD = "Your_WiFi_Password";  // Your WiFi password | 你的WiFi密码
+
+// Reset button pin (D1 = GPIO2 on XIAO) | 重置按钮引脚（XIAO 的 D1 = GPIO2）
+#define PIN_RESET_BUTTON 2
+
+// Status LED pin (built-in LED on XIAO) | 状态 LED 引脚（XIAO 内置 LED）
+#define PIN_STATUS_LED LED_BUILTIN
+
+// WiFi reset hold time (ms) | WiFi 重置按住时间（毫秒）
+#define WIFI_RESET_HOLD_TIME 6000
 
 // =============================================================================
 // XIAO ESP32-S3 Sense Camera Pin Configuration
@@ -113,6 +148,98 @@ bool cameraInitialized = false;
 
 // Mutex for camera access | 摄像头访问互斥锁
 SemaphoreHandle_t cameraMutex = nullptr;
+
+// WiFi provisioning mode tracking | WiFi 配网模式跟踪
+bool wifiProvisioningMode = false;
+
+// Reset button state tracking | 重置按钮状态跟踪
+volatile uint32_t resetButtonPressTime = 0;
+volatile bool resetButtonPressed = false;
+volatile bool resetFeedbackGiven = false;
+volatile bool wifiResetRequested = false;  // Flag to trigger reset from main loop | 主循环触发重置的标志
+
+// RTOS task handle for reset button | 重置按钮的 RTOS 任务句柄
+TaskHandle_t resetButtonTaskHandle = nullptr;
+
+// =============================================================================
+// LED Control Functions | LED 控制函数
+// =============================================================================
+
+/**
+ * Set status LED state | 设置状态 LED 状态
+ */
+void setStatusLED(bool on) {
+    digitalWrite(PIN_STATUS_LED, on ? LOW : HIGH);
+}
+
+/**
+ * Reset button detection task (runs on Core 0)
+ * 重置按钮检测任务（运行在 Core 0）
+ */
+void resetButtonTask(void* parameter) {
+    Serial.println("[RTOS] Reset button task started on Core " + String(xPortGetCoreID()));
+    
+    while (true) {
+        bool currentState = (digitalRead(PIN_RESET_BUTTON) == LOW);  // Button pressed when LOW
+        uint32_t now = millis();
+        
+        // Button just pressed | 按钮刚被按下
+        if (currentState && !resetButtonPressed) {
+            resetButtonPressed = true;
+            resetButtonPressTime = now;
+            resetFeedbackGiven = false;
+            Serial.println("Reset button pressed...");
+        }
+        
+        // Button held - check for 6 second threshold | 按钮保持按下 - 检查6秒阈值
+        if (currentState && resetButtonPressed && !resetFeedbackGiven) {
+            uint32_t holdTime = now - resetButtonPressTime;
+            
+            if (holdTime >= WIFI_RESET_HOLD_TIME) {
+                resetFeedbackGiven = true;
+                Serial.println();
+                Serial.println("=========================================");
+                Serial.println("  WiFi Reset threshold reached (6s)!");
+                Serial.println("  Release button to reset WiFi...");
+                Serial.println("=========================================");
+                
+                // Visual feedback - fast LED blink | 视觉反馈 - LED 快闪
+                for (int i = 0; i < 6; i++) {
+                    setStatusLED(true);
+                    vTaskDelay(pdMS_TO_TICKS(100));
+                    setStatusLED(false);
+                    vTaskDelay(pdMS_TO_TICKS(100));
+                }
+                setStatusLED(true);
+            }
+        }
+        
+        // Button released | 按钮释放
+        if (!currentState && resetButtonPressed) {
+            uint32_t holdTime = now - resetButtonPressTime;
+            resetButtonPressed = false;
+            
+            // If held long enough, set flag for main loop to handle reset
+            // 如果按住足够长，设置标志让主循环处理重置
+            if (resetFeedbackGiven && holdTime >= WIFI_RESET_HOLD_TIME) {
+                Serial.println();
+                Serial.println("=========================================");
+                Serial.println("  WiFi Reset triggered!");
+                Serial.println("=========================================");
+                
+                // Set flag for main loop (WiFi operations should be on main core)
+                // 设置标志给主循环（WiFi 操作应在主核心执行）
+                wifiResetRequested = true;
+            }
+            
+            setStatusLED(false);
+            resetFeedbackGiven = false;
+        }
+        
+        // Small delay to prevent hogging CPU | 小延时防止占用 CPU
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
+}
 
 // =============================================================================
 // Camera Functions | 摄像头功能函数
@@ -491,6 +618,35 @@ void setup() {
     Serial.println("========================================");
     Serial.println();
 
+    // Initialize GPIO pins | 初始化 GPIO 引脚
+    pinMode(PIN_STATUS_LED, OUTPUT);
+    digitalWrite(PIN_STATUS_LED, HIGH);  // LED off
+    pinMode(PIN_RESET_BUTTON, INPUT_PULLUP);
+    Serial.println("GPIO initialized:");
+    Serial.println("  - Status LED: Ready");
+    Serial.println("  - Reset Button (D1/GPIO2): Ready");
+    
+    // Create RTOS task for reset button on Core 0
+    // 在 Core 0 创建重置按钮的 RTOS 任务
+    xTaskCreatePinnedToCore(
+        resetButtonTask,        // Task function | 任务函数
+        "ResetButton",          // Task name | 任务名称
+        4096,                   // Stack size | 堆栈大小
+        NULL,                   // Parameters | 参数
+        1,                      // Priority | 优先级
+        &resetButtonTaskHandle, // Task handle | 任务句柄
+        0                       // Core 0 | 核心 0
+    );
+    Serial.println("  - Reset button task started on Core 0");
+    
+    // Brief LED blink to indicate boot | 短暂 LED 闪烁指示启动
+    for (int i = 0; i < 2; i++) {
+        setStatusLED(true);
+        delay(100);
+        setStatusLED(false);
+        delay(100);
+    }
+
     // Check PSRAM | 检查 PSRAM
     if (psramFound()) {
         Serial.printf("PSRAM Size: %d bytes\n", ESP.getPsramSize());
@@ -515,12 +671,55 @@ void setup() {
     ha.setDeviceInfo(
         "XIAO Camera",           // Device name | 设备名称
         "XIAO ESP32-S3 Sense",   // Device model | 设备型号
-        "1.0.0"                  // Firmware version | 固件版本
+        "1.2.0"                  // Firmware version | 固件版本
     );
 
     ha.enableDebug(true);
 
     // Connect WiFi | 连接 WiFi
+#if USE_WIFI_PROVISIONING
+    // Use web-based WiFi provisioning | 使用网页配网
+    Serial.println("Starting with WiFi provisioning...");
+    Serial.print("  AP Name (if needed): ");
+    Serial.println(AP_SSID);
+    
+    bool wifiConnected = ha.beginWithProvisioning(AP_SSID);
+    
+    // Enable reset button | 启用重置按钮
+    ha.enableResetButton(PIN_RESET_BUTTON);
+    
+    if (!wifiConnected) {
+        // Device is in AP mode for WiFi configuration
+        // 设备处于 AP 模式进行 WiFi 配置
+        Serial.println();
+        Serial.println("============================================");
+        Serial.println("  WiFi Provisioning Mode Active!");
+        Serial.println("============================================");
+        Serial.println();
+        Serial.println("To configure WiFi:");
+        Serial.println("  1. Connect to WiFi: " + String(AP_SSID));
+        Serial.println("  2. Open browser: http://192.168.4.1");
+        Serial.println("  3. Select network and enter password");
+        Serial.println();
+        Serial.println("  Long press D1 (6s) to reset WiFi credentials");
+        Serial.println();
+        
+        wifiProvisioningMode = true;
+        
+        // LED slow blink to indicate provisioning mode | LED 慢闪指示配网模式
+        for (int i = 0; i < 3; i++) {
+            setStatusLED(true);
+            delay(300);
+            setStatusLED(false);
+            delay(300);
+        }
+        
+        // In provisioning mode, skip the rest of setup
+        // 在配网模式下，跳过 setup 的其余部分
+        return;
+    }
+#else
+    // Use hardcoded credentials | 使用硬编码凭据
     Serial.println("Connecting to WiFi...");
 
     if (!ha.begin(WIFI_SSID, WIFI_PASSWORD)) {
@@ -529,10 +728,19 @@ void setup() {
             delay(1000);
         }
     }
+#endif
 
     Serial.println("WiFi connected!");
     Serial.print("IP Address: ");
     Serial.println(ha.getLocalIP().toString().c_str());
+    
+    // LED quick blinks to indicate WiFi connected | LED 快闪指示 WiFi 已连接
+    for (int i = 0; i < 3; i++) {
+        setStatusLED(true);
+        delay(100);
+        setStatusLED(false);
+        delay(100);
+    }
 
     // Start camera server | 启动摄像头服务器
     if (cameraInitialized) {
@@ -583,11 +791,102 @@ void setup() {
     Serial.print("  Enter IP: ");
     Serial.println(ha.getLocalIP().toString().c_str());
     Serial.println();
+#if USE_WIFI_PROVISIONING
+    Serial.println("WiFi Reset:");
+    Serial.println("  Long press D1 (6s) to reset WiFi credentials");
+    Serial.println();
+#endif
 }
 
 void loop() {
     // Handle SeeedHADiscovery events | 处理 SeeedHADiscovery 事件
     ha.handle();
+    
+    // Check if WiFi reset was requested by the button task (on Core 0)
+    // 检查按钮任务（Core 0）是否请求了 WiFi 重置
+    if (wifiResetRequested) {
+        wifiResetRequested = false;
+        Serial.println("  Clearing credentials and restarting...");
+        ha.clearWiFiCredentials();
+        Serial.flush();
+        delay(500);
+        ESP.restart();
+    }
+    
+    // Detect if we entered AP mode due to reset button press
+    // 检测是否因按下重置按钮而进入了 AP 模式
+    if (!wifiProvisioningMode && ha.isProvisioningActive()) {
+        Serial.println();
+        Serial.println("============================================");
+        Serial.println("  Entered AP Mode (WiFi Reset Triggered)!");
+        Serial.println("============================================");
+        Serial.println("  Connect to AP: " + String(AP_SSID));
+        Serial.println("  Then visit: http://192.168.4.1");
+        Serial.println();
+        
+        wifiProvisioningMode = true;
+    }
+    
+    // If in provisioning mode, handle it specially | 如果处于配网模式，特殊处理
+    if (wifiProvisioningMode) {
+        // Check if WiFi got connected (user completed provisioning)
+        // 检查 WiFi 是否已连接（用户完成了配网）
+        if (ha.isWiFiConnected()) {
+            Serial.println();
+            Serial.println("============================================");
+            Serial.println("  WiFi Connected via Provisioning!");
+            Serial.println("============================================");
+            Serial.print("IP: ");
+            Serial.println(ha.getLocalIP());
+            
+            wifiProvisioningMode = false;
+            
+            // LED quick blinks to indicate WiFi connected | LED 快闪指示 WiFi 已连接
+            for (int i = 0; i < 5; i++) {
+                setStatusLED(true);
+                delay(100);
+                setStatusLED(false);
+                delay(100);
+            }
+            
+            // Start camera server if not already running | 如果摄像头服务器未运行则启动
+            if (cameraInitialized && cameraServer == nullptr) {
+                setupCameraServer();
+            }
+            
+            // Register camera entity | 注册摄像头实体
+            SeeedHASensor* cameraSensor = ha.addSensor("camera_status", "Camera Status");
+            cameraSensor->setIcon("mdi:camera");
+            cameraSensor->setValue(cameraInitialized ? 1 : 0);
+            
+            Serial.println();
+            Serial.println("========================================");
+            Serial.println("  Setup Complete!");
+            Serial.println("========================================");
+            if (cameraInitialized) {
+                Serial.println("Camera URLs:");
+                Serial.print("  Still Image: http://");
+                Serial.print(ha.getLocalIP().toString().c_str());
+                Serial.println(":82/camera");
+                Serial.print("  MJPEG Stream: http://");
+                Serial.print(ha.getLocalIP().toString().c_str());
+                Serial.println(":82/stream");
+            }
+            Serial.println();
+        }
+        
+        // Print status periodically in provisioning mode | 配网模式下定期打印状态
+        static unsigned long lastProvisioningStatus = 0;
+        unsigned long now = millis();
+        if (now - lastProvisioningStatus > 30000) {
+            lastProvisioningStatus = now;
+            Serial.println("Status: WiFi Provisioning mode active...");
+            Serial.println("  Connect to AP: " + String(AP_SSID));
+            Serial.println("  Then visit: http://192.168.4.1");
+        }
+        
+        return;
+    }
 
     // 注意：摄像头服务器在核心 0 的单独任务中运行
     // Note: Camera server runs in separate task on Core 0
