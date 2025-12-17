@@ -463,11 +463,21 @@ float readBatteryVoltage() {
  * Calculate battery percentage from voltage
  * 从电压计算电池百分比
  * Formula: percentage = ((voltage - 2.75) / (4.2 - 2.75)) * 100
+ * 
+ * Note: When fully charged, voltage may slightly exceed 4.2V (e.g., 4.25V).
+ * We should return 100% instead of NAN in this case.
+ * 注意：充满电时，电压可能略微超过 4.2V（如 4.25V）。
+ * 此时应返回 100% 而不是 NAN。
  */
 float calculateBatteryPercentage(float voltage) {
-    if (isnan(voltage) || voltage < BATTERY_VOLTAGE_MIN || voltage > BATTERY_VOLTAGE_MAX) {
+    // Only return NAN for invalid readings (too low or not a number)
+    // 仅对无效读数返回 NAN（过低或非数字）
+    if (isnan(voltage) || voltage < BATTERY_VOLTAGE_MIN) {
         return NAN;
     }
+    
+    // Calculate percentage and clamp to 0-100 range
+    // 计算百分比并限制在 0-100 范围内
     float percentage = ((voltage - BATTERY_VOLTAGE_MIN) / (BATTERY_VOLTAGE_MAX - BATTERY_VOLTAGE_MIN)) * 100.0f;
     return constrain(percentage, 0.0f, 100.0f);
 }
