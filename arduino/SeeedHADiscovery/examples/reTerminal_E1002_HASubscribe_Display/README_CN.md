@@ -4,6 +4,7 @@
 
 ## 功能特性
 
+- **网页配网（Captive Portal）** - 无需硬编码 WiFi 凭据
 - 订阅任意 Home Assistant 实体
 - 六色墨水屏（800x480）
 - 美观的彩色仪表板界面
@@ -11,11 +12,18 @@
 - 最多 6 个实体卡片
 - 自动显示刷新
 - 连接状态指示
+- 智能刷新逻辑（避免不必要的更新）
+- **GPIO3 重置按钮** - 长按 6 秒清除 WiFi 凭据
+- **GPIO6 状态 LED** - 提供视觉反馈
+- **GPIO45 蜂鸣器** - WiFi 重置声音反馈
 
 ## 硬件要求
 
 - **reTerminal E1002** 带六色墨水屏
 - 显示分辨率：800x480
+- GPIO3：重置按钮（长按 6 秒重置 WiFi）
+- GPIO6：状态 LED（低电平点亮）
+- GPIO45：蜂鸣器（声音反馈）
 
 ## 支持的颜色
 
@@ -46,18 +54,23 @@
 
 ## 快速开始
 
-### 1. 配置 WiFi
-
-```cpp
-const char* WIFI_SSID = "你的WiFi名称";
-const char* WIFI_PASSWORD = "你的WiFi密码";
-```
-
-### 2. 上传
+### 1. 上传固件
 
 1. 选择 reTerminal E1002 对应的开发板
 2. 确保在 User_Setup.h 中定义了 `EPAPER_ENABLE`
 3. 上传程序
+
+### 2. WiFi 配网
+
+首次启动（或重置后），设备会进入配网模式：
+
+1. 墨水屏显示彩色配网界面，提示连接 AP
+2. 用手机或电脑连接 WiFi：**reTerminal_E1002_AP**
+3. 打开浏览器访问：**http://192.168.4.1**
+4. 选择你的 WiFi 网络并输入密码
+5. 设备自动连接并显示 IP 地址
+
+> **重置 WiFi**：长按 GPIO3 按钮 6 秒，蜂鸣器报警后松开即可重置
 
 ### 3. 在 Home Assistant 中配置
 
@@ -65,6 +78,17 @@ const char* WIFI_PASSWORD = "你的WiFi密码";
 2. 点击 **配置**
 3. 选择要订阅的实体（最多 6 个）
 4. 保存 - 显示屏将自动更新
+
+### 备用：硬编码 WiFi（可选）
+
+如果不想使用配网功能，可以修改代码：
+
+```cpp
+#define USE_WIFI_PROVISIONING false  // 禁用配网
+
+const char* WIFI_SSID = "你的WiFi名称";
+const char* WIFI_PASSWORD = "你的WiFi密码";
+```
 
 ## 按设备类别颜色编码
 
@@ -108,9 +132,24 @@ const char* WIFI_PASSWORD = "你的WiFi密码";
 
 | 选项 | 默认值 | 说明 |
 |-----|-------|------|
+| `USE_WIFI_PROVISIONING` | true | 启用网页配网 |
+| `AP_SSID` | reTerminal_E1002_AP | 配网时的热点名称 |
+| `PIN_RESET_BUTTON` | 3 | 重置按钮引脚 |
+| `PIN_STATUS_LED` | 6 | 状态 LED 引脚 |
+| `PIN_BUZZER` | 45 | 蜂鸣器引脚 |
 | `DISPLAY_REFRESH_INTERVAL` | 300000ms | 定时刷新间隔（5分钟） |
 | `DATA_COLLECTION_WAIT` | 5000ms | 初始刷新前等待时间 |
 | `MAX_DISPLAY_ENTITIES` | 6 | 最大显示实体数 |
+
+## LED 和蜂鸣器状态指示
+
+| 状态 | LED 行为 | 蜂鸣器反馈 |
+|-----|---------|----------|
+| 启动 | 快闪 2 次 | - |
+| 进入配网模式 | 慢闪 3 次 | - |
+| WiFi 连接成功 | 快闪 3-5 次 | - |
+| 重置按钮达到 6 秒 | 快闪后常亮 | 警报声（1500/1000Hz x3）+ 提示音 |
+| WiFi 重置触发 | LED 熄灭 | 长鸣（800Hz，500ms） |
 
 ## 串口输出
 

@@ -96,6 +96,9 @@ const char* WIFI_PASSWORD = "your-wifi-password";
 // Status LED pin (active LOW) | 状态 LED 引脚（低电平点亮）
 #define PIN_STATUS_LED 6
 
+// Buzzer pin | 蜂鸣器引脚
+#define PIN_BUZZER 45
+
 // WiFi reset hold time (ms) | WiFi 重置按住时间（毫秒）
 #define WIFI_RESET_HOLD_TIME 6000
 
@@ -227,15 +230,19 @@ void checkResetButtonFeedback() {
             Serial1.println("  松开按钮以重置 WiFi...");
             Serial1.println("=========================================");
             
-            // Visual feedback: LED rapid blink | 视觉反馈：LED 快速闪烁
-            for (int i = 0; i < 5; i++) {
+            // Audio + Visual feedback | 声音 + 视觉反馈
+            // Buzzer alarm sound | 蜂鸣器警报声
+            for (int i = 0; i < 3; i++) {
+                tone(PIN_BUZZER, 1500, 100);
                 setStatusLED(true);
-                delay(80);
+                delay(100);
+                tone(PIN_BUZZER, 1000, 100);
                 setStatusLED(false);
-                delay(80);
+                delay(100);
             }
             // Keep LED on to indicate ready to reset | 保持 LED 亮起表示准备重置
             setStatusLED(true);
+            tone(PIN_BUZZER, 2000, 200);  // Final beep | 最后一声
         }
     }
     
@@ -255,6 +262,8 @@ void checkResetButtonFeedback() {
             Serial1.println("  Clearing credentials and restarting...");
             Serial1.println("  正在清除凭据并重启...");
             
+            // Confirmation beep | 确认蜂鸣
+            tone(PIN_BUZZER, 800, 500);
             setStatusLED(false);
             
             // Clear WiFi credentials and restart

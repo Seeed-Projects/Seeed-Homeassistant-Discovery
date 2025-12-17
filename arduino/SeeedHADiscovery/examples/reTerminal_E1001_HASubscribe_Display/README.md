@@ -21,6 +21,7 @@ Display Home Assistant entity states on the reTerminal E1001's 4-level grayscale
 - Display resolution: 800x480
 - GPIO3: Reset button (long press 6s to reset WiFi)
 - GPIO6: Status LED (active LOW)
+- GPIO45: Buzzer (audio feedback)
 
 ## Supported Colors
 
@@ -118,18 +119,20 @@ const char* WIFI_PASSWORD = "your-wifi-password";
 | `AP_SSID` | reTerminal_E1001_AP | AP hotspot name for provisioning |
 | `PIN_RESET_BUTTON` | 3 | Reset button pin |
 | `PIN_STATUS_LED` | 6 | Status LED pin |
+| `PIN_BUZZER` | 45 | Buzzer pin |
 | `DISPLAY_REFRESH_INTERVAL` | 300000ms | Periodic refresh (5 min) |
 | `DATA_COLLECTION_WAIT` | 5000ms | Wait time before initial refresh |
 | `MAX_DISPLAY_ENTITIES` | 6 | Maximum entities shown |
 
-## LED Status Indicators
+## LED & Buzzer Status Indicators
 
-| Status | LED Behavior |
-|--------|--------------|
-| Boot | Quick flash 2 times |
-| Enter provisioning mode | Slow flash 3 times |
-| WiFi connected | Quick flash 3-5 times |
-| Reset button held 6s | Quick flash 5 times, then stays on |
+| Status | LED Behavior | Buzzer Feedback |
+|--------|--------------|-----------------|
+| Boot | Quick flash 2 times | - |
+| Enter provisioning mode | Slow flash 3 times | - |
+| WiFi connected | Quick flash 3-5 times | - |
+| Reset button held 6s | Quick flash + stays on | Alarm sound (1500/1000Hz x3) + beep |
+| WiFi reset triggered | LED off | Long beep (800Hz, 500ms) |
 
 ## Serial Output
 
