@@ -673,14 +673,15 @@ jobs:
             exit 0
           fi
           
-          # Clear existing firmware (but keep the directory structure)
-          rm -rf docs/flasher/firmware/*
+          # Create firmware directory if it doesn't exist
           mkdir -p docs/flasher/firmware
           
-          # Copy all firmware to docs folder
+          # Only copy/overwrite the firmware that was built this time
+          # This preserves existing firmware that wasn't rebuilt
+          # 只复制/覆盖这次编译的固件，保留未重新编译的旧固件
           cp -r firmware-temp/* docs/flasher/firmware/
           
-          echo "Deployed firmware:"
+          echo "Deployed firmware (merged with existing):"
           find docs/flasher/firmware -type f | head -50
       
       - name: Commit and push firmware
