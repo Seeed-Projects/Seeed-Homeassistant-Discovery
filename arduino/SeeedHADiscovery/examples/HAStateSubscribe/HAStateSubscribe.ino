@@ -66,9 +66,18 @@
 // Configuration | 配置
 // =============================================================================
 
-// WiFi credentials | WiFi 凭据
-// Note: XIAO ESP32-C5 supports both 2.4GHz and 5GHz WiFi networks
-// 注意：XIAO ESP32-C5 支持 2.4GHz 和 5GHz 双频 WiFi 网络
+// WiFi Provisioning Configuration | WiFi 配网配置
+// Set to true to enable web-based WiFi provisioning (recommended)
+// Set to false to use hardcoded credentials below
+// 设置为 true 启用网页配网（推荐）
+// 设置为 false 使用下面的硬编码凭据
+#define USE_WIFI_PROVISIONING true
+
+// AP hotspot name for WiFi provisioning | 配网时的 AP 热点名称
+const char* AP_SSID = "Seeed_StateDisplay_AP";
+
+// Fallback WiFi credentials (only used if USE_WIFI_PROVISIONING is false)
+// 备用 WiFi 凭据（仅在 USE_WIFI_PROVISIONING 为 false 时使用）
 const char* WIFI_SSID = "your-wifi-ssid";       // Your WiFi name | 你的 WiFi 名称
 const char* WIFI_PASSWORD = "your-wifi-password"; // Your WiFi password | 你的 WiFi 密码
 
@@ -162,12 +171,32 @@ void setup() {
     #endif
 
     // Connect to WiFi and start services | 连接 WiFi 并启动服务
+#if USE_WIFI_PROVISIONING
+    Serial.println("Starting with WiFi provisioning...");
+    Serial.print("  AP Name (if needed): ");
+    Serial.println(AP_SSID);
+    
+    bool wifiConnected = ha.beginWithProvisioning(AP_SSID);
+    
+    if (!wifiConnected) {
+        Serial.println();
+        Serial.println("============================================");
+        Serial.println("  WiFi Provisioning Mode Active!");
+        Serial.println("============================================");
+        Serial.println("  1. Connect to WiFi: " + String(AP_SSID));
+        Serial.println("  2. Open browser: http://192.168.4.1");
+        Serial.println("  3. Select network and enter password");
+        Serial.println();
+        return;
+    }
+#else
     if (!ha.begin(WIFI_SSID, WIFI_PASSWORD)) {
         Serial.println("Failed to start! Check WiFi credentials.");
         while (1) {
             delay(1000);
         }
     }
+#endif
 
     Serial.println();
     Serial.println("====================================");
@@ -189,6 +218,14 @@ void setup() {
 void loop() {
     // Handle network events | 处理网络事件
     ha.handle();
+
+#if USE_WIFI_PROVISIONING
+    // If in provisioning mode, only handle AP | 如果处于配网模式，只处理 AP
+    if (ha.isProvisioningActive()) {
+        delay(10);
+        return;
+    }
+#endif
 
     // Periodically print all subscribed states
     // 定期打印所有订阅的状态

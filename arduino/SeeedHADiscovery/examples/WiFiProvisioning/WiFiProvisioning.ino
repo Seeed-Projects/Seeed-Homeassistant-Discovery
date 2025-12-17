@@ -70,6 +70,22 @@ const char* AP_SSID = "Seeed_HA_Device_AP";
                              // GPIO0 是大多数 ESP32 开发板上的 BOOT 按钮
 
 // =============================================================================
+// WiFi Band Mode Configuration (ESP32-C5 only) | WiFi 频段配置（仅 ESP32-C5）
+// =============================================================================
+// ESP32-C5 supports 5GHz WiFi. You can force a specific band mode.
+// ESP32-C5 支持 5GHz WiFi，你可以强制指定频段模式。
+// Requires Arduino ESP32 Core 3.3.0+ (ESP-IDF 5.4.2+)
+// 需要 Arduino ESP32 Core 3.3.0+ (ESP-IDF 5.4.2+)
+//
+// Available modes | 可用模式:
+// - WIFI_BAND_MODE_AUTO   : Auto select (default) | 自动选择（默认）
+// - WIFI_BAND_MODE_2G_ONLY: 2.4GHz only | 仅 2.4GHz
+// - WIFI_BAND_MODE_5G_ONLY: 5GHz only (C5 only) | 仅 5GHz（仅 C5）
+//
+// Uncomment to enable band mode selection | 取消注释以启用频段选择:
+// #define WIFI_BAND_MODE WIFI_BAND_MODE_AUTO
+
+// =============================================================================
 // Global Objects | 全局对象
 // =============================================================================
 
@@ -100,6 +116,15 @@ void setup() {
     );
     
     ha.enableDebug(true);
+    
+    // Set WiFi band mode for ESP32-C5 (optional)
+    // 为 ESP32-C5 设置 WiFi 频段模式（可选）
+    #if defined(WIFI_BAND_MODE) && defined(CONFIG_SOC_WIFI_SUPPORT_5G)
+        #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 2)
+            WiFi.setBandMode(WIFI_BAND_MODE);
+            Serial.println("WiFi band mode configured (ESP32-C5 5GHz support)");
+        #endif
+    #endif
     
     // Enable reset button for WiFi re-provisioning
     // 启用重置按钮用于重新配网

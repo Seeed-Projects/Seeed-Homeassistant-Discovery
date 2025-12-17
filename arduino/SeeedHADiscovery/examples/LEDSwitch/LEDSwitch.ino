@@ -69,9 +69,18 @@
 // 配置区域 - 请根据你的环境修改
 // =============================================================================
 
-// WiFi Configuration | WiFi 配置
-// Note: XIAO ESP32-C5 supports both 2.4GHz and 5GHz WiFi networks
-// 注意：XIAO ESP32-C5 支持 2.4GHz 和 5GHz 双频 WiFi 网络
+// WiFi Provisioning Configuration | WiFi 配网配置
+// Set to true to enable web-based WiFi provisioning (recommended)
+// Set to false to use hardcoded credentials below
+// 设置为 true 启用网页配网（推荐）
+// 设置为 false 使用下面的硬编码凭据
+#define USE_WIFI_PROVISIONING true
+
+// AP hotspot name for WiFi provisioning | 配网时的 AP 热点名称
+const char* AP_SSID = "Seeed_LED_AP";
+
+// Fallback WiFi credentials (only used if USE_WIFI_PROVISIONING is false)
+// 备用 WiFi 凭据（仅在 USE_WIFI_PROVISIONING 为 false 时使用）
 const char* WIFI_SSID = "Your_WiFi_SSID";      // Your WiFi SSID | 你的WiFi名称
 const char* WIFI_PASSWORD = "Your_WiFi_Password";  // Your WiFi password | 你的WiFi密码
 
@@ -170,9 +179,6 @@ void setup() {
 
     ha.enableDebug(true);
 
-    // Connect WiFi | 连接 WiFi
-    Serial.println("Connecting to WiFi...");
-
     // Set WiFi band mode for ESP32-C5 (optional)
     // 为 ESP32-C5 设置 WiFi 频段模式（可选）
     #if defined(WIFI_BAND_MODE) && defined(CONFIG_SOC_WIFI_SUPPORT_5G)
@@ -182,6 +188,35 @@ void setup() {
         #endif
     #endif
 
+    // Connect WiFi | 连接 WiFi
+#if USE_WIFI_PROVISIONING
+    Serial.println("Starting with WiFi provisioning...");
+    Serial.print("  AP Name (if needed): ");
+    Serial.println(AP_SSID);
+    
+    bool wifiConnected = ha.beginWithProvisioning(AP_SSID);
+    
+    if (!wifiConnected) {
+        Serial.println();
+        Serial.println("============================================");
+        Serial.println("  WiFi Provisioning Mode Active!");
+        Serial.println("============================================");
+        Serial.println("  1. Connect to WiFi: " + String(AP_SSID));
+        Serial.println("  2. Open browser: http://192.168.4.1");
+        Serial.println("  3. Select network and enter password");
+        Serial.println();
+        
+        // Blink LED to indicate provisioning mode | LED 闪烁指示配网模式
+        for (int i = 0; i < 3; i++) {
+            setLED(true);
+            delay(200);
+            setLED(false);
+            delay(200);
+        }
+        return;
+    }
+#else
+    Serial.println("Connecting to WiFi...");
     if (!ha.begin(WIFI_SSID, WIFI_PASSWORD)) {
         Serial.println("WiFi connection failed!");
         while (1) {
@@ -191,6 +226,7 @@ void setup() {
             delay(200);
         }
     }
+#endif
 
     Serial.println("WiFi connected!");
     Serial.print("IP Address: ");
@@ -236,6 +272,14 @@ void loop() {
     // Must call! Handle network events
     // 必须调用！处理网络事件
     ha.handle();
+
+#if USE_WIFI_PROVISIONING
+    // If in provisioning mode, only handle AP | 如果处于配网模式，只处理 AP
+    if (ha.isProvisioningActive()) {
+        delay(10);
+        return;
+    }
+#endif
 
     // Connection status monitoring | 连接状态监控
     static unsigned long lastCheck = 0;
