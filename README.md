@@ -52,7 +52,7 @@ Click the button below to add this integration to your Home Assistant:
 
 **Don't want to set up Arduino IDE?** Use our web-based firmware flasher to program your device directly from the browser!
 
-🌐 **[Open Web Flasher](https://limengdu.github.io/Seeed-Homeassistant-Discovery/)**
+🌐 **[Open Web Flasher](https://seeed-projects.github.io/Seeed-Homeassistant-Discovery/)**
 
 | Feature | Description |
 |---------|-------------|
