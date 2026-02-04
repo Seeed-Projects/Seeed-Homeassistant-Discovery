@@ -42,6 +42,7 @@ jobs:
     outputs:
       library: ${{ steps.filter.outputs.library }}
       iot-button: ${{ steps.filter.outputs.iot-button }}
+      soil-moisture: ${{ steps.filter.outputs.soil-moisture }}
       camera-stream: ${{ steps.filter.outputs.camera-stream }}
       reterminal-e1001: ${{ steps.filter.outputs.reterminal-e1001 }}
       reterminal-e1002: ${{ steps.filter.outputs.reterminal-e1002 }}
@@ -62,6 +63,8 @@ jobs:
               - '.github/workflows/build-firmware.yml'
             iot-button:
               - 'arduino/SeeedHADiscovery/examples/IoTButtonV2_DeepSleep/**'
+            soil-moisture:
+              - 'arduino/SeeedHADiscovery/examples/XIAO_Soil_Moisture_Sensor/**'
             camera-stream:
               - 'arduino/SeeedHADiscovery/examples/CameraStream/**'
             reterminal-e1001:
@@ -126,6 +129,48 @@ jobs:
         with:
           name: firmware-IoTButtonV2_DeepSleep
           path: build/IoTButtonV2_DeepSleep/
+
+  # Soil Moisture Sensor - XIAO ESP32-C6 only
+  build-soil-moisture:
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.library == 'true' || needs.detect-changes.outputs.soil-moisture == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Arduino CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=/usr/local/bin sh
+      - name: Install dependencies
+        run: |
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }}
+          for i in 1 2 3; do arduino-cli lib install "ArduinoJson@${{ env.ARDUINOJSON_VERSION }}" && break || sleep 10; done
+          for i in 1 2 3; do arduino-cli lib install "WebSockets@${{ env.WEBSOCKETS_VERSION }}" && break || sleep 10; done
+          mkdir -p ~/Arduino/libraries && cp -r arduino/SeeedHADiscovery ~/Arduino/libraries/
+      - name: Compile
+        run: |
+          mkdir -p build/XIAO_Soil_Moisture_Sensor
+          arduino-cli compile --fqbn "esp32:esp32:XIAO_ESP32C6:CDCOnBoot=cdc,PartitionScheme=huge_app,FlashMode=qio,FlashSize=4M" \
+            --output-dir "build/XIAO_Soil_Moisture_Sensor" --export-binaries \
+            "arduino/SeeedHADiscovery/examples/XIAO_Soil_Moisture_Sensor/XIAO_Soil_Moisture_Sensor.ino"
+      - name: Prepare firmware
+        run: |
+          cd build/XIAO_Soil_Moisture_Sensor
+          for f in *.bin; do
+            [[ "$f" == *".ino.bin" ]] && mv "$f" "firmware.bin"
+            [[ "$f" == *".bootloader.bin" ]] && mv "$f" "bootloader.bin"
+            [[ "$f" == *".partitions.bin" ]] && mv "$f" "partitions.bin"
+          done
+          cp $(find ~/.arduino15/packages/esp32 -name "boot_app0.bin" -type f | head -1) ./boot_app0.bin
+          cat > manifest.json << 'EOF'
+          {"name":"Soil Moisture Sensor (XIAO ESP32-C6)","version":"1.0.0","new_install_prompt_erase":true,"builds":[{"chipFamily":"ESP32-C6","parts":[{"path":"bootloader.bin","offset":0},{"path":"partitions.bin","offset":32768},{"path":"boot_app0.bin","offset":57344},{"path":"firmware.bin","offset":65536}]}]}
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-XIAO_Soil_Moisture_Sensor
+          path: build/XIAO_Soil_Moisture_Sensor/
 
   # Camera Stream - XIAO ESP32-S3 Sense only
   build-camera-stream:
@@ -516,7 +561,7 @@ jobs:
   # ============================================================================
 
   combine:
-    needs: [detect-changes, build-iot-button, build-camera-stream, build-reterminal-e1001, build-reterminal-e1002, build-wifi-provisioning, build-button-switch, build-led-switch, build-ha-state-subscribe, build-temp-humidity]
+    needs: [detect-changes, build-iot-button, build-soil-moisture, build-camera-stream, build-reterminal-e1001, build-reterminal-e1002, build-wifi-provisioning, build-button-switch, build-led-switch, build-ha-state-subscribe, build-temp-humidity]
     if: always() && !cancelled()
     runs-on: ubuntu-latest
     steps:
@@ -532,7 +577,7 @@ jobs:
           mkdir -p combined-firmware
           
           # Single-chip firmware (Seeed-specific)
-          for fw in IoTButtonV2_DeepSleep CameraStream reTerminal_E1001 reTerminal_E1002; do
+          for fw in IoTButtonV2_DeepSleep XIAO_Soil_Moisture_Sensor CameraStream reTerminal_E1001 reTerminal_E1002; do
             if [ -d "all-firmware/firmware-${fw}" ]; then
               cp -r "all-firmware/firmware-${fw}" "combined-firmware/${fw}"
               echo "Added: ${fw}"
