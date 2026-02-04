@@ -569,6 +569,7 @@ jobs:
   # ============================================================================
 
   # Bluetooth Proxy - BLE-MQTT Gateway (Multi-chip)
+  # Note: Uses huge_app partition for C3/C6 due to large firmware size (~1.4MB)
   build-bluetooth-proxy:
     needs: detect-changes
     if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.library-ble == 'true' || needs.detect-changes.outputs.bluetooth-proxy == 'true' }}
@@ -578,13 +579,13 @@ jobs:
       matrix:
         include:
           - chip: C3
-            fqbn: "esp32:esp32:XIAO_ESP32C3:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C3:CDCOnBoot=cdc,PartitionScheme=huge_app,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C3"
           - chip: C5
             fqbn: "esp32:esp32:XIAO_ESP32C5:CDCOnBoot=cdc,PartitionScheme=default_8MB,FlashMode=qio,FlashSize=8M"
             family: "ESP32-C5"
           - chip: C6
-            fqbn: "esp32:esp32:XIAO_ESP32C6:CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
+            fqbn: "esp32:esp32:XIAO_ESP32C6:CDCOnBoot=cdc,PartitionScheme=huge_app,FlashMode=qio,FlashSize=4M"
             family: "ESP32-C6"
           - chip: S3
             fqbn: "esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,PartitionScheme=default_8MB,USBMode=hwcdc,FlashMode=qio,FlashSize=8M,PSRAM=opi"
