@@ -126,7 +126,7 @@ firmware:
     description_zh: "扫描 BTHome BLE 设备并转发到 MQTT 服务器。连接 BLE 传感器与 Home Assistant 的桥梁。"
     sketch: "arduino/SeeedHADiscoveryBLE/examples/XIAO_ESP32_Series_BluetoothProxy/XIAO_ESP32_Series_BluetoothProxy.ino"
     board: "esp32:esp32:esp32c6"
-    board_options: "CDCOnBoot=cdc,PartitionScheme=min_spiffs,CPUFreq=160,FlashMode=qio,FlashSize=4M"
+    board_options: "CDCOnBoot=cdc,PartitionScheme=default,FlashMode=qio,FlashSize=4M"
     platform: "esp32:esp32"
     platform_url: "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
     chip_family: "ESP32-C6"
