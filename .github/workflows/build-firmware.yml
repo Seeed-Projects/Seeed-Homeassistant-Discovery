@@ -109,7 +109,8 @@ jobs:
           arduino-cli config init
           arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
           arduino-cli core update-index
-          arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }}
+          # Retry up to 5 times with 30s delay for 502/network errors
+          for i in 1 2 3 4 5; do arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }} && break || { echo "Attempt $i failed, retrying in 30s..."; sleep 30; }; done
           # Install libraries with retry mechanism for network issues
           for i in 1 2 3; do arduino-cli lib install "ArduinoJson@${{ env.ARDUINOJSON_VERSION }}" && break || sleep 10; done
           for i in 1 2 3; do arduino-cli lib install "WebSockets@${{ env.WEBSOCKETS_VERSION }}" && break || sleep 10; done
@@ -153,7 +154,8 @@ jobs:
           arduino-cli config init
           arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
           arduino-cli core update-index
-          arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }}
+          # Retry up to 5 times with 30s delay for 502/network errors
+          for i in 1 2 3 4 5; do arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }} && break || { echo "Attempt $i failed, retrying in 30s..."; sleep 30; }; done
           for i in 1 2 3; do arduino-cli lib install "ArduinoJson@${{ env.ARDUINOJSON_VERSION }}" && break || sleep 10; done
           for i in 1 2 3; do arduino-cli lib install "WebSockets@${{ env.WEBSOCKETS_VERSION }}" && break || sleep 10; done
           mkdir -p ~/Arduino/libraries && cp -r arduino/SeeedHADiscovery ~/Arduino/libraries/
@@ -195,7 +197,8 @@ jobs:
           arduino-cli config init
           arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
           arduino-cli core update-index
-          arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }}
+          # Retry up to 5 times with 30s delay for 502/network errors
+          for i in 1 2 3 4 5; do arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }} && break || { echo "Attempt $i failed, retrying in 30s..."; sleep 30; }; done
           arduino-cli lib install "ArduinoJson@${{ env.ARDUINOJSON_VERSION }}"
           arduino-cli lib install "WebSockets@${{ env.WEBSOCKETS_VERSION }}"
           mkdir -p ~/Arduino/libraries && cp -r arduino/SeeedHADiscovery ~/Arduino/libraries/
@@ -237,7 +240,8 @@ jobs:
           arduino-cli config init
           arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
           arduino-cli core update-index
-          arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }}
+          # Retry up to 5 times with 30s delay for 502/network errors
+          for i in 1 2 3 4 5; do arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }} && break || { echo "Attempt $i failed, retrying in 30s..."; sleep 30; }; done
           arduino-cli lib install "ArduinoJson@${{ env.ARDUINOJSON_VERSION }}"
           arduino-cli lib install "WebSockets@${{ env.WEBSOCKETS_VERSION }}"
           git clone https://github.com/Seeed-Studio/Seeed_GFX.git ~/Arduino/libraries/Seeed_GFX
@@ -282,7 +286,8 @@ jobs:
           arduino-cli config init
           arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
           arduino-cli core update-index
-          arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }}
+          # Retry up to 5 times with 30s delay for 502/network errors
+          for i in 1 2 3 4 5; do arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }} && break || { echo "Attempt $i failed, retrying in 30s..."; sleep 30; }; done
           arduino-cli lib install "ArduinoJson@${{ env.ARDUINOJSON_VERSION }}"
           arduino-cli lib install "WebSockets@${{ env.WEBSOCKETS_VERSION }}"
           git clone https://github.com/Seeed-Studio/Seeed_GFX.git ~/Arduino/libraries/Seeed_GFX
@@ -345,7 +350,8 @@ jobs:
           arduino-cli config init
           arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
           arduino-cli core update-index
-          arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }}
+          # Retry up to 5 times with 30s delay for 502/network errors
+          for i in 1 2 3 4 5; do arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }} && break || { echo "Attempt $i failed, retrying in 30s..."; sleep 30; }; done
           arduino-cli lib install "ArduinoJson@${{ env.ARDUINOJSON_VERSION }}"
           arduino-cli lib install "WebSockets@${{ env.WEBSOCKETS_VERSION }}"
           mkdir -p ~/Arduino/libraries && cp -r arduino/SeeedHADiscovery ~/Arduino/libraries/
@@ -395,7 +401,8 @@ jobs:
           arduino-cli config init
           arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
           arduino-cli core update-index
-          arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }}
+          # Retry up to 5 times with 30s delay for 502/network errors
+          for i in 1 2 3 4 5; do arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }} && break || { echo "Attempt $i failed, retrying in 30s..."; sleep 30; }; done
           arduino-cli lib install "ArduinoJson@${{ env.ARDUINOJSON_VERSION }}"
           arduino-cli lib install "WebSockets@${{ env.WEBSOCKETS_VERSION }}"
           mkdir -p ~/Arduino/libraries && cp -r arduino/SeeedHADiscovery ~/Arduino/libraries/
@@ -443,7 +450,8 @@ jobs:
           arduino-cli config init
           arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
           arduino-cli core update-index
-          arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }}
+          # Retry up to 5 times with 30s delay for 502/network errors
+          for i in 1 2 3 4 5; do arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }} && break || { echo "Attempt $i failed, retrying in 30s..."; sleep 30; }; done
           arduino-cli lib install "ArduinoJson@${{ env.ARDUINOJSON_VERSION }}"
           arduino-cli lib install "WebSockets@${{ env.WEBSOCKETS_VERSION }}"
           mkdir -p ~/Arduino/libraries && cp -r arduino/SeeedHADiscovery ~/Arduino/libraries/
@@ -493,7 +501,8 @@ jobs:
           arduino-cli config init
           arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
           arduino-cli core update-index
-          arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }}
+          # Retry up to 5 times with 30s delay for 502/network errors
+          for i in 1 2 3 4 5; do arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }} && break || { echo "Attempt $i failed, retrying in 30s..."; sleep 30; }; done
           arduino-cli lib install "ArduinoJson@${{ env.ARDUINOJSON_VERSION }}"
           arduino-cli lib install "WebSockets@${{ env.WEBSOCKETS_VERSION }}"
           mkdir -p ~/Arduino/libraries && cp -r arduino/SeeedHADiscovery ~/Arduino/libraries/
@@ -543,7 +552,8 @@ jobs:
           arduino-cli config init
           arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
           arduino-cli core update-index
-          arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }}
+          # Retry up to 5 times with 30s delay for 502/network errors
+          for i in 1 2 3 4 5; do arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }} && break || { echo "Attempt $i failed, retrying in 30s..."; sleep 30; }; done
           arduino-cli lib install "ArduinoJson@${{ env.ARDUINOJSON_VERSION }}"
           arduino-cli lib install "WebSockets@${{ env.WEBSOCKETS_VERSION }}"
           mkdir -p ~/Arduino/libraries && cp -r arduino/SeeedHADiscovery ~/Arduino/libraries/
@@ -598,7 +608,8 @@ jobs:
           arduino-cli config init
           arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
           arduino-cli core update-index
-          arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }}
+          # Retry up to 5 times with 30s delay for 502/network errors
+          for i in 1 2 3 4 5; do arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }} && break || { echo "Attempt $i failed, retrying in 30s..."; sleep 30; }; done
           # Install required libraries
           arduino-cli lib install "ArduinoJson@${{ env.ARDUINOJSON_VERSION }}"
           arduino-cli lib install "WiFiManager"
