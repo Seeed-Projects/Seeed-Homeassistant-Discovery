@@ -66,6 +66,7 @@ Click the button below to add this integration to your Home Assistant:
 | Category | Firmware | Supported Chips |
 |----------|----------|-----------------|
 | 🏷️ **Seeed Products** | IoT Button V2 | ESP32-C6 |
+| 🏷️ **Seeed Products** | XIAO Soil Moisture Sensor | ESP32-C6 |
 | 🏷️ **Seeed Products** | CameraStream | ESP32-S3 Sense |
 | 🏷️ **Seeed Products** | reTerminal E1001/E1002 | ESP32-S3 |
 | 🔧 **Universal** | WiFi Provisioning | C3/C5/C6/S3 |

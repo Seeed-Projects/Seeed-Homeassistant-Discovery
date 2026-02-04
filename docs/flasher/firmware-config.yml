@@ -45,6 +45,29 @@ firmware:
       - "RGB LED"
       - "电池监测"
   
+  - id: XIAO_Soil_Moisture_Sensor
+    name: "XIAO Soil Moisture Sensor"
+    name_zh: "XIAO 土壤湿度传感器"
+    description: "Soil moisture sensor with LED indicators. Supports dry/normal/wet level detection with visual feedback."
+    description_zh: "带 LED 指示灯的土壤湿度传感器。支持干燥/正常/湿润等级检测，并提供可视化反馈。"
+    sketch: "arduino/SeeedHADiscovery/examples/XIAO_Soil_Moisture_Sensor/XIAO_Soil_Moisture_Sensor.ino"
+    board: "esp32:esp32:esp32c6"
+    board_options: "CDCOnBoot=cdc,PartitionScheme=huge_app,CPUFreq=80,FlashMode=qio,FlashSize=4M"
+    platform: "esp32:esp32"
+    platform_url: "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
+    chip_family: "ESP32-C6"
+    icon: "🌱"
+    features:
+      - "Soil Moisture"
+      - "LED Indicator"
+      - "Web Provisioning"
+      - "ADC Calibration"
+    features_zh:
+      - "土壤湿度"
+      - "LED 指示灯"
+      - "网页配网"
+      - "ADC 校准"
+  
   - id: WiFiProvisioning
     name: "WiFi Provisioning Demo"
     name_zh: "WiFi 配网演示"

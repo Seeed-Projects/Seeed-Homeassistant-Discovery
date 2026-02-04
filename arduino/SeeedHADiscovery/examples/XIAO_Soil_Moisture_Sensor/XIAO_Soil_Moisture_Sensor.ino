@@ -292,6 +292,27 @@ void setup() {
   Serial.print(WET_THRESHOLD);
   Serial.println("% (Green LED)");
   Serial.println("------------------------");
+
+    // =========================================================================
+    // Initialization complete | 完成初始化
+    // =========================================================================
+
+    Serial.println();
+    Serial.println("========================================");
+    Serial.println("  Initialization Complete!");
+    Serial.println("  初始化完成！");
+    Serial.println("========================================");
+    Serial.println();
+    Serial.println("Add device in Home Assistant:");
+    Serial.println("在 Home Assistant 中添加设备：");
+    Serial.println("  Settings -> Devices & Services -> Add Integration");
+    Serial.println("  Search 'Seeed HA Discovery'");
+    Serial.print("  Enter IP: ");
+    Serial.println(ha.getLocalIP().toString().c_str());
+    Serial.println();
+    Serial.print("Device status page: http://");
+    Serial.println(ha.getLocalIP().toString().c_str());
+    Serial.println();
 }
 
 void loop() {
