@@ -69,11 +69,12 @@ Click the button below to add this integration to your Home Assistant:
 | 🏷️ **Seeed Products** | XIAO Soil Moisture Sensor | ESP32-C6 |
 | 🏷️ **Seeed Products** | CameraStream | ESP32-S3 Sense |
 | 🏷️ **Seeed Products** | reTerminal E1001/E1002 | ESP32-S3 |
-| 🔧 **Universal** | WiFi Provisioning | C3/C5/C6/S3 |
-| 🔧 **Universal** | Button Switch | C3/C5/C6/S3 |
-| 🔧 **Universal** | LED Switch | C5/C6/S3 |
-| 🔧 **Universal** | HA State Subscribe | C3/C5/C6/S3 |
-| 🔧 **Universal** | Temperature & Humidity | C3/C5/C6/S3 |
+| 📶 **WiFi Universal** | WiFi Provisioning | C3/C5/C6/S3 |
+| 📶 **WiFi Universal** | Button Switch | C3/C5/C6/S3 |
+| 📶 **WiFi Universal** | LED Switch | C5/C6/S3 |
+| 📶 **WiFi Universal** | HA State Subscribe | C3/C5/C6/S3 |
+| 📶 **WiFi Universal** | Temperature & Humidity | C3/C5/C6/S3 |
+| 📡 **BLE Universal** | BLE-MQTT Gateway | C3/C5/C6/S3 |
 
 > 💡 **Tip**: Universal firmware supports auto chip detection - just connect your XIAO board and click flash!
 
@@ -637,7 +638,9 @@ seeed-ha-discovery/
 │       │   ├── TemperatureBLE/       # Temperature/Humidity sensor example (passive broadcast)
 │       │   ├── ButtonBLE/            # Button switch example (GATT bidirectional)
 │       │   ├── LEDSwitchBLE/         # LED switch example (GATT bidirectional)
-│       │   └── HAStateSubscribeBLE/  # HA state subscription example (v2.4 New)
+│       │   ├── HAStateSubscribeBLE/  # HA state subscription example (v2.4 New)
+│       │   ├── XIAO_nRF52840_LowPowerMotionDetect/  # Ultra-low power motion detection (nRF52840)
+│       │   └── XIAO_ESP32_Series_BluetoothProxy/    # BLE-MQTT Gateway (ESP32 series)
 │       ├── library.json
 │       └── library.properties
 ├── hacs.json

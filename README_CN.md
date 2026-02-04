@@ -69,11 +69,12 @@
 | 🏷️ **Seeed 产品** | 土壤湿度传感器 | ESP32-C6 |
 | 🏷️ **Seeed 产品** | 摄像头推流 | ESP32-S3 Sense |
 | 🏷️ **Seeed 产品** | reTerminal E1001/E1002 | ESP32-S3 |
-| 🔧 **通用固件** | WiFi 配网 | C3/C5/C6/S3 |
-| 🔧 **通用固件** | 按钮开关 | C3/C5/C6/S3 |
-| 🔧 **通用固件** | LED 开关 | C5/C6/S3 |
-| 🔧 **通用固件** | HA 状态订阅 | C3/C5/C6/S3 |
-| 🔧 **通用固件** | 温湿度传感器 | C3/C5/C6/S3 |
+| 📶 **WiFi 通用** | WiFi 配网 | C3/C5/C6/S3 |
+| 📶 **WiFi 通用** | 按钮开关 | C3/C5/C6/S3 |
+| 📶 **WiFi 通用** | LED 开关 | C5/C6/S3 |
+| 📶 **WiFi 通用** | HA 状态订阅 | C3/C5/C6/S3 |
+| 📶 **WiFi 通用** | 温湿度传感器 | C3/C5/C6/S3 |
+| 📡 **蓝牙通用** | BLE-MQTT 网关 | C3/C5/C6/S3 |
 
 > 💡 **提示**：通用固件支持自动芯片检测 - 只需连接你的 XIAO 开发板，点击烧录即可！
 
@@ -637,7 +638,9 @@ seeed-ha-discovery/
 │       │   ├── TemperatureBLE/       # 温湿度传感器示例 (被动广播)
 │       │   ├── ButtonBLE/            # 按钮开关示例 (GATT 双向)
 │       │   ├── LEDSwitchBLE/         # LED 开关示例 (GATT 双向)
-│       │   └── HAStateSubscribeBLE/  # HA 状态订阅示例 (v2.4 新增)
+│       │   ├── HAStateSubscribeBLE/  # HA 状态订阅示例 (v2.4 新增)
+│       │   ├── XIAO_nRF52840_LowPowerMotionDetect/  # 超低功耗运动检测 (nRF52840)
+│       │   └── XIAO_ESP32_Series_BluetoothProxy/    # BLE-MQTT 网关 (ESP32 系列)
 │       ├── library.json
 │       └── library.properties
 ├── hacs.json

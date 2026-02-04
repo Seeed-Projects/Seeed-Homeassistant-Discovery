@@ -116,6 +116,33 @@ firmware:
       - "HA 摄像头"
   
   # ============================================================================
+  # BLE Universal Firmware | BLE 通用固件
+  # ============================================================================
+  
+  - id: BluetoothProxy
+    name: "BLE-MQTT Gateway"
+    name_zh: "BLE-MQTT 网关"
+    description: "Scan BTHome BLE devices and forward to MQTT server. Bridge between BLE sensors and Home Assistant."
+    description_zh: "扫描 BTHome BLE 设备并转发到 MQTT 服务器。连接 BLE 传感器与 Home Assistant 的桥梁。"
+    sketch: "arduino/SeeedHADiscoveryBLE/examples/XIAO_ESP32_Series_BluetoothProxy/XIAO_ESP32_Series_BluetoothProxy.ino"
+    board: "esp32:esp32:esp32c6"
+    board_options: "CDCOnBoot=cdc,PartitionScheme=min_spiffs,CPUFreq=160,FlashMode=qio,FlashSize=4M"
+    platform: "esp32:esp32"
+    platform_url: "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
+    chip_family: "ESP32-C6"
+    icon: "🌉"
+    features:
+      - "BLE Scan"
+      - "MQTT"
+      - "BTHome"
+      - "WiFiManager"
+    features_zh:
+      - "BLE 扫描"
+      - "MQTT"
+      - "BTHome"
+      - "WiFi 配网"
+  
+  # ============================================================================
   # Additional Products - Add yours here | 其他产品 - 在此添加
   # ============================================================================
   
@@ -149,6 +176,8 @@ libraries:
   - "ArduinoJson"
   - "WebSockets"
   - "Adafruit NeoPixel"
+  - "WiFiManager"
+  - "PubSubClient"
   # Add more as needed | 根据需要添加更多
 
 # ============================================================================

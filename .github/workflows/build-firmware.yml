@@ -41,6 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       library: ${{ steps.filter.outputs.library }}
+      library-ble: ${{ steps.filter.outputs.library-ble }}
       iot-button: ${{ steps.filter.outputs.iot-button }}
       soil-moisture: ${{ steps.filter.outputs.soil-moisture }}
       camera-stream: ${{ steps.filter.outputs.camera-stream }}
@@ -51,6 +52,7 @@ jobs:
       led-switch: ${{ steps.filter.outputs.led-switch }}
       ha-state-subscribe: ${{ steps.filter.outputs.ha-state-subscribe }}
       temp-humidity: ${{ steps.filter.outputs.temp-humidity }}
+      bluetooth-proxy: ${{ steps.filter.outputs.bluetooth-proxy }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -60,6 +62,10 @@ jobs:
             library:
               - 'arduino/SeeedHADiscovery/src/**'
               - 'arduino/SeeedHADiscovery/library.*'
+              - '.github/workflows/build-firmware.yml'
+            library-ble:
+              - 'arduino/SeeedHADiscoveryBLE/src/**'
+              - 'arduino/SeeedHADiscoveryBLE/library.*'
               - '.github/workflows/build-firmware.yml'
             iot-button:
               - 'arduino/SeeedHADiscovery/examples/IoTButtonV2_DeepSleep/**'
@@ -81,6 +87,8 @@ jobs:
               - 'arduino/SeeedHADiscovery/examples/HAStateSubscribe/**'
             temp-humidity:
               - 'arduino/SeeedHADiscovery/examples/TemperatureHumidity/**'
+            bluetooth-proxy:
+              - 'arduino/SeeedHADiscoveryBLE/examples/XIAO_ESP32_Series_BluetoothProxy/**'
 
   # ============================================================================
   # SEEED-SPECIFIC FIRMWARE | SEEED 专用固件
@@ -557,11 +565,68 @@ jobs:
           path: build/TemperatureHumidity/${{ matrix.chip }}/
 
   # ============================================================================
+  # BLE UNIVERSAL FIRMWARE | BLE 通用固件
+  # ============================================================================
+
+  # Bluetooth Proxy - BLE-MQTT Gateway (Multi-chip)
+  build-bluetooth-proxy:
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.library-ble == 'true' || needs.detect-changes.outputs.bluetooth-proxy == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - chip: C3
+            fqbn: "esp32:esp32:XIAO_ESP32C3:CDCOnBoot=cdc,PartitionScheme=min_spiffs,FlashMode=qio,FlashSize=4M"
+            family: "ESP32-C3"
+          - chip: C5
+            fqbn: "esp32:esp32:XIAO_ESP32C5:CDCOnBoot=cdc,PartitionScheme=min_spiffs,FlashMode=qio,FlashSize=8M"
+            family: "ESP32-C5"
+          - chip: C6
+            fqbn: "esp32:esp32:XIAO_ESP32C6:CDCOnBoot=cdc,PartitionScheme=min_spiffs,FlashMode=qio,FlashSize=4M"
+            family: "ESP32-C6"
+          - chip: S3
+            fqbn: "esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,PartitionScheme=min_spiffs,USBMode=hwcdc,FlashMode=qio,FlashSize=8M,PSRAM=opi"
+            family: "ESP32-S3"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup and compile
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=/usr/local/bin sh
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }}
+          # Install required libraries
+          arduino-cli lib install "ArduinoJson@${{ env.ARDUINOJSON_VERSION }}"
+          arduino-cli lib install "WiFiManager"
+          arduino-cli lib install "PubSubClient"
+          # Copy BLE library
+          mkdir -p ~/Arduino/libraries && cp -r arduino/SeeedHADiscoveryBLE ~/Arduino/libraries/
+          mkdir -p build/BluetoothProxy/${{ matrix.chip }}
+          arduino-cli compile --fqbn "${{ matrix.fqbn }}" --output-dir "build/BluetoothProxy/${{ matrix.chip }}" --export-binaries \
+            "arduino/SeeedHADiscoveryBLE/examples/XIAO_ESP32_Series_BluetoothProxy/XIAO_ESP32_Series_BluetoothProxy.ino"
+      - name: Prepare firmware
+        run: |
+          cd build/BluetoothProxy/${{ matrix.chip }}
+          for f in *.bin; do
+            [[ "$f" == *".ino.bin" ]] && mv "$f" "firmware.bin"
+            [[ "$f" == *".bootloader.bin" ]] && mv "$f" "bootloader.bin"
+            [[ "$f" == *".partitions.bin" ]] && mv "$f" "partitions.bin"
+          done
+          cp $(find ~/.arduino15/packages/esp32 -name "boot_app0.bin" -type f | head -1) ./boot_app0.bin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-BluetoothProxy-${{ matrix.chip }}
+          path: build/BluetoothProxy/${{ matrix.chip }}/
+
+  # ============================================================================
   # COMBINE & RELEASE | 合并与发布
   # ============================================================================
 
   combine:
-    needs: [detect-changes, build-iot-button, build-soil-moisture, build-camera-stream, build-reterminal-e1001, build-reterminal-e1002, build-wifi-provisioning, build-button-switch, build-led-switch, build-ha-state-subscribe, build-temp-humidity]
+    needs: [detect-changes, build-iot-button, build-soil-moisture, build-camera-stream, build-reterminal-e1001, build-reterminal-e1002, build-wifi-provisioning, build-button-switch, build-led-switch, build-ha-state-subscribe, build-temp-humidity, build-bluetooth-proxy]
     if: always() && !cancelled()
     runs-on: ubuntu-latest
     steps:
@@ -584,7 +649,7 @@ jobs:
             fi
           done
           
-          # Multi-chip firmware (Universal) - create manifest with all chips
+          # Multi-chip firmware (Universal WiFi) - create manifest with all chips
           for fw in WiFiProvisioning ButtonSwitch LEDSwitch HAStateSubscribe TemperatureHumidity; do
             mkdir -p "combined-firmware/${fw}"
             for chip in C3 C5 C6 S3; do
@@ -598,6 +663,34 @@ jobs:
             # Create multi-chip manifest
             if [ -d "combined-firmware/${fw}/C3" ] || [ -d "combined-firmware/${fw}/C5" ] || [ -d "combined-firmware/${fw}/C6" ] || [ -d "combined-firmware/${fw}/S3" ]; then
               echo '{"name":"'"${fw}"'","version":"1.0.0","new_install_prompt_erase":true,"builds":[' > "combined-firmware/${fw}/manifest.json"
+              FIRST=true
+              for chip in C3 C5 C6 S3; do
+                if [ -d "combined-firmware/${fw}/${chip}" ]; then
+                  [ "$FIRST" = false ] && echo ',' >> "combined-firmware/${fw}/manifest.json"
+                  FIRST=false
+                  FAMILY="ESP32-${chip}"
+                  echo '{"chipFamily":"'"${FAMILY}"'","parts":[{"path":"'"${chip}"'/bootloader.bin","offset":0},{"path":"'"${chip}"'/partitions.bin","offset":32768},{"path":"'"${chip}"'/boot_app0.bin","offset":57344},{"path":"'"${chip}"'/firmware.bin","offset":65536}]}' >> "combined-firmware/${fw}/manifest.json"
+                fi
+              done
+              echo ']}' >> "combined-firmware/${fw}/manifest.json"
+              echo "Created manifest for ${fw}"
+            fi
+          done
+          
+          # Multi-chip firmware (Universal BLE) - create manifest with all chips
+          for fw in BluetoothProxy; do
+            mkdir -p "combined-firmware/${fw}"
+            for chip in C3 C5 C6 S3; do
+              if [ -d "all-firmware/firmware-${fw}-${chip}" ]; then
+                mkdir -p "combined-firmware/${fw}/${chip}"
+                cp -r "all-firmware/firmware-${fw}-${chip}/"* "combined-firmware/${fw}/${chip}/"
+                echo "Added: ${fw}/${chip}"
+              fi
+            done
+            
+            # Create multi-chip manifest
+            if [ -d "combined-firmware/${fw}/C3" ] || [ -d "combined-firmware/${fw}/C5" ] || [ -d "combined-firmware/${fw}/C6" ] || [ -d "combined-firmware/${fw}/S3" ]; then
+              echo '{"name":"BLE-MQTT Gateway","version":"1.0.0","new_install_prompt_erase":true,"builds":[' > "combined-firmware/${fw}/manifest.json"
               FIRST=true
               for chip in C3 C5 C6 S3; do
                 if [ -d "combined-firmware/${fw}/${chip}" ]; then
@@ -667,7 +760,7 @@ jobs:
           | reTerminal_E1001 | reTerminal E1001 | E-Paper dashboard |
           | reTerminal_E1002 | reTerminal E1002 | Color E-Paper dashboard |
           
-          ### 📦 Universal Firmware (Auto Chip Detection)
+          ### 📦 WiFi Universal Firmware (Auto Chip Detection)
           | Firmware | Supported Chips | Description |
           |----------|-----------------|-------------|
           | WiFiProvisioning | C3/C5/C6/S3 | WiFi setup demo |
@@ -675,6 +768,11 @@ jobs:
           | LEDSwitch | C3/C5/C6/S3 | LED control |
           | HAStateSubscribe | C3/C5/C6/S3 | HA state display |
           | TemperatureHumidity | C3/C5/C6/S3 | Sensor demo |
+          
+          ### 📦 BLE Universal Firmware (Auto Chip Detection)
+          | Firmware | Supported Chips | Description |
+          |----------|-----------------|-------------|
+          | BluetoothProxy | C3/C5/C6/S3 | BLE-MQTT Gateway |
           
           ### 📝 Changelog
           ${CHANGELOG}

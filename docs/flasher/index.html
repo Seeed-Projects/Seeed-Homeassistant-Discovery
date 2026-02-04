@@ -115,6 +115,8 @@
         
         .section-seeed .section-icon { background: var(--accent-orange-dim); }
         .section-universal .section-icon { background: var(--accent-purple-dim); }
+        .section-wifi .section-icon { background: var(--accent-blue-dim); }
+        .section-ble .section-icon { background: var(--accent-green-dim); }
         
         .section-title {
             font-size: 1.4rem;
@@ -123,6 +125,13 @@
         
         .section-seeed .section-title { color: var(--accent-orange); }
         .section-universal .section-title { color: var(--accent-purple); }
+        .section-wifi .section-title { color: var(--accent-blue); }
+        .section-ble .section-title { color: var(--accent-green); }
+        
+        .card-chip.ble {
+            background: var(--accent-green-dim);
+            color: var(--accent-green);
+        }
         
         .section-hint {
             margin-left: auto;
@@ -489,11 +498,11 @@
             </div>
         </section>
         
-        <!-- Universal Firmware -->
-        <section class="section section-universal">
+        <!-- WiFi Universal Firmware -->
+        <section class="section section-wifi">
             <div class="section-header">
-                <div class="section-icon">🌐</div>
-                <h2 class="section-title" data-en="Universal Firmware" data-zh="通用固件">Universal Firmware</h2>
+                <div class="section-icon">📶</div>
+                <h2 class="section-title" data-en="WiFi Universal Firmware" data-zh="WiFi 通用固件">WiFi Universal Firmware</h2>
                 <div class="section-hint"><strong>✨</strong> <span data-en="Auto chip detection - just select the correct serial port" data-zh="自动芯片检测 - 只需选择正确的串口">Auto chip detection - just select the correct serial port</span></div>
             </div>
             
@@ -632,6 +641,46 @@
                         <span class="feature-tag" data-en="DHT22" data-zh="DHT22">DHT22</span>
                     </div>
                     <esp-web-install-button manifest="./firmware/TemperatureHumidity/manifest.json">
+                        <button slot="activate" data-en="Install Firmware" data-zh="安装固件">Install Firmware</button>
+                    </esp-web-install-button>
+                    <div class="unsupported" data-en="Browser not supported" data-zh="浏览器不支持">Browser not supported</div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- BLE Universal Firmware -->
+        <section class="section section-ble">
+            <div class="section-header">
+                <div class="section-icon">📡</div>
+                <h2 class="section-title" data-en="BLE Universal Firmware" data-zh="蓝牙通用固件">BLE Universal Firmware</h2>
+                <div class="section-hint"><strong>✨</strong> <span data-en="BTHome protocol - Auto discovered by Home Assistant" data-zh="BTHome 协议 - 被 Home Assistant 自动发现">BTHome protocol - Auto discovered by Home Assistant</span></div>
+            </div>
+            
+            <div class="firmware-grid">
+                <!-- BLE-MQTT Gateway -->
+                <div class="firmware-card">
+                    <div class="auto-detect-badge">🔍 <span data-en="Auto Detect" data-zh="自动检测">Auto Detect</span></div>
+                    <div class="card-header">
+                        <div class="card-icon">🌉</div>
+                        <div>
+                            <div class="card-title" data-en="BLE-MQTT Gateway" data-zh="BLE-MQTT 网关">BLE-MQTT Gateway</div>
+                            <div class="card-chips">
+                                <span class="card-chip ble">ESP32-C3</span>
+                                <span class="card-chip ble">ESP32-C5</span>
+                                <span class="card-chip ble">ESP32-C6</span>
+                                <span class="card-chip ble">ESP32-S3</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="card-description" data-en="Scan BTHome BLE devices and forward to MQTT server. Bridge between BLE sensors and Home Assistant." data-zh="扫描 BTHome BLE 设备并转发到 MQTT 服务器。连接 BLE 传感器与 Home Assistant 的桥梁。">
+                        Scan BTHome BLE devices and forward to MQTT server. Bridge between BLE sensors and Home Assistant.
+                    </p>
+                    <div class="card-features">
+                        <span class="feature-tag" data-en="BLE Scan" data-zh="BLE 扫描">BLE Scan</span>
+                        <span class="feature-tag" data-en="MQTT" data-zh="MQTT">MQTT</span>
+                        <span class="feature-tag" data-en="BTHome" data-zh="BTHome">BTHome</span>
+                    </div>
+                    <esp-web-install-button manifest="./firmware/BluetoothProxy/manifest.json">
                         <button slot="activate" data-en="Install Firmware" data-zh="安装固件">Install Firmware</button>
                     </esp-web-install-button>
                     <div class="unsupported" data-en="Browser not supported" data-zh="浏览器不支持">Browser not supported</div>

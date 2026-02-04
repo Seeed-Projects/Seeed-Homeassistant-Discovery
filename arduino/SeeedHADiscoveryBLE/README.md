@@ -171,12 +171,14 @@ void loop() {
 
 ## 📂 Examples
 
-| Example | Description |
-|---------|-------------|
-| [TemperatureBLE](examples/TemperatureBLE/) | Basic sensor broadcast (BTHome) |
-| [ButtonBLE](examples/ButtonBLE/) | Button events via BLE |
-| [LEDSwitchBLE](examples/LEDSwitchBLE/) | Controllable LED via GATT |
-| [HAStateSubscribeBLE](examples/HAStateSubscribeBLE/) | Subscribe to HA entity states |
+| Example | Description | Platform |
+|---------|-------------|----------|
+| [TemperatureBLE](examples/TemperatureBLE/) | Basic sensor broadcast (BTHome) | ESP32 / nRF52840 |
+| [ButtonBLE](examples/ButtonBLE/) | Button events via BLE | ESP32 / nRF52840 |
+| [LEDSwitchBLE](examples/LEDSwitchBLE/) | Controllable LED via GATT | ESP32 / nRF52840 |
+| [HAStateSubscribeBLE](examples/HAStateSubscribeBLE/) | Subscribe to HA entity states | ESP32 / nRF52840 |
+| [XIAO_nRF52840_LowPowerMotionDetect](examples/XIAO_nRF52840_LowPowerMotionDetect/) | Ultra-low power motion detection with IMU wake-up | nRF52840 Sense |
+| [XIAO_ESP32_Series_BluetoothProxy](examples/XIAO_ESP32_Series_BluetoothProxy/) | BLE-MQTT Gateway, forward BTHome to MQTT | ESP32-C3/C5/C6/S3 |
 
 ## 🔌 API Reference
 

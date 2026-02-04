@@ -171,12 +171,14 @@ void loop() {
 
 ## 📂 示例程序
 
-| 示例 | 描述 |
-|------|------|
-| [TemperatureBLE](examples/TemperatureBLE/) | 基础传感器广播（BTHome） |
-| [ButtonBLE](examples/ButtonBLE/) | 通过 BLE 发送按钮事件 |
-| [LEDSwitchBLE](examples/LEDSwitchBLE/) | 通过 GATT 控制 LED |
-| [HAStateSubscribeBLE](examples/HAStateSubscribeBLE/) | 订阅 HA 实体状态 |
+| 示例 | 描述 | 平台 |
+|------|------|------|
+| [TemperatureBLE](examples/TemperatureBLE/) | 基础传感器广播（BTHome） | ESP32 / nRF52840 |
+| [ButtonBLE](examples/ButtonBLE/) | 通过 BLE 发送按钮事件 | ESP32 / nRF52840 |
+| [LEDSwitchBLE](examples/LEDSwitchBLE/) | 通过 GATT 控制 LED | ESP32 / nRF52840 |
+| [HAStateSubscribeBLE](examples/HAStateSubscribeBLE/) | 订阅 HA 实体状态 | ESP32 / nRF52840 |
+| [XIAO_nRF52840_LowPowerMotionDetect](examples/XIAO_nRF52840_LowPowerMotionDetect/) | 超低功耗运动检测，IMU 唤醒 | nRF52840 Sense |
+| [XIAO_ESP32_Series_BluetoothProxy](examples/XIAO_ESP32_Series_BluetoothProxy/) | BLE-MQTT 网关，转发 BTHome 到 MQTT | ESP32-C3/C5/C6/S3 |
 
 ## 🔌 API 参考
 
