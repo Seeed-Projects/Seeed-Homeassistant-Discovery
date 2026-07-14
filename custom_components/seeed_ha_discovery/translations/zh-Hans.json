@@ -54,11 +54,84 @@
         "data": {
           "ble_subscribed_entities": "订阅的实体（最多 16 个）"
         }
+      },
+      "ir": {
+        "title": "配置 IR Mate",
+        "description": "在 Seeed HA Discovery 内管理 **{device_name}**。\n\n遥控设备：**{appliance_count}** · 保存在 Home Assistant 的已学习命令：**{learned_count}** · 触摸配置版本：**{revision}/{device_revision}**",
+        "menu_options": {
+          "ir_add_appliance": "添加遥控设备",
+          "ir_delete_appliance": "删除遥控设备",
+          "ir_learn_command": "学习或替换命令",
+          "ir_learn_new_command": "学习自定义命令",
+          "ir_test_command": "测试命令",
+          "ir_delete_command": "删除已学习命令",
+          "ir_touch_bindings": "配置触摸动作",
+          "wifi_entities": "配置实体订阅"
+        }
+      },
+      "ir_add_appliance": {
+        "title": "添加红外遥控设备",
+        "description": "选择品牌型号，并填写一个容易辨认的设备名称。",
+        "data": {
+          "profile_id": "品牌与型号",
+          "name": "设备名称"
+        }
+      },
+      "ir_delete_appliance": {
+        "title": "删除红外遥控设备",
+        "description": "选择要删除的设备。它的学习命令和触摸引用会同时删除。",
+        "data": {
+          "appliance_id": "遥控设备"
+        }
+      },
+      "ir_learn_command": {
+        "title": "学习或替换命令",
+        "description": "选择命令并提交，然后在 30 秒内将原遥控器对准 IR Mate，按下对应按键。",
+        "data": {
+          "command": "遥控命令"
+        }
+      },
+      "ir_learn_new_command": {
+        "title": "学习自定义命令",
+        "description": "选择遥控设备并填写命令名称，提交后在 30 秒内按下原遥控器的对应按键。",
+        "data": {
+          "appliance_id": "遥控设备",
+          "command_name": "命令名称"
+        }
+      },
+      "ir_test_command": {
+        "title": "测试红外命令",
+        "description": "选择一个命令，提交后立即发射。",
+        "data": {
+          "command": "遥控命令"
+        }
+      },
+      "ir_delete_command": {
+        "title": "删除已学习命令",
+        "description": "选择要从 Home Assistant 存储中删除的学习命令。",
+        "data": {
+          "command": "遥控命令"
+        }
+      },
+      "ir_touch_bindings": {
+        "title": "配置离线触摸动作",
+        "description": "为每种手势选择一个可用命令。保存后，四个动作会同步到 IR Mate 供离线使用。",
+        "data": {
+          "single": "单击",
+          "double": "双击",
+          "triple": "三击",
+          "long": "长按"
+        }
       }
+    },
+    "error": {
+      "ir_operation_failed": "IR Mate 操作失败，请检查设备连接后重试。",
+      "ir_learning_failed": "没有学习到有效红外信号，请将原遥控器对准 IR Mate 后重试。"
     },
     "abort": {
       "ble_not_supported": "BLE 设备不支持实体订阅，此功能仅适用于 WiFi 设备。",
-      "ble_control_not_supported": "此 BLE 设备不支持双向通信。实体订阅需要启用了 GATT 控制服务的设备。"
+      "ble_control_not_supported": "此 BLE 设备不支持双向通信。实体订阅需要启用了 GATT 控制服务的设备。",
+      "ir_not_available": "该设备不提供 IR Mate 管理功能。"
     }
   }
 }

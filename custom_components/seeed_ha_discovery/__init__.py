@@ -118,11 +118,25 @@ async def _async_setup_wifi_entry(hass: HomeAssistant, entry: ConfigEntry) -> bo
         raise ConfigEntryNotReady(f"Cannot connect to {host}") from err
 
     # 保存设备和协调器引用
-    hass.data[DOMAIN][entry.entry_id] = {
+    entry_data: dict[str, Any] = {
         "device": device,
         "coordinator": coordinator,
         "connection_type": CONNECTION_TYPE_WIFI,
     }
+    # Create IR management only for devices that report both infrared roles.
+    # 仅为同时上报红外收发能力的设备创建 IR 管理功能。
+    infrared_roles = {
+        config.get("role")
+        for config in device.entities.values()
+        if config.get("type") == "infrared"
+    }
+    if {"emitter", "receiver"}.issubset(infrared_roles):
+        from .ir_manager import IRMateManager
+
+        ir_manager = IRMateManager(hass, entry, device)
+        await ir_manager.async_initialize()
+        entry_data["ir_manager"] = ir_manager
+    hass.data[DOMAIN][entry.entry_id] = entry_data
 
     # 设置 HA 实体订阅（如果配置了）
     # Set up HA entity subscription (if configured)

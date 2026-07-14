@@ -14,7 +14,9 @@
 #include <SeeedHADiscovery.h>
 #include <ir_Gree.h>
 
+#include <array>
 #include <functional>
+#include <utility>
 #include <vector>
 
 class IRMateInfrared {
@@ -55,6 +57,8 @@ public:
     bool toggleDefaultGreePower();
     bool increaseDefaultGreeTemperature();
     bool decreaseDefaultGreeTemperature();
+    bool cycleDefaultGreeMode();
+    bool executeTouchGesture(const String& gesture);
     bool isLearning() const { return _learning; }
 
     void setDefaultCarrierFrequency(uint16_t frequency);
@@ -77,6 +81,28 @@ private:
     static constexpr uint32_t MIN_LEARNING_TIMEOUT_MS = 1000;
     static constexpr uint32_t MAX_LEARNING_TIMEOUT_MS = 60000;
     static constexpr uint8_t DEFAULT_GREE_TEMPERATURE = 25;
+    static constexpr size_t TOUCH_BINDING_COUNT = 4;
+
+    enum class TouchBindingSource : uint8_t {
+        None = 0,
+        Builtin = 1,
+        Raw = 2,
+    };
+
+    enum class BuiltinAction : uint8_t {
+        None = 0,
+        GreePower = 1,
+        GreeTemperatureUp = 2,
+        GreeTemperatureDown = 3,
+        GreeMode = 4,
+    };
+
+    struct TouchBinding {
+        TouchBindingSource source = TouchBindingSource::None;
+        BuiltinAction action = BuiltinAction::None;
+        uint16_t carrierFrequency = 38000;
+        std::vector<uint16_t> timings;
+    };
 
     SeeedHADiscovery& _ha;
     IRsend _sender;
@@ -92,18 +118,28 @@ private:
     TransmitCallback _transmitCallback;
     LearningStateCallback _learningStateCallback;
     LearningResultCallback _learningResultCallback;
+    std::array<TouchBinding, TOUCH_BINDING_COUNT> _touchBindings;
+    uint32_t _touchRevision;
 
     void _appendDiscoveryEntities(JsonArray& entities);
     void _handleTransmitMessage(JsonDocument& doc);
+    void _handleBuiltinCommandMessage(JsonDocument& doc);
     void _handleLearnStartMessage(JsonDocument& doc);
     void _handleLearnCancelMessage(JsonDocument& doc);
+    void _handleTouchBindingMessage(JsonDocument& doc);
+    void _handleTouchStatusMessage(JsonDocument& doc);
     bool _parseTimings(JsonArray timings, std::vector<uint16_t>& output, String& error);
     bool _transmitRaw(
         const std::vector<uint16_t>& timings,
         uint16_t carrierFrequency,
         uint8_t repeatCount
     );
-    void _sendTransmitResult(uint32_t requestId, bool success, const String& error = "");
+    void _sendTransmitResult(
+        uint32_t requestId,
+        bool success,
+        const String& error = "",
+        bool notifyCallback = true
+    );
     void _finishLearning(
         bool success,
         const String& error = "",
@@ -120,6 +156,20 @@ private:
     void _loadDefaultGreeState();
     void _saveDefaultGreeState();
     bool _sendDefaultGreeState();
+    int8_t _gestureIndex(const String& gesture) const;
+    BuiltinAction _parseBuiltinAction(const String& action) const;
+    bool _executeBuiltinAction(BuiltinAction action);
+    void _setFactoryTouchBindings();
+    void _loadTouchBindings();
+    bool _saveTouchBinding(size_t index);
+    bool _saveTouchRevision();
+    void _sendTouchBindingResult(
+        uint32_t requestId,
+        bool success,
+        const String& gesture,
+        const String& error = ""
+    );
+    void _sendTouchStatusResult(uint32_t requestId);
 };
 
 #endif

@@ -42,6 +42,7 @@ from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers import selector
 
@@ -655,6 +656,80 @@ class SeeedHAOptionsFlow(config_entries.OptionsFlow):
     # 注意：不需要 __init__ 方法，父类 OptionsFlow 会自动设置 self.config_entry
     # Note: No __init__ needed, parent OptionsFlow automatically sets self.config_entry
 
+    def _ir_manager(self) -> Any | None:
+        """Return the IR manager attached to this config entry."""
+        entry_data = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        if not isinstance(entry_data, dict):
+            return None
+        return entry_data.get("ir_manager")
+
+    @staticmethod
+    def _select(options: list[dict[str, str]]) -> selector.SelectSelector:
+        """Build one dropdown selector from value and label pairs."""
+        return selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=options,
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        )
+
+    @staticmethod
+    def _appliance_options(
+        snapshot: dict[str, Any],
+        *,
+        include_factory: bool = True,
+        learning_only: bool = False,
+    ) -> list[dict[str, str]]:
+        """Return configured appliances as dropdown options."""
+        options = []
+        for appliance in snapshot["appliances"]:
+            if not include_factory and appliance.get("factory"):
+                continue
+            if learning_only and appliance.get("source") != "learning":
+                continue
+            options.append({"value": appliance["id"], "label": appliance["name"]})
+        return options
+
+    @staticmethod
+    def _command_options(
+        snapshot: dict[str, Any],
+        *,
+        learned_only: bool = False,
+        learned_source_only: bool = False,
+        learning_only: bool = False,
+    ) -> list[dict[str, str]]:
+        """Return appliance commands as dropdown options."""
+        options = []
+        for appliance in snapshot["appliances"]:
+            for command in appliance["commands"]:
+                if learned_only and not command["learned"]:
+                    continue
+                if learned_source_only and command["source"] != "learned":
+                    continue
+                if learning_only and command["source"] == "builtin":
+                    continue
+                options.append(
+                    {
+                        "value": f"{appliance['id']}::{command['id']}",
+                        "label": f"{appliance['name']} · {command['name']}",
+                    }
+                )
+        return options
+
+    @staticmethod
+    def _command_from_value(
+        snapshot: dict[str, Any], value: str
+    ) -> tuple[str, str, str]:
+        """Resolve one dropdown value into appliance, command, and name."""
+        appliance_id, command_id = value.split("::", 1)
+        for appliance in snapshot["appliances"]:
+            if appliance["id"] != appliance_id:
+                continue
+            for command in appliance["commands"]:
+                if command["id"] == command_id:
+                    return appliance_id, command_id, command["name"]
+        raise HomeAssistantError("Infrared command is no longer available")
+
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
@@ -673,8 +748,305 @@ class SeeedHAOptionsFlow(config_entries.OptionsFlow):
         # Choose different config flow based on connection type
         if connection_type == CONNECTION_TYPE_BLE:
             return await self.async_step_ble_entities(user_input)
-        else:
-            return await self.async_step_wifi_entities(user_input)
+        if self._ir_manager() is not None:
+            return await self.async_step_ir()
+        return await self.async_step_wifi_entities(user_input)
+
+    async def async_step_ir(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Show IR Mate management inside the existing integration options."""
+        manager = self._ir_manager()
+        if manager is None:
+            return self.async_abort(reason="ir_not_available")
+
+        snapshot = await manager.async_snapshot(refresh_status=True)
+        appliance_count = len(snapshot["appliances"])
+        learned_count = sum(
+            command["source"] == "learned"
+            for appliance in snapshot["appliances"]
+            for command in appliance["commands"]
+        )
+        menu_options = ["ir_add_appliance"]
+        if self._appliance_options(snapshot, include_factory=False):
+            menu_options.append("ir_delete_appliance")
+        if self._command_options(snapshot, learning_only=True):
+            menu_options.append("ir_learn_command")
+        if self._appliance_options(snapshot, learning_only=True):
+            menu_options.append("ir_learn_new_command")
+        if self._command_options(snapshot, learned_only=True):
+            menu_options.append("ir_test_command")
+        if self._command_options(snapshot, learned_source_only=True):
+            menu_options.append("ir_delete_command")
+        menu_options.extend(["ir_touch_bindings", "wifi_entities"])
+
+        return self.async_show_menu(
+            step_id="ir",
+            menu_options=menu_options,
+            description_placeholders={
+                "device_name": self.config_entry.title,
+                "appliance_count": str(appliance_count),
+                "learned_count": str(learned_count),
+                "revision": str(snapshot["revision"]),
+                "device_revision": str(snapshot["device_revision"]),
+            },
+        )
+
+    async def async_step_ir_add_appliance(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Add one brand profile to the current IR Mate."""
+        manager = self._ir_manager()
+        if manager is None:
+            return self.async_abort(reason="ir_not_available")
+        snapshot = await manager.async_snapshot()
+        profile_options = [
+            {
+                "value": profile["id"],
+                "label": f"{profile['brand']} · {profile['model']}",
+            }
+            for profile in snapshot["profiles"]["profiles"]
+        ]
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                await manager.async_create_appliance(
+                    user_input["profile_id"], user_input["name"]
+                )
+                return await self.async_step_ir()
+            except (HomeAssistantError, ValueError) as err:
+                _LOGGER.warning("IR appliance creation failed: %s", err)
+                errors["base"] = "ir_operation_failed"
+
+        return self.async_show_form(
+            step_id="ir_add_appliance",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("profile_id"): self._select(profile_options),
+                    vol.Required("name"): str,
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_ir_delete_appliance(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Delete one user-created IR appliance."""
+        manager = self._ir_manager()
+        if manager is None:
+            return self.async_abort(reason="ir_not_available")
+        snapshot = await manager.async_snapshot()
+        appliance_options = self._appliance_options(
+            snapshot, include_factory=False
+        )
+        if not appliance_options:
+            return await self.async_step_ir()
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                await manager.async_delete_appliance(user_input["appliance_id"])
+                return await self.async_step_ir()
+            except (HomeAssistantError, ValueError) as err:
+                _LOGGER.warning("IR appliance deletion failed: %s", err)
+                errors["base"] = "ir_operation_failed"
+
+        return self.async_show_form(
+            step_id="ir_delete_appliance",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("appliance_id"): self._select(appliance_options),
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_ir_learn_command(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Learn or replace one command slot."""
+        manager = self._ir_manager()
+        if manager is None:
+            return self.async_abort(reason="ir_not_available")
+        snapshot = await manager.async_snapshot()
+        command_options = self._command_options(snapshot, learning_only=True)
+        if not command_options:
+            return await self.async_step_ir()
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                appliance_id, command_id, command_name = self._command_from_value(
+                    snapshot, user_input["command"]
+                )
+                await manager.async_learn_command(
+                    appliance_id, command_id, command_name
+                )
+                return await self.async_step_ir()
+            except (HomeAssistantError, RuntimeError, TimeoutError, ValueError) as err:
+                _LOGGER.warning("IR command learning failed: %s", err)
+                errors["base"] = "ir_learning_failed"
+
+        return self.async_show_form(
+            step_id="ir_learn_command",
+            data_schema=vol.Schema(
+                {vol.Required("command"): self._select(command_options)}
+            ),
+            errors=errors,
+        )
+
+    async def async_step_ir_learn_new_command(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Create and learn one custom command."""
+        manager = self._ir_manager()
+        if manager is None:
+            return self.async_abort(reason="ir_not_available")
+        snapshot = await manager.async_snapshot()
+        appliance_options = self._appliance_options(snapshot, learning_only=True)
+        if not appliance_options:
+            return await self.async_step_ir()
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                await manager.async_learn_command(
+                    user_input["appliance_id"],
+                    None,
+                    user_input["command_name"],
+                )
+                return await self.async_step_ir()
+            except (HomeAssistantError, RuntimeError, TimeoutError, ValueError) as err:
+                _LOGGER.warning("Custom IR command learning failed: %s", err)
+                errors["base"] = "ir_learning_failed"
+
+        return self.async_show_form(
+            step_id="ir_learn_new_command",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("appliance_id"): self._select(appliance_options),
+                    vol.Required("command_name"): str,
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_ir_test_command(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Transmit one available command for testing."""
+        manager = self._ir_manager()
+        if manager is None:
+            return self.async_abort(reason="ir_not_available")
+        snapshot = await manager.async_snapshot()
+        command_options = self._command_options(snapshot, learned_only=True)
+        if not command_options:
+            return await self.async_step_ir()
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                appliance_id, command_id, _name = self._command_from_value(
+                    snapshot, user_input["command"]
+                )
+                await manager.async_test_command(appliance_id, command_id)
+                return await self.async_step_ir()
+            except (HomeAssistantError, RuntimeError, TimeoutError, ValueError) as err:
+                _LOGGER.warning("IR command test failed: %s", err)
+                errors["base"] = "ir_operation_failed"
+
+        return self.async_show_form(
+            step_id="ir_test_command",
+            data_schema=vol.Schema(
+                {vol.Required("command"): self._select(command_options)}
+            ),
+            errors=errors,
+        )
+
+    async def async_step_ir_delete_command(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Delete one learned command."""
+        manager = self._ir_manager()
+        if manager is None:
+            return self.async_abort(reason="ir_not_available")
+        snapshot = await manager.async_snapshot()
+        command_options = self._command_options(
+            snapshot, learned_source_only=True
+        )
+        if not command_options:
+            return await self.async_step_ir()
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                appliance_id, command_id, _name = self._command_from_value(
+                    snapshot, user_input["command"]
+                )
+                await manager.async_delete_command(appliance_id, command_id)
+                return await self.async_step_ir()
+            except (HomeAssistantError, ValueError) as err:
+                _LOGGER.warning("IR command deletion failed: %s", err)
+                errors["base"] = "ir_operation_failed"
+
+        return self.async_show_form(
+            step_id="ir_delete_command",
+            data_schema=vol.Schema(
+                {vol.Required("command"): self._select(command_options)}
+            ),
+            errors=errors,
+        )
+
+    async def async_step_ir_touch_bindings(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Configure and synchronize the four offline touch gestures."""
+        manager = self._ir_manager()
+        if manager is None:
+            return self.async_abort(reason="ir_not_available")
+        snapshot = await manager.async_snapshot()
+        command_options = [
+            {"value": "none", "label": "—"},
+            *self._command_options(snapshot, learned_only=True),
+        ]
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                bindings: dict[str, dict[str, str] | None] = {}
+                for gesture in ("single", "double", "triple", "long"):
+                    value = user_input[gesture]
+                    if value == "none":
+                        bindings[gesture] = None
+                        continue
+                    appliance_id, command_id, _name = self._command_from_value(
+                        snapshot, value
+                    )
+                    bindings[gesture] = {
+                        "appliance_id": appliance_id,
+                        "command_id": command_id,
+                    }
+                await manager.async_save_bindings(bindings)
+                return await self.async_step_ir()
+            except (HomeAssistantError, RuntimeError, TimeoutError, ValueError) as err:
+                _LOGGER.warning("IR touch binding synchronization failed: %s", err)
+                errors["base"] = "ir_operation_failed"
+
+        defaults = {}
+        for gesture in ("single", "double", "triple", "long"):
+            binding = snapshot["bindings"].get(gesture)
+            defaults[gesture] = (
+                f"{binding['appliance_id']}::{binding['command_id']}"
+                if binding
+                else "none"
+            )
+        return self.async_show_form(
+            step_id="ir_touch_bindings",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(gesture, default=defaults[gesture]): self._select(
+                        command_options
+                    )
+                    for gesture in ("single", "double", "triple", "long")
+                }
+            ),
+            errors=errors,
+        )
 
     async def async_step_wifi_entities(
         self, user_input: dict[str, Any] | None = None

@@ -6,6 +6,12 @@
 namespace {
 constexpr char STORAGE_NAMESPACE[] = "ir_mate";
 constexpr char GREE_STATE_KEY[] = "gree_state";
+constexpr char TOUCH_STORAGE_NAMESPACE[] = "ir_touch";
+constexpr char TOUCH_REVISION_KEY[] = "revision";
+constexpr char TOUCH_SOURCE_KEYS[][9] = {"s_source", "d_source", "t_source", "l_source"};
+constexpr char TOUCH_ACTION_KEYS[][9] = {"s_action", "d_action", "t_action", "l_action"};
+constexpr char TOUCH_FREQUENCY_KEYS[][7] = {"s_freq", "d_freq", "t_freq", "l_freq"};
+constexpr char TOUCH_TIMING_KEYS[][6] = {"s_raw", "d_raw", "t_raw", "l_raw"};
 }
 
 IRMateInfrared::IRMateInfrared(
@@ -27,7 +33,8 @@ IRMateInfrared::IRMateInfrared(
     _receiveCallback(nullptr),
     _transmitCallback(nullptr),
     _learningStateCallback(nullptr),
-    _learningResultCallback(nullptr)
+    _learningResultCallback(nullptr),
+    _touchRevision(0)
 {
 }
 
@@ -39,15 +46,25 @@ void IRMateInfrared::begin() {
     _sender.begin();
     _gree.begin();
     _loadDefaultGreeState();
+    _loadTouchBindings();
 
     _ha.onProtocolMessage("ir_transmit", [this](JsonDocument& doc) {
         _handleTransmitMessage(doc);
+    });
+    _ha.onProtocolMessage("ir_builtin_command", [this](JsonDocument& doc) {
+        _handleBuiltinCommandMessage(doc);
     });
     _ha.onProtocolMessage("ir_learn_start", [this](JsonDocument& doc) {
         _handleLearnStartMessage(doc);
     });
     _ha.onProtocolMessage("ir_learn_cancel", [this](JsonDocument& doc) {
         _handleLearnCancelMessage(doc);
+    });
+    _ha.onProtocolMessage("ir_touch_binding_set", [this](JsonDocument& doc) {
+        _handleTouchBindingMessage(doc);
+    });
+    _ha.onProtocolMessage("ir_touch_status_request", [this](JsonDocument& doc) {
+        _handleTouchStatusMessage(doc);
     });
     _ha.onDiscovery([this](JsonArray& entities) {
         _appendDiscoveryEntities(entities);
@@ -136,6 +153,52 @@ bool IRMateInfrared::decreaseDefaultGreeTemperature() {
     return _sendDefaultGreeState();
 }
 
+bool IRMateInfrared::cycleDefaultGreeMode() {
+    if (!_started || _learning || !_gree.getPower()) {
+        return false;
+    }
+
+    switch (_gree.getMode()) {
+        case kGreeCool:
+            _gree.setMode(kGreeDry);
+            break;
+        case kGreeDry:
+            _gree.setMode(kGreeFan);
+            break;
+        case kGreeFan:
+            _gree.setMode(kGreeHeat);
+            break;
+        case kGreeHeat:
+            _gree.setMode(kGreeAuto);
+            break;
+        default:
+            _gree.setMode(kGreeCool);
+            break;
+    }
+    return _sendDefaultGreeState();
+}
+
+bool IRMateInfrared::executeTouchGesture(const String& gesture) {
+    int8_t index = _gestureIndex(gesture);
+    if (index < 0 || _learning) {
+        return false;
+    }
+
+    TouchBinding& binding = _touchBindings[static_cast<size_t>(index)];
+    if (binding.source == TouchBindingSource::Builtin) {
+        return _executeBuiltinAction(binding.action);
+    }
+    if (binding.source != TouchBindingSource::Raw || binding.timings.empty()) {
+        return false;
+    }
+
+    bool success = _transmitRaw(binding.timings, binding.carrierFrequency, 0);
+    if (_transmitCallback) {
+        _transmitCallback(success);
+    }
+    return success;
+}
+
 void IRMateInfrared::setDefaultCarrierFrequency(uint16_t frequency) {
     if (frequency >= 1000) {
         _defaultCarrierFrequency = frequency;
@@ -203,6 +266,28 @@ void IRMateInfrared::_handleTransmitMessage(JsonDocument& doc) {
     _sendTransmitResult(requestId, success, success ? "" : "transmit_failed");
 }
 
+void IRMateInfrared::_handleBuiltinCommandMessage(JsonDocument& doc) {
+    uint32_t requestId = doc["request_id"] | 0;
+    String actionName = doc["action"] | "";
+    BuiltinAction action = _parseBuiltinAction(actionName);
+    if (requestId == 0 || action == BuiltinAction::None) {
+        _sendTransmitResult(
+            requestId,
+            false,
+            "unsupported_builtin_action"
+        );
+        return;
+    }
+
+    bool success = _executeBuiltinAction(action);
+    _sendTransmitResult(
+        requestId,
+        success,
+        success ? "" : "builtin_action_failed",
+        !success
+    );
+}
+
 void IRMateInfrared::_handleLearnStartMessage(JsonDocument& doc) {
     uint32_t requestId = doc["request_id"] | 0;
     uint32_t timeoutMs = doc["timeout_ms"] | 30000;
@@ -236,6 +321,86 @@ void IRMateInfrared::_handleLearnCancelMessage(JsonDocument& doc) {
         return;
     }
     _finishLearning(false, "learning_cancelled");
+}
+
+void IRMateInfrared::_handleTouchBindingMessage(JsonDocument& doc) {
+    uint32_t requestId = doc["request_id"] | 0;
+    uint32_t revision = doc["revision"] | 0;
+    String gesture = doc["gesture"] | "";
+    bool finalBinding = doc["final"] | false;
+    int8_t index = _gestureIndex(gesture);
+    if (requestId == 0 || index < 0) {
+        _sendTouchBindingResult(requestId, false, gesture, "invalid_binding_request");
+        return;
+    }
+
+    JsonObject bindingData = doc["binding"].as<JsonObject>();
+    String source = bindingData["source"] | "";
+    TouchBinding binding;
+    if (source == "none") {
+        binding.source = TouchBindingSource::None;
+    } else if (source == "builtin") {
+        binding.action = _parseBuiltinAction(bindingData["action"] | "");
+        if (binding.action == BuiltinAction::None) {
+            _sendTouchBindingResult(
+                requestId,
+                false,
+                gesture,
+                "unsupported_builtin_action"
+            );
+            return;
+        }
+        binding.source = TouchBindingSource::Builtin;
+    } else if (source == "raw") {
+        uint32_t carrierFrequency = bindingData["carrier_frequency"] | 0;
+        if (carrierFrequency < 1000 || carrierFrequency > UINT16_MAX) {
+            _sendTouchBindingResult(
+                requestId,
+                false,
+                gesture,
+                "carrier_frequency_out_of_range"
+            );
+            return;
+        }
+        String error;
+        if (!_parseTimings(bindingData["timings"].as<JsonArray>(), binding.timings, error)) {
+            _sendTouchBindingResult(requestId, false, gesture, error);
+            return;
+        }
+        binding.source = TouchBindingSource::Raw;
+        binding.carrierFrequency = static_cast<uint16_t>(carrierFrequency);
+    } else {
+        _sendTouchBindingResult(requestId, false, gesture, "unsupported_binding_source");
+        return;
+    }
+
+    size_t bindingIndex = static_cast<size_t>(index);
+    TouchBinding previousBinding = _touchBindings[bindingIndex];
+    _touchBindings[bindingIndex] = std::move(binding);
+    if (!_saveTouchBinding(bindingIndex)) {
+        _touchBindings[bindingIndex] = std::move(previousBinding);
+        _sendTouchBindingResult(requestId, false, gesture, "storage_write_failed");
+        return;
+    }
+    if (finalBinding) {
+        uint32_t previousRevision = _touchRevision;
+        _touchRevision = revision;
+        if (!_saveTouchRevision()) {
+            _touchRevision = previousRevision;
+            _sendTouchBindingResult(
+                requestId,
+                false,
+                gesture,
+                "storage_write_failed"
+            );
+            return;
+        }
+    }
+    _sendTouchBindingResult(requestId, true, gesture);
+}
+
+void IRMateInfrared::_handleTouchStatusMessage(JsonDocument& doc) {
+    _sendTouchStatusResult(doc["request_id"] | 0);
 }
 
 bool IRMateInfrared::_parseTimings(
@@ -310,9 +475,10 @@ bool IRMateInfrared::_transmitRaw(
 void IRMateInfrared::_sendTransmitResult(
     uint32_t requestId,
     bool success,
-    const String& error
+    const String& error,
+    bool notifyCallback
 ) {
-    if (_transmitCallback) {
+    if (notifyCallback && _transmitCallback) {
         _transmitCallback(success);
     }
 
@@ -437,4 +603,197 @@ bool IRMateInfrared::_sendDefaultGreeState() {
         _transmitCallback(true);
     }
     return true;
+}
+
+int8_t IRMateInfrared::_gestureIndex(const String& gesture) const {
+    if (gesture == "single") {
+        return 0;
+    }
+    if (gesture == "double") {
+        return 1;
+    }
+    if (gesture == "triple") {
+        return 2;
+    }
+    if (gesture == "long") {
+        return 3;
+    }
+    return -1;
+}
+
+IRMateInfrared::BuiltinAction IRMateInfrared::_parseBuiltinAction(
+    const String& action
+) const {
+    if (action == "gree_power") {
+        return BuiltinAction::GreePower;
+    }
+    if (action == "gree_temp_up") {
+        return BuiltinAction::GreeTemperatureUp;
+    }
+    if (action == "gree_temp_down") {
+        return BuiltinAction::GreeTemperatureDown;
+    }
+    if (action == "gree_mode") {
+        return BuiltinAction::GreeMode;
+    }
+    return BuiltinAction::None;
+}
+
+bool IRMateInfrared::_executeBuiltinAction(BuiltinAction action) {
+    switch (action) {
+        case BuiltinAction::GreePower:
+            return toggleDefaultGreePower();
+        case BuiltinAction::GreeTemperatureUp:
+            return increaseDefaultGreeTemperature();
+        case BuiltinAction::GreeTemperatureDown:
+            return decreaseDefaultGreeTemperature();
+        case BuiltinAction::GreeMode:
+            return cycleDefaultGreeMode();
+        default:
+            return false;
+    }
+}
+
+void IRMateInfrared::_setFactoryTouchBindings() {
+    _touchBindings[0].source = TouchBindingSource::Builtin;
+    _touchBindings[0].action = BuiltinAction::GreePower;
+    _touchBindings[1].source = TouchBindingSource::Builtin;
+    _touchBindings[1].action = BuiltinAction::GreeTemperatureUp;
+    _touchBindings[2].source = TouchBindingSource::Builtin;
+    _touchBindings[2].action = BuiltinAction::GreeTemperatureDown;
+    _touchBindings[3].source = TouchBindingSource::Builtin;
+    _touchBindings[3].action = BuiltinAction::GreeMode;
+}
+
+void IRMateInfrared::_loadTouchBindings() {
+    _setFactoryTouchBindings();
+    Preferences preferences;
+    if (!preferences.begin(TOUCH_STORAGE_NAMESPACE, true)) {
+        return;
+    }
+
+    _touchRevision = preferences.getULong(TOUCH_REVISION_KEY, 0);
+    for (size_t index = 0; index < TOUCH_BINDING_COUNT; index++) {
+        if (!preferences.isKey(TOUCH_SOURCE_KEYS[index])) {
+            continue;
+        }
+        uint8_t sourceValue = preferences.getUChar(
+            TOUCH_SOURCE_KEYS[index],
+            static_cast<uint8_t>(TouchBindingSource::None)
+        );
+        if (sourceValue > static_cast<uint8_t>(TouchBindingSource::Raw)) {
+            continue;
+        }
+
+        TouchBinding binding;
+        binding.source = static_cast<TouchBindingSource>(sourceValue);
+        binding.action = static_cast<BuiltinAction>(preferences.getUChar(
+            TOUCH_ACTION_KEYS[index],
+            static_cast<uint8_t>(BuiltinAction::None)
+        ));
+        if (binding.source == TouchBindingSource::Builtin &&
+            (binding.action == BuiltinAction::None ||
+             binding.action > BuiltinAction::GreeMode)) {
+            continue;
+        }
+        binding.carrierFrequency = preferences.getUShort(
+            TOUCH_FREQUENCY_KEYS[index],
+            _defaultCarrierFrequency
+        );
+
+        if (binding.source == TouchBindingSource::Raw) {
+            size_t byteCount = preferences.getBytesLength(TOUCH_TIMING_KEYS[index]);
+            if (byteCount == 0 || byteCount % sizeof(uint16_t) != 0 ||
+                byteCount > MAX_TRANSMIT_ENTRIES * sizeof(uint16_t)) {
+                continue;
+            }
+            binding.timings.resize(byteCount / sizeof(uint16_t));
+            preferences.getBytes(
+                TOUCH_TIMING_KEYS[index],
+                binding.timings.data(),
+                byteCount
+            );
+        }
+        _touchBindings[index] = std::move(binding);
+    }
+    preferences.end();
+}
+
+bool IRMateInfrared::_saveTouchBinding(size_t index) {
+    if (index >= TOUCH_BINDING_COUNT) {
+        return false;
+    }
+    Preferences preferences;
+    if (!preferences.begin(TOUCH_STORAGE_NAMESPACE, false)) {
+        return false;
+    }
+
+    const TouchBinding& binding = _touchBindings[index];
+    bool success = preferences.putUChar(
+        TOUCH_SOURCE_KEYS[index],
+        static_cast<uint8_t>(binding.source)
+    ) == sizeof(uint8_t);
+    success = preferences.putUChar(
+        TOUCH_ACTION_KEYS[index],
+        static_cast<uint8_t>(binding.action)
+    ) == sizeof(uint8_t) && success;
+    success = preferences.putUShort(
+        TOUCH_FREQUENCY_KEYS[index],
+        binding.carrierFrequency
+    ) == sizeof(uint16_t) && success;
+    if (binding.source == TouchBindingSource::Raw && !binding.timings.empty()) {
+        size_t byteCount = binding.timings.size() * sizeof(uint16_t);
+        success = preferences.putBytes(
+            TOUCH_TIMING_KEYS[index],
+            binding.timings.data(),
+            byteCount
+        ) == byteCount && success;
+    } else {
+        preferences.remove(TOUCH_TIMING_KEYS[index]);
+    }
+    preferences.end();
+    return success;
+}
+
+bool IRMateInfrared::_saveTouchRevision() {
+    Preferences preferences;
+    if (!preferences.begin(TOUCH_STORAGE_NAMESPACE, false)) {
+        return false;
+    }
+    bool success = preferences.putULong(
+        TOUCH_REVISION_KEY,
+        _touchRevision
+    ) == sizeof(uint32_t);
+    preferences.end();
+    return success;
+}
+
+void IRMateInfrared::_sendTouchBindingResult(
+    uint32_t requestId,
+    bool success,
+    const String& gesture,
+    const String& error
+) {
+    JsonDocument doc;
+    doc["type"] = "ir_touch_binding_result";
+    doc["request_id"] = requestId;
+    doc["gesture"] = gesture;
+    doc["success"] = success;
+    doc["revision"] = _touchRevision;
+    if (!success && error.length() > 0) {
+        doc["error"] = error;
+    }
+    _ha.sendProtocolMessage(doc);
+}
+
+void IRMateInfrared::_sendTouchStatusResult(uint32_t requestId) {
+    JsonDocument doc;
+    doc["type"] = "ir_touch_status_result";
+    doc["request_id"] = requestId;
+    doc["success"] = requestId != 0;
+    doc["revision"] = _touchRevision;
+    if (requestId == 0) {
+        doc["error"] = "request_id_required";
+    }
+    _ha.sendProtocolMessage(doc);
 }

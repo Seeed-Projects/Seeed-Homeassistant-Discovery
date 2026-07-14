@@ -236,7 +236,7 @@ Install `IRremoteESP8266` 2.9.0 or later and `Adafruit NeoPixel` 1.15.2 or later
 
 `arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/XIAO_IR_Mate.ino`
 
-The example controls a Gree air conditioner by touch without WiFi and can optionally connect to Home Assistant for infrared learning and transmission. See the [IR Mate example guide](arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/README.md).
+The example controls a Gree air conditioner by touch without WiFi. After connecting to Home Assistant, open `Settings → Devices & services → Seeed HA Discovery → Configure` to select a brand and model, learn and test commands, and synchronize single, double, triple, and long-press actions for offline use. See the [IR Mate example guide](arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/README.md).
 
 #### BLE Version (SeeedHADiscoveryBLE)
 

@@ -1,6 +1,6 @@
 # IR Mate Universal Infrared Remote
 
-This example lets IR Mate control a Gree air conditioner offline and optionally connect to Home Assistant to learn and send other remote-control commands.
+This example lets IR Mate control a Gree air conditioner offline and connect to Home Assistant to manage appliances, learn infrared commands, and configure touch actions.
 
 Home Assistant 2026.7.0 or later is required.
 
@@ -30,17 +30,24 @@ After flashing `XIAO_IR_Mate.ino`, the touch button controls a Gree air conditio
 - Single touch: toggle power with cooling mode and a 25°C default.
 - Double touch: increase the temperature by 1°C.
 - Triple touch: decrease the temperature by 1°C.
+- Long press: cycle the air-conditioner mode.
 
-The device uses a Gree protocol compatible with YAN-series remotes. Its current air-conditioner state is stored in ESP32 NVS and remains available after a restart.
+The device uses a Gree protocol compatible with YAN-series remotes. Its current air-conditioner state and four touch bindings are stored in ESP32 NVS and remain available while offline and after a restart.
 
 ## Optional Home Assistant setup
 
 1. Connect to the `Seeed_IR_Mate` access point and configure Wi-Fi.
 2. Add the discovered `IR Mate` device in Home Assistant.
-3. Learn a command with `remote.learn_command`.
-4. Replay it with `remote.send_command`.
+3. Open `Settings → Devices & services → Seeed HA Discovery`, find the IR Mate config entry, and select Configure.
+4. Select a device type, brand, and model, then add the appliance.
+5. Select Learn for each command that requires capture and follow the on-screen prompt.
+6. Assign single, double, triple, and long-press actions, then select Save and sync.
 
 The infrared receiver is enabled only after Home Assistant starts learning. It is disabled again when learning succeeds, is cancelled, or times out.
+
+The Gree YAN / YAW1F profile uses the firmware's built-in codes and is ready to test or bind. Other brand profiles provide common command slots that can be tested, relearned, deleted, or bound after learning. The brand and model catalog is stored in the Home Assistant integration's `ir_profiles.json` file and can be extended.
+
+Home Assistant stores the complete learned waveforms in persistent storage. Save and sync copies the four selected touch actions to IR Mate NVS, so the device continues using the last synchronized configuration while offline.
 
 ## Status feedback
 
@@ -49,7 +56,7 @@ The infrared receiver is enabled only after Home Assistant starts learning. It i
 - Provisioning, disconnected, or not yet paired with Home Assistant: blinking blue light.
 - Connected to Home Assistant and idle: status light off.
 
-Example actions:
+Automations can also use the standard `remote` services. The remote entity is hidden by default and can be enabled in the entity registry:
 
 ```yaml
 action: remote.learn_command
@@ -70,5 +77,3 @@ data:
   device: air_conditioner
   command: power
 ```
-
-Learned commands are stored by Home Assistant and remain available after a restart. Offline touch control uses the Gree air-conditioner state stored on the device and is independent of Home Assistant learning.

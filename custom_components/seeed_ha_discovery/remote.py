@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import asyncio
 from collections.abc import Iterable
-import logging
 from typing import Any
 
-from homeassistant.components import persistent_notification
 from homeassistant.components.remote import (
     ATTR_ALTERNATIVE,
     ATTR_COMMAND_TYPE,
@@ -26,7 +23,6 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
@@ -34,16 +30,12 @@ from .const import (
     CONF_DEVICE_ID,
     CONF_MODEL,
     CONNECTION_TYPE_WIFI,
-    DEFAULT_IR_CARRIER_FREQUENCY,
     DOMAIN,
     MANUFACTURER,
 )
 from .coordinator import SeeedHACoordinator
+from .ir_manager import DEFAULT_APPLIANCE_ID, IRMateManager
 
-_LOGGER = logging.getLogger(__name__)
-
-STORAGE_VERSION = 1
-DEFAULT_SUBDEVICE = "default"
 DEFAULT_LEARNING_TIMEOUT = 30
 
 
@@ -76,9 +68,8 @@ async def async_setup_entry(
         if not {"emitter", "receiver"}.issubset(roles):
             return
 
-        device_id = entry.data.get(CONF_DEVICE_ID, entry.entry_id)
-        store = Store(hass, STORAGE_VERSION, f"{DOMAIN}_{device_id}_ir_codes")
-        async_add_entities([SeeedHAUniversalRemote(coordinator, entry, store)])
+        manager: IRMateManager = hass.data[DOMAIN][entry.entry_id]["ir_manager"]
+        async_add_entities([SeeedHAUniversalRemote(coordinator, entry, manager)])
         remote_added = True
 
     add_remote_if_supported()
@@ -96,6 +87,7 @@ class SeeedHAUniversalRemote(CoordinatorEntity, RemoteEntity):
 
     _attr_has_entity_name = True
     _attr_name = "Universal remote"
+    _attr_entity_registry_enabled_default = False
     _attr_supported_features = (
         RemoteEntityFeature.LEARN_COMMAND | RemoteEntityFeature.DELETE_COMMAND
     )
@@ -104,21 +96,16 @@ class SeeedHAUniversalRemote(CoordinatorEntity, RemoteEntity):
         self,
         coordinator: SeeedHACoordinator,
         entry: ConfigEntry,
-        store: Store,
+        manager: IRMateManager,
     ) -> None:
         """Initialize the universal remote."""
         super().__init__(coordinator)
         self._entry = entry
-        self._store = store
-        self._storage_loaded = False
-        self._codes: dict[str, dict[str, list[dict[str, Any]]]] = {}
-        self._alternative_indexes: dict[str, int] = {}
-        self._learning_lock = asyncio.Lock()
+        self._manager = manager
 
         device_id = entry.data.get(CONF_DEVICE_ID, "")
         self._attr_unique_id = f"{device_id}_universal_remote"
         self._attr_is_on = True
-        self._notification_id = f"{DOMAIN}_{device_id}_learn_command"
 
     @property
     def available(self) -> bool:
@@ -159,10 +146,9 @@ class SeeedHAUniversalRemote(CoordinatorEntity, RemoteEntity):
         """Send stored raw infrared commands."""
         if not self._attr_is_on:
             return
-        await self._async_load_storage()
 
         commands = list(command)
-        subdevice = kwargs.get(ATTR_DEVICE) or DEFAULT_SUBDEVICE
+        subdevice = kwargs.get(ATTR_DEVICE) or DEFAULT_APPLIANCE_ID
         repeat_count = kwargs.get(ATTR_NUM_REPEATS, DEFAULT_NUM_REPEATS)
         delay = kwargs.get(ATTR_DELAY_SECS, DEFAULT_DELAY_SECS)
         if not commands:
@@ -170,40 +156,12 @@ class SeeedHAUniversalRemote(CoordinatorEntity, RemoteEntity):
         if repeat_count < 1:
             raise HomeAssistantError("Repeat count must be at least one")
 
-        records: list[tuple[str, list[dict[str, Any]]]] = []
-        for command_name in commands:
-            learned = self._codes.get(subdevice, {}).get(command_name)
-            if not learned:
-                raise HomeAssistantError(
-                    f"Command '{command_name}' was not learned for device '{subdevice}'"
-                )
-            records.append((command_name, learned))
-
-        transmitted = 0
-        for _repeat_index in range(repeat_count):
-            for command_name, alternatives in records:
-                if transmitted:
-                    await asyncio.sleep(delay)
-
-                key = f"{subdevice}:{command_name}"
-                alternative_index = self._alternative_indexes.get(key, 0)
-                signal = alternatives[alternative_index % len(alternatives)]
-                try:
-                    await self.coordinator.device.async_transmit_infrared(
-                        int(signal["carrier_frequency"]),
-                        list(signal["timings"]),
-                    )
-                except (
-                    ConnectionError,
-                    RuntimeError,
-                    TimeoutError,
-                    ValueError,
-                ) as err:
-                    raise HomeAssistantError(str(err)) from err
-
-                if len(alternatives) > 1:
-                    self._alternative_indexes[key] = alternative_index + 1
-                transmitted += 1
+        await self._manager.async_remote_send(
+            subdevice,
+            commands,
+            repeat_count,
+            delay,
+        )
 
     async def async_learn_command(self, **kwargs: Any) -> None:
         """Learn and persist one or more raw infrared commands."""
@@ -218,79 +176,18 @@ class SeeedHAUniversalRemote(CoordinatorEntity, RemoteEntity):
         if not commands:
             raise HomeAssistantError("At least one command is required")
 
-        await self._async_load_storage()
-        subdevice = kwargs.get(ATTR_DEVICE) or DEFAULT_SUBDEVICE
+        subdevice = kwargs.get(ATTR_DEVICE) or DEFAULT_APPLIANCE_ID
         alternative = bool(kwargs.get(ATTR_ALTERNATIVE, False))
         timeout = int(kwargs.get(ATTR_TIMEOUT, DEFAULT_LEARNING_TIMEOUT))
-
-        async with self._learning_lock:
-            for command_name in commands:
-                signals = [await self._async_capture_signal(command_name, timeout)]
-                if alternative:
-                    signals.append(
-                        await self._async_capture_signal(command_name, timeout, True)
-                    )
-                self._codes.setdefault(subdevice, {})[command_name] = signals
-
-            await self._store.async_save(self._codes)
+        await self._manager.async_remote_learn(
+            subdevice,
+            commands,
+            timeout,
+            alternative,
+        )
 
     async def async_delete_command(self, **kwargs: Any) -> None:
         """Delete learned commands from persistent storage."""
-        await self._async_load_storage()
         commands = list(kwargs.get(ATTR_COMMAND) or [])
-        subdevice = kwargs.get(ATTR_DEVICE) or DEFAULT_SUBDEVICE
-        stored_commands = self._codes.get(subdevice, {})
-
-        for command_name in commands:
-            stored_commands.pop(command_name, None)
-            self._alternative_indexes.pop(f"{subdevice}:{command_name}", None)
-        if not stored_commands:
-            self._codes.pop(subdevice, None)
-        await self._store.async_save(self._codes)
-
-    async def _async_load_storage(self) -> None:
-        """Load learned commands once from Home Assistant storage."""
-        if self._storage_loaded:
-            return
-        stored = await self._store.async_load()
-        if isinstance(stored, dict):
-            self._codes = stored
-        self._storage_loaded = True
-
-    async def _async_capture_signal(
-        self,
-        command_name: str,
-        timeout: int,
-        alternative: bool = False,
-    ) -> dict[str, Any]:
-        """Wait for the next raw infrared signal from the device."""
-        prompt = f"Press the '{command_name}' button"
-        if alternative:
-            prompt += " again"
-        persistent_notification.async_create(
-            self.hass,
-            f"{prompt} within {timeout} seconds.",
-            title="Learn infrared command",
-            notification_id=self._notification_id,
-        )
-
-        try:
-            data = await self.coordinator.device.async_learn_infrared(timeout)
-        except TimeoutError as err:
-            raise HomeAssistantError(
-                f"No infrared signal was received within {timeout} seconds"
-            ) from err
-        except (ConnectionError, RuntimeError, ValueError) as err:
-            raise HomeAssistantError(str(err)) from err
-        finally:
-            persistent_notification.async_dismiss(
-                self.hass,
-                notification_id=self._notification_id,
-            )
-
-        timings = data["timings"]
-        carrier_frequency = data.get("carrier_frequency", DEFAULT_IR_CARRIER_FREQUENCY)
-        return {
-            "carrier_frequency": carrier_frequency,
-            "timings": timings,
-        }
+        subdevice = kwargs.get(ATTR_DEVICE) or DEFAULT_APPLIANCE_ID
+        await self._manager.async_remote_delete(subdevice, commands)

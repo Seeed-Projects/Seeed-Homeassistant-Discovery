@@ -236,7 +236,7 @@ lib_deps =
 
 `arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/XIAO_IR_Mate.ino`
 
-该示例无需配网即可通过触摸控制格力空调，也可接入 Home Assistant 学习和发送其他红外按键。具体操作见 [IR Mate 示例说明](arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/README_CN.md)。
+该示例无需配网即可通过触摸控制格力空调。接入 Home Assistant 后，在 `设置 → 设备与服务 → Seeed HA Discovery → 配置` 中选择品牌与型号、学习和测试遥控命令，并把单击、双击、三击、长按配置同步到设备供离线使用。具体操作见 [IR Mate 示例说明](arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/README_CN.md)。
 
 #### BLE 版本 (SeeedHADiscoveryBLE)
 

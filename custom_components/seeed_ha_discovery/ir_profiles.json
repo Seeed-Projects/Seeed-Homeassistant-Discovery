@@ -1,0 +1,251 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "air_conditioner",
+      "labels": {
+        "en": "Air conditioner",
+        "zh-Hans": "空调"
+      }
+    },
+    {
+      "id": "television",
+      "labels": {
+        "en": "Television",
+        "zh-Hans": "电视"
+      }
+    },
+    {
+      "id": "fan",
+      "labels": {
+        "en": "Fan",
+        "zh-Hans": "风扇"
+      }
+    },
+    {
+      "id": "custom",
+      "labels": {
+        "en": "Custom device",
+        "zh-Hans": "自定义设备"
+      }
+    }
+  ],
+  "profiles": [
+    {
+      "id": "gree_yan_yaw1f",
+      "category": "air_conditioner",
+      "brand": "Gree",
+      "model": "YAN / YAW1F",
+      "source": "builtin",
+      "commands": [
+        {"id": "power", "name": "Power", "builtin_action": "gree_power"},
+        {"id": "temperature_up", "name": "Temperature up", "builtin_action": "gree_temp_up"},
+        {"id": "temperature_down", "name": "Temperature down", "builtin_action": "gree_temp_down"},
+        {"id": "mode", "name": "Mode", "builtin_action": "gree_mode"}
+      ]
+    },
+    {
+      "id": "midea_learning",
+      "category": "air_conditioner",
+      "brand": "Midea",
+      "model": "Learn from original remote",
+      "source": "learning",
+      "commands": [
+        {"id": "power", "name": "Power"},
+        {"id": "temperature_up", "name": "Temperature up"},
+        {"id": "temperature_down", "name": "Temperature down"},
+        {"id": "mode", "name": "Mode"}
+      ]
+    },
+    {
+      "id": "haier_learning",
+      "category": "air_conditioner",
+      "brand": "Haier",
+      "model": "Learn from original remote",
+      "source": "learning",
+      "commands": [
+        {"id": "power", "name": "Power"},
+        {"id": "temperature_up", "name": "Temperature up"},
+        {"id": "temperature_down", "name": "Temperature down"},
+        {"id": "mode", "name": "Mode"}
+      ]
+    },
+    {
+      "id": "daikin_learning",
+      "category": "air_conditioner",
+      "brand": "Daikin",
+      "model": "Learn from original remote",
+      "source": "learning",
+      "commands": [
+        {"id": "power", "name": "Power"},
+        {"id": "temperature_up", "name": "Temperature up"},
+        {"id": "temperature_down", "name": "Temperature down"},
+        {"id": "mode", "name": "Mode"}
+      ]
+    },
+    {
+      "id": "mitsubishi_electric_learning",
+      "category": "air_conditioner",
+      "brand": "Mitsubishi Electric",
+      "model": "Learn from original remote",
+      "source": "learning",
+      "commands": [
+        {"id": "power", "name": "Power"},
+        {"id": "temperature_up", "name": "Temperature up"},
+        {"id": "temperature_down", "name": "Temperature down"},
+        {"id": "mode", "name": "Mode"}
+      ]
+    },
+    {
+      "id": "panasonic_ac_learning",
+      "category": "air_conditioner",
+      "brand": "Panasonic",
+      "model": "Learn from original remote",
+      "source": "learning",
+      "commands": [
+        {"id": "power", "name": "Power"},
+        {"id": "temperature_up", "name": "Temperature up"},
+        {"id": "temperature_down", "name": "Temperature down"},
+        {"id": "mode", "name": "Mode"}
+      ]
+    },
+    {
+      "id": "hisense_ac_learning",
+      "category": "air_conditioner",
+      "brand": "Hisense",
+      "model": "Learn from original remote",
+      "source": "learning",
+      "commands": [
+        {"id": "power", "name": "Power"},
+        {"id": "temperature_up", "name": "Temperature up"},
+        {"id": "temperature_down", "name": "Temperature down"},
+        {"id": "mode", "name": "Mode"}
+      ]
+    },
+    {
+      "id": "aux_learning",
+      "category": "air_conditioner",
+      "brand": "AUX",
+      "model": "Learn from original remote",
+      "source": "learning",
+      "commands": [
+        {"id": "power", "name": "Power"},
+        {"id": "temperature_up", "name": "Temperature up"},
+        {"id": "temperature_down", "name": "Temperature down"},
+        {"id": "mode", "name": "Mode"}
+      ]
+    },
+    {
+      "id": "xiaomi_tv_learning",
+      "category": "television",
+      "brand": "Xiaomi",
+      "model": "Learn from original remote",
+      "source": "learning",
+      "commands": [
+        {"id": "power", "name": "Power"},
+        {"id": "volume_up", "name": "Volume up"},
+        {"id": "volume_down", "name": "Volume down"},
+        {"id": "mute", "name": "Mute"}
+      ]
+    },
+    {
+      "id": "hisense_tv_learning",
+      "category": "television",
+      "brand": "Hisense",
+      "model": "Learn from original remote",
+      "source": "learning",
+      "commands": [
+        {"id": "power", "name": "Power"},
+        {"id": "volume_up", "name": "Volume up"},
+        {"id": "volume_down", "name": "Volume down"},
+        {"id": "mute", "name": "Mute"}
+      ]
+    },
+    {
+      "id": "tcl_tv_learning",
+      "category": "television",
+      "brand": "TCL",
+      "model": "Learn from original remote",
+      "source": "learning",
+      "commands": [
+        {"id": "power", "name": "Power"},
+        {"id": "volume_up", "name": "Volume up"},
+        {"id": "volume_down", "name": "Volume down"},
+        {"id": "mute", "name": "Mute"}
+      ]
+    },
+    {
+      "id": "sony_tv_learning",
+      "category": "television",
+      "brand": "Sony",
+      "model": "Learn from original remote",
+      "source": "learning",
+      "commands": [
+        {"id": "power", "name": "Power"},
+        {"id": "volume_up", "name": "Volume up"},
+        {"id": "volume_down", "name": "Volume down"},
+        {"id": "mute", "name": "Mute"}
+      ]
+    },
+    {
+      "id": "samsung_tv_learning",
+      "category": "television",
+      "brand": "Samsung",
+      "model": "Learn from original remote",
+      "source": "learning",
+      "commands": [
+        {"id": "power", "name": "Power"},
+        {"id": "volume_up", "name": "Volume up"},
+        {"id": "volume_down", "name": "Volume down"},
+        {"id": "mute", "name": "Mute"}
+      ]
+    },
+    {
+      "id": "lg_tv_learning",
+      "category": "television",
+      "brand": "LG",
+      "model": "Learn from original remote",
+      "source": "learning",
+      "commands": [
+        {"id": "power", "name": "Power"},
+        {"id": "volume_up", "name": "Volume up"},
+        {"id": "volume_down", "name": "Volume down"},
+        {"id": "mute", "name": "Mute"}
+      ]
+    },
+    {
+      "id": "midea_fan_learning",
+      "category": "fan",
+      "brand": "Midea",
+      "model": "Learn from original remote",
+      "source": "learning",
+      "commands": [
+        {"id": "power", "name": "Power"},
+        {"id": "speed", "name": "Speed"},
+        {"id": "oscillation", "name": "Oscillation"},
+        {"id": "timer", "name": "Timer"}
+      ]
+    },
+    {
+      "id": "gree_fan_learning",
+      "category": "fan",
+      "brand": "Gree",
+      "model": "Learn from original remote",
+      "source": "learning",
+      "commands": [
+        {"id": "power", "name": "Power"},
+        {"id": "speed", "name": "Speed"},
+        {"id": "oscillation", "name": "Oscillation"},
+        {"id": "timer", "name": "Timer"}
+      ]
+    },
+    {
+      "id": "custom_learning",
+      "category": "custom",
+      "brand": "Custom",
+      "model": "Learn each command",
+      "source": "learning",
+      "commands": []
+    }
+  ]
+}

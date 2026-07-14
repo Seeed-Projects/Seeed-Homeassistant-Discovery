@@ -54,11 +54,84 @@
         "data": {
           "ble_subscribed_entities": "Entities to subscribe (max 16)"
         }
+      },
+      "ir": {
+        "title": "Configure IR Mate",
+        "description": "Manage **{device_name}** inside Seeed HA Discovery.\n\nAppliances: **{appliance_count}** · Learned commands stored in Home Assistant: **{learned_count}** · Touch profile revision: **{revision}/{device_revision}**",
+        "menu_options": {
+          "ir_add_appliance": "Add an appliance",
+          "ir_delete_appliance": "Delete an appliance",
+          "ir_learn_command": "Learn or replace a command",
+          "ir_learn_new_command": "Learn a custom command",
+          "ir_test_command": "Test a command",
+          "ir_delete_command": "Delete a learned command",
+          "ir_touch_bindings": "Configure touch actions",
+          "wifi_entities": "Configure entity subscription"
+        }
+      },
+      "ir_add_appliance": {
+        "title": "Add an IR appliance",
+        "description": "Select the brand profile and give this appliance a recognizable name.",
+        "data": {
+          "profile_id": "Brand and model",
+          "name": "Appliance name"
+        }
+      },
+      "ir_delete_appliance": {
+        "title": "Delete an IR appliance",
+        "description": "Select the appliance to remove. Its learned commands and touch references will also be removed.",
+        "data": {
+          "appliance_id": "Appliance"
+        }
+      },
+      "ir_learn_command": {
+        "title": "Learn or replace a command",
+        "description": "Select a command, submit the form, then point the original remote at IR Mate and press the matching button within 30 seconds.",
+        "data": {
+          "command": "Command"
+        }
+      },
+      "ir_learn_new_command": {
+        "title": "Learn a custom command",
+        "description": "Choose an appliance, name the new command, submit the form, then press the matching button on the original remote within 30 seconds.",
+        "data": {
+          "appliance_id": "Appliance",
+          "command_name": "Command name"
+        }
+      },
+      "ir_test_command": {
+        "title": "Test an IR command",
+        "description": "Select a command to transmit immediately.",
+        "data": {
+          "command": "Command"
+        }
+      },
+      "ir_delete_command": {
+        "title": "Delete a learned command",
+        "description": "Select the learned command to remove from Home Assistant storage.",
+        "data": {
+          "command": "Command"
+        }
+      },
+      "ir_touch_bindings": {
+        "title": "Configure offline touch actions",
+        "description": "Assign an available command to each gesture. Saving copies these four actions to IR Mate for offline use.",
+        "data": {
+          "single": "Single tap",
+          "double": "Double tap",
+          "triple": "Triple tap",
+          "long": "Long press"
+        }
       }
+    },
+    "error": {
+      "ir_operation_failed": "The IR Mate operation failed. Check the device connection and try again.",
+      "ir_learning_failed": "No valid infrared signal was learned. Point the original remote at IR Mate and try again."
     },
     "abort": {
       "ble_not_supported": "BLE devices do not support entity subscription. This feature is only available for WiFi devices.",
-      "ble_control_not_supported": "This BLE device does not support bidirectional communication. Entity subscription requires a device with GATT control service enabled."
+      "ble_control_not_supported": "This BLE device does not support bidirectional communication. Entity subscription requires a device with GATT control service enabled.",
+      "ir_not_available": "IR Mate management is not available for this device."
     }
   }
 }

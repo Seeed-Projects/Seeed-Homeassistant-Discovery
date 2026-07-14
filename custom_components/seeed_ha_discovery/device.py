@@ -52,6 +52,11 @@ from .const import (
     MSG_TYPE_IR_LEARN_START,
     MSG_TYPE_IR_LEARN_CANCEL,
     MSG_TYPE_IR_LEARN_RESULT,
+    MSG_TYPE_IR_BUILTIN_COMMAND,
+    MSG_TYPE_IR_TOUCH_BINDING_SET,
+    MSG_TYPE_IR_TOUCH_BINDING_RESULT,
+    MSG_TYPE_IR_TOUCH_STATUS_REQUEST,
+    MSG_TYPE_IR_TOUCH_STATUS_RESULT,
     HEARTBEAT_INTERVAL,
     RECONNECT_INTERVAL,
     DEFAULT_HTTP_PORT,
@@ -127,6 +132,11 @@ class SeeedHADevice:
         # Pending infrared learning sessions keyed by request ID
         # 以请求 ID 为键保存正在等待的红外学习任务
         self._pending_ir_learns: dict[int, asyncio.Future[dict[str, Any]]] = {}
+        # Pending offline touch profile requests keyed by request ID
+        # 以请求 ID 为键保存正在等待的离线触摸配置任务
+        self._pending_ir_touch_requests: dict[
+            int, asyncio.Future[dict[str, Any]]
+        ] = {}
         self._next_request_id = 1
 
         # =========================================================================
@@ -299,6 +309,9 @@ class SeeedHADevice:
         self._connected = False
         self._fail_pending_ir_transmits(ConnectionError("Device disconnected"))
         self._fail_pending_ir_learns(ConnectionError("Device disconnected"))
+        self._fail_pending_ir_touch_requests(
+            ConnectionError("Device disconnected")
+        )
 
         # 取消 HA 实体状态监听 | Cancel HA entity state listener
         if self._state_unsub:
@@ -403,6 +416,9 @@ class SeeedHADevice:
             self._connected = False
             self._fail_pending_ir_transmits(ConnectionError("Device disconnected"))
             self._fail_pending_ir_learns(ConnectionError("Device disconnected"))
+            self._fail_pending_ir_touch_requests(
+                ConnectionError("Device disconnected")
+            )
             if not self._reconnect_task:
                 self._reconnect_task = asyncio.create_task(self._async_reconnect())
 
@@ -524,6 +540,15 @@ class SeeedHADevice:
                     callback(data)
                 except Exception as err:
                     _LOGGER.error("Infrared receive callback error: %s", err)
+
+        elif msg_type in (
+            MSG_TYPE_IR_TOUCH_BINDING_RESULT,
+            MSG_TYPE_IR_TOUCH_STATUS_RESULT,
+        ):
+            request_id = data.get("request_id")
+            future = self._pending_ir_touch_requests.get(request_id)
+            if future is not None and not future.done():
+                future.set_result(data)
 
     async def _async_reconnect(self) -> None:
         """
@@ -692,6 +717,35 @@ class SeeedHADevice:
             error = result.get("error", "unknown_error")
             raise RuntimeError(f"Infrared transmission failed: {error}")
 
+    async def async_execute_ir_builtin(self, action: str) -> None:
+        """Execute one firmware-backed infrared action."""
+        if not action:
+            raise ValueError("Built-in infrared action cannot be empty")
+
+        request_id = self._next_request_id
+        self._next_request_id = 1 if request_id >= 0x7FFFFFFF else request_id + 1
+        future = asyncio.get_running_loop().create_future()
+        self._pending_ir_transmits[request_id] = future
+
+        sent = await self._async_send(
+            {
+                "type": MSG_TYPE_IR_BUILTIN_COMMAND,
+                "request_id": request_id,
+                "action": action,
+            }
+        )
+        if not sent:
+            self._pending_ir_transmits.pop(request_id, None)
+            raise ConnectionError("Built-in infrared request could not be sent")
+
+        try:
+            result = await asyncio.wait_for(future, timeout=15)
+        finally:
+            self._pending_ir_transmits.pop(request_id, None)
+        if not result.get("success", False):
+            error = result.get("error", "unknown_error")
+            raise RuntimeError(f"Built-in infrared action failed: {error}")
+
     async def async_learn_infrared(self, timeout: int) -> dict[str, Any]:
         """Start one device-side learning session and return its raw signal."""
         if not 1 <= timeout <= 60:
@@ -736,6 +790,69 @@ class SeeedHADevice:
             raise RuntimeError(f"Infrared learning failed: {error}")
         return result
 
+    async def async_set_ir_touch_binding(
+        self,
+        gesture: str,
+        binding: dict[str, Any],
+        revision: int,
+        final: bool,
+    ) -> dict[str, Any]:
+        """Write one gesture binding and wait for the device acknowledgement."""
+        if gesture not in {"single", "double", "triple", "long"}:
+            raise ValueError("Unsupported touch gesture")
+        if binding.get("source") not in {"none", "builtin", "raw"}:
+            raise ValueError("Unsupported touch binding source")
+
+        request_id = self._next_request_id
+        self._next_request_id = 1 if request_id >= 0x7FFFFFFF else request_id + 1
+        future = asyncio.get_running_loop().create_future()
+        self._pending_ir_touch_requests[request_id] = future
+        sent = await self._async_send(
+            {
+                "type": MSG_TYPE_IR_TOUCH_BINDING_SET,
+                "request_id": request_id,
+                "revision": revision,
+                "gesture": gesture,
+                "binding": binding,
+                "final": final,
+            }
+        )
+        if not sent:
+            self._pending_ir_touch_requests.pop(request_id, None)
+            raise ConnectionError("Touch binding request could not be sent")
+        try:
+            result = await asyncio.wait_for(future, timeout=15)
+        finally:
+            self._pending_ir_touch_requests.pop(request_id, None)
+        if not result.get("success", False):
+            error = result.get("error", "unknown_error")
+            raise RuntimeError(f"Touch binding synchronization failed: {error}")
+        return result
+
+    async def async_get_ir_touch_status(self) -> dict[str, Any]:
+        """Read the offline touch profile revision from the device."""
+        request_id = self._next_request_id
+        self._next_request_id = 1 if request_id >= 0x7FFFFFFF else request_id + 1
+        future = asyncio.get_running_loop().create_future()
+        self._pending_ir_touch_requests[request_id] = future
+        sent = await self._async_send(
+            {
+                "type": MSG_TYPE_IR_TOUCH_STATUS_REQUEST,
+                "request_id": request_id,
+            }
+        )
+        if not sent:
+            self._pending_ir_touch_requests.pop(request_id, None)
+            raise ConnectionError("Touch status request could not be sent")
+        try:
+            result = await asyncio.wait_for(future, timeout=10)
+        finally:
+            self._pending_ir_touch_requests.pop(request_id, None)
+        if not result.get("success", False):
+            error = result.get("error", "unknown_error")
+            raise RuntimeError(f"Touch status request failed: {error}")
+        return result
+
     def _fail_pending_ir_transmits(self, error: Exception) -> None:
         """Fail all infrared transmissions waiting for a device response."""
         for future in self._pending_ir_transmits.values():
@@ -749,6 +866,13 @@ class SeeedHADevice:
             if not future.done():
                 future.set_exception(error)
         self._pending_ir_learns.clear()
+
+    def _fail_pending_ir_touch_requests(self, error: Exception) -> None:
+        """Fail all touch profile requests waiting for a device response."""
+        for future in self._pending_ir_touch_requests.values():
+            if not future.done():
+                future.set_exception(error)
+        self._pending_ir_touch_requests.clear()
 
     # =========================================================================
     # HA 实体状态订阅 | HA Entity State Subscription

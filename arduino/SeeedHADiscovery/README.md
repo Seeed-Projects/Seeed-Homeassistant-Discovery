@@ -155,7 +155,7 @@ void loop() {
 | [HAStateSubscribe](examples/HAStateSubscribe/) | Subscribe to HA entity states |
 | [CameraStream](examples/CameraStream/) | MJPEG camera streaming (S3 Sense) |
 | [WiFiProvisioning](examples/WiFiProvisioning/) | Web-based WiFi configuration |
-| [XIAO_IR_Mate](examples/XIAO_IR_Mate/) | Universal infrared remote with offline Gree control and HA learning |
+| [XIAO_IR_Mate](examples/XIAO_IR_Mate/) | Universal infrared remote with offline touch bindings and HA integration configuration |
 | [IoTButtonV2_DeepSleep](examples/IoTButtonV2_DeepSleep/) | Battery-powered IoT button with deep sleep |
 | [reTerminal_E1001_HASubscribe_Display](examples/reTerminal_E1001_HASubscribe_Display/) | E-Paper display with HA states |
 | [reTerminal_E1002_HASubscribe_Display](examples/reTerminal_E1002_HASubscribe_Display/) | Color E-Paper display with HA states |

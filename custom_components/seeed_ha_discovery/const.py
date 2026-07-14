@@ -127,6 +127,14 @@ MSG_TYPE_IR_LEARN_START: Final = "ir_learn_start"
 MSG_TYPE_IR_LEARN_CANCEL: Final = "ir_learn_cancel"
 MSG_TYPE_IR_LEARN_RESULT: Final = "ir_learn_result"
 
+# IR Mate built-in actions and offline touch profile synchronization
+# IR Mate 内置动作和离线触摸配置同步
+MSG_TYPE_IR_BUILTIN_COMMAND: Final = "ir_builtin_command"
+MSG_TYPE_IR_TOUCH_BINDING_SET: Final = "ir_touch_binding_set"
+MSG_TYPE_IR_TOUCH_BINDING_RESULT: Final = "ir_touch_binding_result"
+MSG_TYPE_IR_TOUCH_STATUS_REQUEST: Final = "ir_touch_status_request"
+MSG_TYPE_IR_TOUCH_STATUS_RESULT: Final = "ir_touch_status_result"
+
 # =============================================================================
 # 实体订阅配置 | Entity Subscription Configuration
 # =============================================================================

@@ -17,6 +17,7 @@ constexpr uint8_t RESET_PIN = 9;
 
 constexpr uint32_t TOUCH_DEBOUNCE_MS = 35;
 constexpr uint32_t TOUCH_MULTI_CLICK_MS = 350;
+constexpr uint32_t TOUCH_LONG_PRESS_MS = 800;
 constexpr uint32_t UNPAIRED_BLINK_INTERVAL_MS = 500;
 constexpr uint32_t RESULT_LED_DURATION_MS = 400;
 constexpr uint32_t VIBRATION_PULSE_MS = 70;
@@ -30,6 +31,7 @@ bool touchRawState = false;
 bool touchStableState = false;
 uint32_t touchChangedAt = 0;
 uint32_t lastTouchAt = 0;
+uint32_t touchPressedAt = 0;
 uint8_t touchCount = 0;
 uint32_t feedbackEndsAt = 0;
 uint32_t vibrationPhaseEndsAt = 0;
@@ -38,6 +40,7 @@ uint32_t currentColor = UINT32_MAX;
 uint8_t vibrationPulsesRemaining = 0;
 bool vibrationMotorOn = false;
 bool unpairedBlinkOn = false;
+bool longPressHandled = false;
 
 void setStatusColor(uint32_t color) {
     if (currentColor == color) {
@@ -102,14 +105,21 @@ void handleTouchButton() {
     }
 
     touchStableState = rawState;
-    if (!touchStableState) {
-        return;
-    }
-
     if (infrared.isLearning()) {
+        touchCount = 0;
+        longPressHandled = false;
         return;
     }
 
+    if (touchStableState) {
+        touchPressedAt = now;
+        longPressHandled = false;
+        return;
+    }
+
+    if (longPressHandled) {
+        return;
+    }
     if (touchCount < UINT8_MAX) {
         touchCount++;
     }
@@ -126,19 +136,35 @@ void handleTouchAction() {
 
     bool sent = false;
     if (completedCount == 1) {
-        Serial.println("Touch action: toggle Gree power");
-        sent = infrared.toggleDefaultGreePower();
+        Serial.println("Touch gesture: single");
+        sent = infrared.executeTouchGesture("single");
     } else if (completedCount == 2) {
-        Serial.println("Touch action: increase Gree temperature");
-        sent = infrared.increaseDefaultGreeTemperature();
+        Serial.println("Touch gesture: double");
+        sent = infrared.executeTouchGesture("double");
     } else if (completedCount == 3) {
-        Serial.println("Touch action: decrease Gree temperature");
-        sent = infrared.decreaseDefaultGreeTemperature();
+        Serial.println("Touch gesture: triple");
+        sent = infrared.executeTouchGesture("triple");
     } else {
         Serial.printf("Touch action ignored: %u touches\n", completedCount);
     }
 
     if (!sent && completedCount <= 3) {
+        startResultFeedback(false);
+    }
+}
+
+void handleLongPressAction() {
+    if (!touchStableState || longPressHandled || infrared.isLearning()) {
+        return;
+    }
+    if (millis() - touchPressedAt < TOUCH_LONG_PRESS_MS) {
+        return;
+    }
+
+    longPressHandled = true;
+    touchCount = 0;
+    Serial.println("Touch gesture: long");
+    if (!infrared.executeTouchGesture("long")) {
         startResultFeedback(false);
     }
 }
@@ -212,6 +238,7 @@ void loop() {
     ha.handle();
     infrared.handle();
     handleTouchButton();
+    handleLongPressAction();
     handleTouchAction();
     updateStatus();
     delay(2);
