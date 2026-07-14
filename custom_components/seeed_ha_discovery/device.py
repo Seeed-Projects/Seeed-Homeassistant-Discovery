@@ -47,6 +47,9 @@ from .const import (
     MSG_TYPE_HA_STATE,
     MSG_TYPE_HA_STATE_CLEAR,
     MSG_TYPE_SLEEP,
+    MSG_TYPE_IR_TRANSMIT,
+    MSG_TYPE_IR_TRANSMIT_RESULT,
+    MSG_TYPE_IR_RECEIVED,
     HEARTBEAT_INTERVAL,
     RECONNECT_INTERVAL,
     DEFAULT_HTTP_PORT,
@@ -102,6 +105,10 @@ class SeeedHADevice:
         self._state_callbacks: list[Callable[[dict[str, Any]], None]] = []
         # 发现回调 - 当收到设备实体列表时调用
         self._discovery_callbacks: list[Callable[[dict[str, Any]], None]] = []
+        # Infrared signal callbacks | 红外信号回调
+        self._infrared_receive_callbacks: list[
+            Callable[[dict[str, Any]], None]
+        ] = []
 
         # 设备上报的实体数据
         # 格式: {entity_id: {type, name, state, unit, ...}}
@@ -109,6 +116,13 @@ class SeeedHADevice:
 
         # 设备基本信息（型号、版本等）
         self._device_info: dict[str, Any] = {}
+
+        # Pending infrared transmissions keyed by request ID
+        # 以请求 ID 为键保存正在等待的红外发射任务
+        self._pending_ir_transmits: dict[
+            int, asyncio.Future[dict[str, Any]]
+        ] = {}
+        self._next_request_id = 1
 
         # =========================================================================
         # HA 实体订阅相关 | HA Entity Subscription
@@ -191,6 +205,18 @@ class SeeedHADevice:
 
         return remove_callback
 
+    def add_infrared_receive_callback(
+        self, callback: Callable[[dict[str, Any]], None]
+    ) -> Callable[[], None]:
+        """Register a callback for raw infrared receive events."""
+        self._infrared_receive_callbacks.append(callback)
+
+        def remove_callback() -> None:
+            """Remove the infrared receive callback."""
+            self._infrared_receive_callbacks.remove(callback)
+
+        return remove_callback
+
     async def async_connect(self) -> bool:
         """
         连接到设备
@@ -266,6 +292,7 @@ class SeeedHADevice:
         # 正在断开连接 | Disconnecting
         _LOGGER.info("Disconnecting: %s", self.host)
         self._connected = False
+        self._fail_pending_ir_transmits(ConnectionError("Device disconnected"))
 
         # 取消 HA 实体状态监听 | Cancel HA entity state listener
         if self._state_unsub:
@@ -368,6 +395,7 @@ class SeeedHADevice:
         finally:
             # 连接断开，触发重连
             self._connected = False
+            self._fail_pending_ir_transmits(ConnectionError("Device disconnected"))
             if not self._reconnect_task:
                 self._reconnect_task = asyncio.create_task(self._async_reconnect())
 
@@ -455,6 +483,24 @@ class SeeedHADevice:
             # 立即启动重连任务
             if not self._reconnect_task:
                 self._reconnect_task = asyncio.create_task(self._async_reconnect())
+
+        elif msg_type == MSG_TYPE_IR_TRANSMIT_RESULT:
+            request_id = data.get("request_id")
+            future = self._pending_ir_transmits.get(request_id)
+            if future is not None and not future.done():
+                future.set_result(data)
+
+        elif msg_type == MSG_TYPE_IR_RECEIVED:
+            timings = data.get("timings")
+            if not isinstance(timings, list) or not timings:
+                _LOGGER.warning("Received invalid infrared signal payload")
+                return
+
+            for callback in tuple(self._infrared_receive_callbacks):
+                try:
+                    callback(data)
+                except Exception as err:
+                    _LOGGER.error("Infrared receive callback error: %s", err)
 
     async def _async_reconnect(self) -> None:
         """
@@ -578,6 +624,57 @@ class SeeedHADevice:
             return False
 
         return await self._async_send(data)
+
+    async def async_transmit_infrared(
+        self,
+        carrier_frequency: int,
+        timings: list[int],
+        repeat_count: int = 0,
+    ) -> None:
+        """Transmit raw infrared timings and wait for the device result."""
+        if not timings:
+            raise ValueError("Infrared timings cannot be empty")
+        if not 1000 <= carrier_frequency <= 65535:
+            raise ValueError("Infrared carrier frequency is out of range")
+        if not 0 <= repeat_count <= 10:
+            raise ValueError("Infrared repeat count is out of range")
+        if not all(isinstance(value, int) for value in timings):
+            raise ValueError("Infrared timings must contain integers")
+
+        request_id = self._next_request_id
+        self._next_request_id = 1 if request_id >= 0x7FFFFFFF else request_id + 1
+
+        future = asyncio.get_running_loop().create_future()
+        self._pending_ir_transmits[request_id] = future
+
+        sent = await self._async_send(
+            {
+                "type": MSG_TYPE_IR_TRANSMIT,
+                "request_id": request_id,
+                "carrier_frequency": carrier_frequency,
+                "repeat_count": repeat_count,
+                "timings": timings,
+            }
+        )
+        if not sent:
+            self._pending_ir_transmits.pop(request_id, None)
+            raise ConnectionError("Infrared transmit request could not be sent")
+
+        try:
+            result = await asyncio.wait_for(future, timeout=15)
+        finally:
+            self._pending_ir_transmits.pop(request_id, None)
+
+        if not result.get("success", False):
+            error = result.get("error", "unknown_error")
+            raise RuntimeError(f"Infrared transmission failed: {error}")
+
+    def _fail_pending_ir_transmits(self, error: Exception) -> None:
+        """Fail all infrared transmissions waiting for a device response."""
+        for future in self._pending_ir_transmits.values():
+            if not future.done():
+                future.set_exception(error)
+        self._pending_ir_transmits.clear()
 
     # =========================================================================
     # HA 实体状态订阅 | HA Entity State Subscription

@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/ESP32-C3%20%7C%20C5%20%7C%20C6%20%7C%20S3-blue" alt="ESP32 Support">
   <img src="https://img.shields.io/badge/nRF52840-BLE-purple" alt="nRF52840 Support">
-  <img src="https://img.shields.io/badge/Home%20Assistant-2025.12+-green" alt="Home Assistant">
+  <img src="https://img.shields.io/badge/Home%20Assistant-2026.7+-green" alt="Home Assistant">
   <img src="https://img.shields.io/badge/Arduino-IDE%20%7C%20PlatformIO-orange" alt="Arduino">
   <img src="https://img.shields.io/badge/HACS-Custom-41BDF5" alt="HACS Custom">
 </p>
@@ -229,6 +229,14 @@ lib_deps =
     bblanchon/ArduinoJson@^7.0.0
     links2004/WebSockets@^2.4.0
 ```
+
+#### IR Mate WiFi Example
+
+Install `IRremoteESP8266` 2.9.0 or later and `Adafruit NeoPixel` 1.15.2 or later, then open:
+
+`arduino/SeeedHADiscovery/examples/IRMateUniversalRemote/IRMateUniversalRemote.ino`
+
+The example uses the WiFi library and exposes Home Assistant infrared emitter, receiver, and learning remote entities. See the [IR Mate example guide](arduino/SeeedHADiscovery/examples/IRMateUniversalRemote/README.md).
 
 #### BLE Version (SeeedHADiscoveryBLE)
 
@@ -853,4 +861,3 @@ See [LICENSE](LICENSE) file for details.
 Issues and Pull Requests are welcome!
 
 - GitHub: [limengdu/Seeed-Homeassistant-Discovery](https://github.com/limengdu/Seeed-Homeassistant-Discovery)
-

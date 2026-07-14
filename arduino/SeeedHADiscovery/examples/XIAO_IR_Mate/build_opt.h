@@ -1,0 +1,3 @@
+-D_IR_ENABLE_DEFAULT_=false
+-DDECODE_HASH=true
+-DSEND_RAW=true

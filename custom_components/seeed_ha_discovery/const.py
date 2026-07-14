@@ -116,6 +116,15 @@ MSG_TYPE_HA_STATE_CLEAR: Final = "ha_state_clear"
 # Device sleep notification - device is about to enter sleep mode
 MSG_TYPE_SLEEP: Final = "sleep"
 
+# Infrared raw transmission request | 红外原始波形发射请求
+MSG_TYPE_IR_TRANSMIT: Final = "ir_transmit"
+
+# Infrared transmission result | 红外发射结果
+MSG_TYPE_IR_TRANSMIT_RESULT: Final = "ir_transmit_result"
+
+# Infrared signal received by the device | 设备接收到红外信号
+MSG_TYPE_IR_RECEIVED: Final = "ir_received"
+
 # =============================================================================
 # 实体订阅配置 | Entity Subscription Configuration
 # =============================================================================
@@ -134,7 +143,13 @@ PLATFORMS: Final = [
     "sensor",
     "switch",
     "camera",
+    "infrared",
+    "remote",
 ]
+
+# Default carrier frequency used for learned raw signals
+# 学习到的原始信号所使用的默认载波频率
+DEFAULT_IR_CARRIER_FREQUENCY: Final = 38000
 
 # =============================================================================
 # BLE 配置 | BLE Configuration

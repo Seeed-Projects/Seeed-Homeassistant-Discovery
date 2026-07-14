@@ -31,6 +31,7 @@ env:
   ARDUINOJSON_VERSION: "7.4.2"
   WEBSOCKETS_VERSION: "2.7.1"
   NEOPIXEL_VERSION: "1.15.2"
+  IRREMOTE_VERSION: "2.9.0"
 
 jobs:
   # ============================================================================
@@ -42,6 +43,7 @@ jobs:
     outputs:
       library: ${{ steps.filter.outputs.library }}
       library-ble: ${{ steps.filter.outputs.library-ble }}
+      ir-mate: ${{ steps.filter.outputs.ir-mate }}
       iot-button: ${{ steps.filter.outputs.iot-button }}
       soil-moisture: ${{ steps.filter.outputs.soil-moisture }}
       camera-stream: ${{ steps.filter.outputs.camera-stream }}
@@ -67,6 +69,8 @@ jobs:
               - 'arduino/SeeedHADiscoveryBLE/src/**'
               - 'arduino/SeeedHADiscoveryBLE/library.*'
               - '.github/workflows/build-firmware.yml'
+            ir-mate:
+              - 'arduino/SeeedHADiscovery/examples/IRMateUniversalRemote/**'
             iot-button:
               - 'arduino/SeeedHADiscovery/examples/IoTButtonV2_DeepSleep/**'
             soil-moisture:
@@ -93,6 +97,33 @@ jobs:
   # ============================================================================
   # SEEED-SPECIFIC FIRMWARE | SEEED 专用固件
   # ============================================================================
+
+  # IR Mate - XIAO ESP32-C3
+  build-ir-mate:
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.library == 'true' || needs.detect-changes.outputs.ir-mate == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Arduino CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=/usr/local/bin sh
+      - name: Install dependencies
+        run: |
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
+          arduino-cli core update-index
+          for i in 1 2 3 4 5; do arduino-cli core install esp32:esp32@${{ env.ESP32_CORE_VERSION }} && break || { echo "Attempt $i failed, retrying in 30s..."; sleep 30; }; done
+          arduino-cli lib install "ArduinoJson@${{ env.ARDUINOJSON_VERSION }}"
+          arduino-cli lib install "WebSockets@${{ env.WEBSOCKETS_VERSION }}"
+          arduino-cli lib install "Adafruit NeoPixel@${{ env.NEOPIXEL_VERSION }}"
+          arduino-cli lib install "IRremoteESP8266@${{ env.IRREMOTE_VERSION }}"
+          mkdir -p ~/Arduino/libraries
+          cp -r arduino/SeeedHADiscovery ~/Arduino/libraries/
+      - name: Compile
+        run: |
+          arduino-cli compile --fqbn "esp32:esp32:XIAO_ESP32C3" \
+            "arduino/SeeedHADiscovery/examples/IRMateUniversalRemote/IRMateUniversalRemote.ino"
 
   # IoT Button V2 - XIAO ESP32-C6 only
   build-iot-button:

@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/ESP32-C3%20%7C%20C5%20%7C%20C6%20%7C%20S3-blue" alt="ESP32 Support">
   <img src="https://img.shields.io/badge/nRF52840-BLE-purple" alt="nRF52840 Support">
-  <img src="https://img.shields.io/badge/Home%20Assistant-2025.12+-green" alt="Home Assistant">
+  <img src="https://img.shields.io/badge/Home%20Assistant-2026.7+-green" alt="Home Assistant">
   <img src="https://img.shields.io/badge/Arduino-IDE%20%7C%20PlatformIO-orange" alt="Arduino">
   <img src="https://img.shields.io/badge/HACS-Custom-41BDF5" alt="HACS Custom">
 </p>
@@ -229,6 +229,14 @@ lib_deps =
     bblanchon/ArduinoJson@^7.0.0
     links2004/WebSockets@^2.4.0
 ```
+
+#### IR Mate WiFi 示例
+
+安装 `IRremoteESP8266` 2.9.0 或更高版本和 `Adafruit NeoPixel` 1.15.2 或更高版本，然后打开：
+
+`arduino/SeeedHADiscovery/examples/IRMateUniversalRemote/IRMateUniversalRemote.ino`
+
+该示例使用 WiFi 库，在 Home Assistant 中提供红外发射器、红外接收器和可学习遥控器实体。具体操作见 [IR Mate 示例说明](arduino/SeeedHADiscovery/examples/IRMateUniversalRemote/README_CN.md)。
 
 #### BLE 版本 (SeeedHADiscoveryBLE)
 

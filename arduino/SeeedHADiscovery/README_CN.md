@@ -1,6 +1,6 @@
 # Seeed Home Assistant Discovery (WiFi 版)
 
-[![Version](https://img.shields.io/badge/版本-1.5.1-blue.svg)](https://github.com/limengdu/Seeed-Homeassistant-Discovery)
+[![Version](https://img.shields.io/badge/版本-1.6.0-blue.svg)](https://github.com/limengdu/Seeed-Homeassistant-Discovery)
 [![License](https://img.shields.io/badge/许可证-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/平台-ESP32-orange.svg)](https://www.espressif.com/)
 
@@ -155,9 +155,12 @@ void loop() {
 | [HAStateSubscribe](examples/HAStateSubscribe/) | 订阅 HA 实体状态 |
 | [CameraStream](examples/CameraStream/) | MJPEG 摄像头串流（S3 Sense） |
 | [WiFiProvisioning](examples/WiFiProvisioning/) | 基于 Web 的 WiFi 配置 |
+| [IRMateUniversalRemote](examples/IRMateUniversalRemote/) | WiFi 万能红外遥控器 |
 | [IoTButtonV2_DeepSleep](examples/IoTButtonV2_DeepSleep/) | 带深度睡眠的电池供电 IoT 按钮 |
 | [reTerminal_E1001_HASubscribe_Display](examples/reTerminal_E1001_HASubscribe_Display/) | E-Paper 显示屏显示 HA 状态 |
 | [reTerminal_E1002_HASubscribe_Display](examples/reTerminal_E1002_HASubscribe_Display/) | 彩色 E-Paper 显示屏显示 HA 状态 |
+
+IR Mate 的红外实现和可选依赖均放在示例目录内。
 
 ## 🔌 API 参考
 
@@ -187,6 +190,13 @@ SeeedHASwitch* addSwitch(const String& id, const String& name, const String& ico
 ```cpp
 void onHAState(HAStateCallback callback);
 SeeedHAState* getHAState(const String& entityId);
+```
+
+#### 协议扩展
+```cpp
+void onProtocolMessage(const String& type, HAProtocolMessageCallback callback);
+void onDiscovery(HADiscoveryCallback callback);
+void sendProtocolMessage(JsonDocument& doc, uint8_t clientNum = 255);
 ```
 
 #### 运行时
@@ -262,4 +272,3 @@ void setup() {
 
 - GitHub Issues：[报告问题](https://github.com/limengdu/Seeed-Homeassistant-Discovery/issues)
 - Seeed 论坛：[社区支持](https://forum.seeedstudio.com/)
-

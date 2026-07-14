@@ -61,6 +61,7 @@
 #include <WebSocketsServer.h>  // WebSocket server (for real-time communication) | WebSocket 服务器（用于实时通信）
 #include <ESPmDNS.h>       // mDNS service (for device discovery) | mDNS 服务（用于设备发现）
 #include <ArduinoJson.h>   // JSON processing library | JSON 处理库
+#include <functional>      // Callback wrappers | 回调函数封装
 #include <vector>          // Dynamic array | 动态数组
 #include <map>             // Key-value container | 键值对容器
 
@@ -72,7 +73,7 @@ class SeeedWiFiProvisioning;
 // =============================================================================
 
 // Library version | 库版本号
-#define SEEED_HA_DISCOVERY_VERSION "1.5.4"
+#define SEEED_HA_DISCOVERY_VERSION "1.6.0"
 
 // Maximum number of subscribed HA entities | 最大订阅 HA 实体数量
 #define SEEED_HA_MAX_SUBSCRIBED_ENTITIES 20
@@ -117,6 +118,13 @@ typedef void (*SwitchCallback)(bool state);
  *                   包含实体属性的 JSON 对象
  */
 typedef void (*HAStateCallback)(const char* entityId, const char* state, JsonObject& attributes);
+
+/**
+ * Protocol extension callback types
+ * 协议扩展回调类型
+ */
+using HAProtocolMessageCallback = std::function<void(JsonDocument&)>;
+using HADiscoveryCallback = std::function<void(JsonArray&)>;
 
 // =============================================================================
 // SeeedHASensor - Sensor Class | 传感器类
@@ -864,6 +872,31 @@ public:
     void clearHAStates();
 
     // =========================================================================
+    // Protocol Extensions | 协议扩展
+    // =========================================================================
+
+    /**
+     * Register a handler for a custom WebSocket message type
+     * 为自定义 WebSocket 消息类型注册处理函数
+     */
+    void onProtocolMessage(
+        const String& type,
+        HAProtocolMessageCallback callback
+    );
+
+    /**
+     * Register a provider that appends custom entities to discovery
+     * 注册向设备发现列表追加自定义实体的函数
+     */
+    void onDiscovery(HADiscoveryCallback callback);
+
+    /**
+     * Send a protocol message to Home Assistant clients
+     * 向 Home Assistant 客户端发送协议消息
+     */
+    void sendProtocolMessage(JsonDocument& doc, uint8_t clientNum = 255);
+
+    // =========================================================================
     // Runtime Methods | 运行时方法
     // =========================================================================
 
@@ -966,6 +999,12 @@ private:
     // -------------------------------------------------------------------------
     std::map<String, SeeedHAState*> _haStates;  // Subscribed HA states | 订阅的 HA 状态
     HAStateCallback _haStateCallback;            // HA state change callback | HA 状态变化回调
+
+    // -------------------------------------------------------------------------
+    // Protocol Extensions | 协议扩展
+    // -------------------------------------------------------------------------
+    std::map<String, HAProtocolMessageCallback> _protocolMessageCallbacks;
+    std::vector<HADiscoveryCallback> _discoveryCallbacks;
 
     // -------------------------------------------------------------------------
     // State Variables | 状态变量

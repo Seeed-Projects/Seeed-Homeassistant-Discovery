@@ -815,6 +815,12 @@ void SeeedHADiscovery::_handleWSEvent(uint8_t num, WStype_t type, uint8_t* paylo
                 _log("Received HA state clear command");
                 clearHAStates();
             }
+            else {
+                auto callback = _protocolMessageCallbacks.find(msgType);
+                if (callback != _protocolMessageCallbacks.end()) {
+                    callback->second(doc);
+                }
+            }
             break;
         }
 
@@ -840,6 +846,12 @@ void SeeedHADiscovery::_sendDiscovery(uint8_t clientNum) {
     for (auto sw : _switches) {
         JsonObject obj = entities.add<JsonObject>();
         sw->toJson(obj);
+    }
+
+    // Append entities provided by optional protocol modules
+    // 追加可选协议模块提供的实体
+    for (auto& callback : _discoveryCallbacks) {
+        callback(entities);
     }
 
     // Serialize and send | 序列化并发送
@@ -1112,16 +1124,36 @@ void SeeedHADiscovery::clearHAStates() {
     _log("HA states cleared");
 }
 
+void SeeedHADiscovery::onProtocolMessage(
+    const String& type,
+    HAProtocolMessageCallback callback
+) {
+    _protocolMessageCallbacks[type] = callback;
+}
+
+void SeeedHADiscovery::onDiscovery(HADiscoveryCallback callback) {
+    _discoveryCallbacks.push_back(callback);
+}
+
+void SeeedHADiscovery::sendProtocolMessage(JsonDocument& doc, uint8_t clientNum) {
+    String message;
+    serializeJson(doc, message);
+
+    if (clientNum == 255) {
+        _broadcastMessage(message);
+    } else if (_wsServer != nullptr) {
+        _wsServer->sendTXT(clientNum, message);
+    }
+}
+
 void SeeedHADiscovery::handle() {
-    // Handle WiFi provisioning if active | 如果配网激活则处理配网
-    if (_provisioning != nullptr && _provisioning->isAPModeActive()) {
-        static unsigned long lastProvLog = 0;
-        if (millis() - lastProvLog > 5000) {
-            lastProvLog = millis();
-            _log("[LIB] Calling _provisioning->handle()");
-        }
+    // Process provisioning and its reset button in every network state
+    // 在所有网络状态下处理配网和重置按钮
+    if (_provisioning != nullptr) {
         _provisioning->handle();
-        return;  // Don't handle other services in AP mode | AP 模式下不处理其他服务
+        if (_provisioning->isAPModeActive()) {
+            return;
+        }
     }
 
     // Handle HTTP requests | 处理 HTTP 请求

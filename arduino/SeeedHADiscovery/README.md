@@ -1,6 +1,6 @@
 # Seeed Home Assistant Discovery (WiFi)
 
-[![Version](https://img.shields.io/badge/version-1.5.1-blue.svg)](https://github.com/limengdu/Seeed-Homeassistant-Discovery)
+[![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)](https://github.com/limengdu/Seeed-Homeassistant-Discovery)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-ESP32-orange.svg)](https://www.espressif.com/)
 
@@ -155,9 +155,12 @@ void loop() {
 | [HAStateSubscribe](examples/HAStateSubscribe/) | Subscribe to HA entity states |
 | [CameraStream](examples/CameraStream/) | MJPEG camera streaming (S3 Sense) |
 | [WiFiProvisioning](examples/WiFiProvisioning/) | Web-based WiFi configuration |
+| [IRMateUniversalRemote](examples/IRMateUniversalRemote/) | WiFi universal infrared remote |
 | [IoTButtonV2_DeepSleep](examples/IoTButtonV2_DeepSleep/) | Battery-powered IoT button with deep sleep |
 | [reTerminal_E1001_HASubscribe_Display](examples/reTerminal_E1001_HASubscribe_Display/) | E-Paper display with HA states |
 | [reTerminal_E1002_HASubscribe_Display](examples/reTerminal_E1002_HASubscribe_Display/) | Color E-Paper display with HA states |
+
+The IR Mate example keeps its infrared implementation and optional dependencies inside the example folder.
 
 ## 🔌 API Reference
 
@@ -187,6 +190,13 @@ SeeedHASwitch* addSwitch(const String& id, const String& name, const String& ico
 ```cpp
 void onHAState(HAStateCallback callback);
 SeeedHAState* getHAState(const String& entityId);
+```
+
+#### Protocol Extensions
+```cpp
+void onProtocolMessage(const String& type, HAProtocolMessageCallback callback);
+void onDiscovery(HADiscoveryCallback callback);
+void sendProtocolMessage(JsonDocument& doc, uint8_t clientNum = 255);
 ```
 
 #### Runtime
@@ -262,4 +272,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 - GitHub Issues: [Report a bug](https://github.com/limengdu/Seeed-Homeassistant-Discovery/issues)
 - Seeed Forum: [Community Support](https://forum.seeedstudio.com/)
-
