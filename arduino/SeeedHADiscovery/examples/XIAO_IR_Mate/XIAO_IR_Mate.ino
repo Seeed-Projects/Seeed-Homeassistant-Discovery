@@ -16,6 +16,7 @@ constexpr uint8_t STATUS_LED_PIN = 7;
 constexpr uint8_t RESET_PIN = 9;
 
 constexpr uint32_t TOUCH_DEBOUNCE_MS = 35;
+constexpr uint32_t TOUCH_MULTI_CLICK_MS = 350;
 constexpr uint32_t WIFI_BLINK_INTERVAL_MS = 500;
 
 SeeedHADiscovery ha;
@@ -25,6 +26,8 @@ Adafruit_NeoPixel statusLed(1, STATUS_LED_PIN, NEO_GRB + NEO_KHZ800);
 bool touchRawState = false;
 bool touchStableState = false;
 uint32_t touchChangedAt = 0;
+uint32_t lastTouchAt = 0;
+uint8_t touchCount = 0;
 uint32_t feedbackEndsAt = 0;
 uint32_t lastWifiBlinkAt = 0;
 uint32_t currentColor = UINT32_MAX;
@@ -63,10 +66,40 @@ void handleTouchButton() {
         return;
     }
 
-    // A local press replays the latest learned signal without Home Assistant.
-    // 本地按键可在不依赖 Home Assistant 的情况下重放最近信号。
-    if (!infrared.replayLastSignal()) {
-        startFeedback(statusLed.Color(255, 0, 0), 350, true);
+    if (infrared.isLearning()) {
+        return;
+    }
+
+    if (touchCount < UINT8_MAX) {
+        touchCount++;
+    }
+    lastTouchAt = now;
+}
+
+void handleTouchAction() {
+    if (touchCount == 0 || millis() - lastTouchAt < TOUCH_MULTI_CLICK_MS) {
+        return;
+    }
+
+    uint8_t completedCount = touchCount;
+    touchCount = 0;
+
+    bool sent = false;
+    if (completedCount == 1) {
+        Serial.println("Touch action: toggle Gree power");
+        sent = infrared.toggleDefaultGreePower();
+    } else if (completedCount == 2) {
+        Serial.println("Touch action: increase Gree temperature");
+        sent = infrared.increaseDefaultGreeTemperature();
+    } else if (completedCount == 3) {
+        Serial.println("Touch action: decrease Gree temperature");
+        sent = infrared.decreaseDefaultGreeTemperature();
+    } else {
+        Serial.printf("Touch action ignored: %u touches\n", completedCount);
+    }
+
+    if (!sent && completedCount <= 3) {
+        startFeedback(statusLed.Color(255, 0, 0), 180, true);
     }
 }
 
@@ -79,6 +112,11 @@ void updateStatus() {
         }
         feedbackEndsAt = 0;
         digitalWrite(VIBRATION_PIN, LOW);
+    }
+
+    if (infrared.isLearning()) {
+        setStatusColor(statusLed.Color(255, 160, 0));
+        return;
     }
 
     if (ha.isHAConnected()) {
@@ -123,7 +161,14 @@ void setup() {
             true
         );
     });
+    infrared.onLearningStateChanged([](bool active) {
+        if (active) {
+            touchCount = 0;
+        }
+        Serial.printf("IR learning: %s\n", active ? "started" : "stopped");
+    });
     infrared.begin();
+    Serial.println("Offline Gree control ready");
 
     ha.beginWithProvisioning("Seeed_IR_Mate");
     ha.enableResetButton(RESET_PIN, true);
@@ -133,6 +178,7 @@ void loop() {
     ha.handle();
     infrared.handle();
     handleTouchButton();
+    handleTouchAction();
     updateStatus();
     delay(2);
 }

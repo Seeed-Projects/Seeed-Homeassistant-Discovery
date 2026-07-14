@@ -1,6 +1,12 @@
 #include "IRMateInfrared.h"
 
 #include <limits.h>
+#include <string.h>
+
+namespace {
+constexpr char STORAGE_NAMESPACE[] = "ir_mate";
+constexpr char GREE_STATE_KEY[] = "gree_state";
+}
 
 IRMateInfrared::IRMateInfrared(
     SeeedHADiscovery& ha,
@@ -12,10 +18,15 @@ IRMateInfrared::IRMateInfrared(
     _ha(ha),
     _sender(transmitPin),
     _receiver(receivePin, captureBufferSize, captureTimeoutMs, false),
+    _gree(transmitPin, YAW1F),
     _defaultCarrierFrequency(38000),
     _started(false),
+    _learning(false),
+    _learningRequestId(0),
+    _learningDeadline(0),
     _receiveCallback(nullptr),
-    _transmitCallback(nullptr)
+    _transmitCallback(nullptr),
+    _learningStateCallback(nullptr)
 {
 }
 
@@ -25,10 +36,17 @@ void IRMateInfrared::begin() {
     }
 
     _sender.begin();
-    _receiver.enableIRIn();
+    _gree.begin();
+    _loadDefaultGreeState();
 
     _ha.onProtocolMessage("ir_transmit", [this](JsonDocument& doc) {
         _handleTransmitMessage(doc);
+    });
+    _ha.onProtocolMessage("ir_learn_start", [this](JsonDocument& doc) {
+        _handleLearnStartMessage(doc);
+    });
+    _ha.onProtocolMessage("ir_learn_cancel", [this](JsonDocument& doc) {
+        _handleLearnCancelMessage(doc);
     });
     _ha.onDiscovery([this](JsonArray& entities) {
         _appendDiscoveryEntities(entities);
@@ -38,7 +56,16 @@ void IRMateInfrared::begin() {
 }
 
 void IRMateInfrared::handle() {
-    if (!_started || !_receiver.decode(&_capture)) {
+    if (!_started || !_learning) {
+        return;
+    }
+
+    if (static_cast<int32_t>(millis() - _learningDeadline) >= 0) {
+        _finishLearning(false, "learning_timeout");
+        return;
+    }
+
+    if (!_receiver.decode(&_capture)) {
         return;
     }
 
@@ -48,7 +75,7 @@ void IRMateInfrared::handle() {
     }
 
     uint16_t timingCount = getCorrectedRawLength(&_capture);
-    if (timingCount == 0 || timingCount > MAX_TRANSMIT_ENTRIES) {
+    if (timingCount < MIN_LEARN_TIMINGS || timingCount > MAX_TRANSMIT_ENTRIES) {
         _receiver.resume();
         return;
     }
@@ -59,23 +86,53 @@ void IRMateInfrared::handle() {
         return;
     }
 
-    _lastSignal.assign(timings, timings + timingCount);
-    _sendReceivedSignal(timings, timingCount);
+    _finishLearning(true, "", timings, timingCount);
 
     if (_receiveCallback) {
         _receiveCallback(timingCount);
     }
 
     delete[] timings;
-    _receiver.resume();
 }
 
-bool IRMateInfrared::replayLastSignal(uint8_t repeatCount) {
-    if (_lastSignal.empty()) {
+bool IRMateInfrared::toggleDefaultGreePower() {
+    if (!_started || _learning) {
         return false;
     }
 
-    return _transmitRaw(_lastSignal, _defaultCarrierFrequency, repeatCount);
+    if (_gree.getPower()) {
+        _gree.off();
+    } else {
+        _gree.setMode(kGreeCool);
+        _gree.on();
+    }
+    return _sendDefaultGreeState();
+}
+
+bool IRMateInfrared::increaseDefaultGreeTemperature() {
+    if (!_started || _learning || !_gree.getPower()) {
+        return false;
+    }
+
+    uint8_t temperature = _gree.getTemp();
+    if (temperature >= kGreeMaxTempC) {
+        return false;
+    }
+    _gree.setTemp(temperature + 1);
+    return _sendDefaultGreeState();
+}
+
+bool IRMateInfrared::decreaseDefaultGreeTemperature() {
+    if (!_started || _learning || !_gree.getPower()) {
+        return false;
+    }
+
+    uint8_t temperature = _gree.getTemp();
+    if (temperature <= kGreeMinTempC) {
+        return false;
+    }
+    _gree.setTemp(temperature - 1);
+    return _sendDefaultGreeState();
 }
 
 void IRMateInfrared::setDefaultCarrierFrequency(uint16_t frequency) {
@@ -90,6 +147,10 @@ void IRMateInfrared::onSignalReceived(ReceiveCallback callback) {
 
 void IRMateInfrared::onTransmitCompleted(TransmitCallback callback) {
     _transmitCallback = callback;
+}
+
+void IRMateInfrared::onLearningStateChanged(LearningStateCallback callback) {
+    _learningStateCallback = callback;
 }
 
 void IRMateInfrared::_appendDiscoveryEntities(JsonArray& entities) {
@@ -135,6 +196,41 @@ void IRMateInfrared::_handleTransmitMessage(JsonDocument& doc) {
         static_cast<uint8_t>(repeatCount)
     );
     _sendTransmitResult(requestId, success, success ? "" : "transmit_failed");
+}
+
+void IRMateInfrared::_handleLearnStartMessage(JsonDocument& doc) {
+    uint32_t requestId = doc["request_id"] | 0;
+    uint32_t timeoutMs = doc["timeout_ms"] | 30000;
+
+    if (requestId == 0) {
+        _sendLearningResult(0, false, "request_id_required", nullptr, 0);
+        return;
+    }
+    if (timeoutMs < MIN_LEARNING_TIMEOUT_MS || timeoutMs > MAX_LEARNING_TIMEOUT_MS) {
+        _sendLearningResult(requestId, false, "learning_timeout_out_of_range", nullptr, 0);
+        return;
+    }
+
+    if (_learning) {
+        _finishLearning(false, "learning_replaced");
+    }
+
+    _learning = true;
+    _learningRequestId = requestId;
+    _learningDeadline = millis() + timeoutMs;
+    _receiver.enableIRIn();
+
+    if (_learningStateCallback) {
+        _learningStateCallback(true);
+    }
+}
+
+void IRMateInfrared::_handleLearnCancelMessage(JsonDocument& doc) {
+    uint32_t requestId = doc["request_id"] | 0;
+    if (!_learning || (requestId != 0 && requestId != _learningRequestId)) {
+        return;
+    }
+    _finishLearning(false, "learning_cancelled");
 }
 
 bool IRMateInfrared::_parseTimings(
@@ -191,14 +287,13 @@ bool IRMateInfrared::_transmitRaw(
     uint16_t carrierFrequency,
     uint8_t repeatCount
 ) {
-    if (!_started || timings.empty()) {
+    if (!_started || _learning || timings.empty()) {
         if (_transmitCallback) {
             _transmitCallback(false);
         }
         return false;
     }
 
-    _receiver.disableIRIn();
     for (uint8_t index = 0; index <= repeatCount; index++) {
         _sender.sendRaw(
             timings.data(),
@@ -206,7 +301,6 @@ bool IRMateInfrared::_transmitRaw(
             carrierFrequency
         );
     }
-    _receiver.enableIRIn();
 
     if (_transmitCallback) {
         _transmitCallback(true);
@@ -229,13 +323,50 @@ void IRMateInfrared::_sendTransmitResult(
     _ha.sendProtocolMessage(doc);
 }
 
-void IRMateInfrared::_sendReceivedSignal(
+void IRMateInfrared::_finishLearning(
+    bool success,
+    const String& error,
+    const uint16_t* timings,
+    uint16_t timingCount
+) {
+    if (!_learning) {
+        return;
+    }
+
+    uint32_t requestId = _learningRequestId;
+    _receiver.disableIRIn();
+    _learning = false;
+    _learningRequestId = 0;
+    _learningDeadline = 0;
+
+    if (_learningStateCallback) {
+        _learningStateCallback(false);
+    }
+
+    _sendLearningResult(requestId, success, error, timings, timingCount);
+}
+
+void IRMateInfrared::_sendLearningResult(
+    uint32_t requestId,
+    bool success,
+    const String& error,
     const uint16_t* timings,
     uint16_t timingCount
 ) {
     JsonDocument doc;
-    doc["type"] = "ir_received";
+    doc["type"] = "ir_learn_result";
+    doc["request_id"] = requestId;
     doc["entity_id"] = "ir_receiver";
+    doc["success"] = success;
+    if (!success) {
+        if (error.length() > 0) {
+            doc["error"] = error;
+        }
+        _ha.sendProtocolMessage(doc);
+        return;
+    }
+
+    doc["carrier_frequency"] = _defaultCarrierFrequency;
     JsonArray values = doc["timings"].to<JsonArray>();
 
     for (uint16_t index = 0; index < timingCount; index++) {
@@ -244,4 +375,59 @@ void IRMateInfrared::_sendReceivedSignal(
     }
 
     _ha.sendProtocolMessage(doc);
+}
+
+void IRMateInfrared::_loadDefaultGreeState() {
+    uint8_t state[kGreeStateLength];
+    Preferences preferences;
+    bool loaded = false;
+
+    if (preferences.begin(STORAGE_NAMESPACE, true)) {
+        if (preferences.getBytesLength(GREE_STATE_KEY) == kGreeStateLength) {
+            preferences.getBytes(GREE_STATE_KEY, state, sizeof(state));
+            if (IRGreeAC::validChecksum(state)) {
+                _gree.setRaw(state);
+                loaded = true;
+            }
+        }
+        preferences.end();
+    }
+
+    if (loaded) {
+        return;
+    }
+
+    _gree.stateReset();
+    _gree.setModel(YAW1F);
+    _gree.setMode(kGreeCool);
+    _gree.setFan(kGreeFanAuto);
+    _gree.setTemp(DEFAULT_GREE_TEMPERATURE);
+    _gree.off();
+    _saveDefaultGreeState();
+}
+
+void IRMateInfrared::_saveDefaultGreeState() {
+    Preferences preferences;
+    if (!preferences.begin(STORAGE_NAMESPACE, false)) {
+        return;
+    }
+
+    uint8_t state[kGreeStateLength];
+    memcpy(state, _gree.getRaw(), sizeof(state));
+    preferences.putBytes(GREE_STATE_KEY, state, sizeof(state));
+    preferences.end();
+}
+
+bool IRMateInfrared::_sendDefaultGreeState() {
+    if (!_started || _learning) {
+        return false;
+    }
+
+    _gree.send();
+    _saveDefaultGreeState();
+
+    if (_transmitCallback) {
+        _transmitCallback(true);
+    }
+    return true;
 }

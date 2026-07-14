@@ -234,9 +234,9 @@ lib_deps =
 
 Install `IRremoteESP8266` 2.9.0 or later and `Adafruit NeoPixel` 1.15.2 or later, then open:
 
-`arduino/SeeedHADiscovery/examples/IRMateUniversalRemote/IRMateUniversalRemote.ino`
+`arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/XIAO_IR_Mate.ino`
 
-The example uses the WiFi library and exposes Home Assistant infrared emitter, receiver, and learning remote entities. See the [IR Mate example guide](arduino/SeeedHADiscovery/examples/IRMateUniversalRemote/README.md).
+The example controls a Gree air conditioner by touch without WiFi and can optionally connect to Home Assistant for infrared learning and transmission. See the [IR Mate example guide](arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/README.md).
 
 #### BLE Version (SeeedHADiscoveryBLE)
 

@@ -22,7 +22,7 @@ from homeassistant.components.remote import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_COMMAND
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -114,8 +114,6 @@ class SeeedHAUniversalRemote(CoordinatorEntity, RemoteEntity):
         self._codes: dict[str, dict[str, list[dict[str, Any]]]] = {}
         self._alternative_indexes: dict[str, int] = {}
         self._learning_lock = asyncio.Lock()
-        self._learning_future: asyncio.Future[dict[str, Any]] | None = None
-        self._remove_receive_callback: CALLBACK_TYPE | None = None
 
         device_id = entry.data.get(CONF_DEVICE_ID, "")
         self._attr_unique_id = f"{device_id}_universal_remote"
@@ -142,24 +140,6 @@ class SeeedHAUniversalRemote(CoordinatorEntity, RemoteEntity):
         if host := entry_data.get("host"):
             info["configuration_url"] = f"http://{host}"
         return info
-
-    async def async_added_to_hass(self) -> None:
-        """Subscribe to infrared receive events."""
-        await super().async_added_to_hass()
-        self._remove_receive_callback = (
-            self.coordinator.device.add_infrared_receive_callback(
-                self._handle_device_signal
-            )
-        )
-
-    async def async_will_remove_from_hass(self) -> None:
-        """Remove the infrared receive subscription."""
-        if self._remove_receive_callback is not None:
-            self._remove_receive_callback()
-            self._remove_receive_callback = None
-        if self._learning_future is not None and not self._learning_future.done():
-            self._learning_future.cancel()
-        await super().async_will_remove_from_hass()
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Enable remote commands."""
@@ -294,15 +274,15 @@ class SeeedHAUniversalRemote(CoordinatorEntity, RemoteEntity):
             notification_id=self._notification_id,
         )
 
-        self._learning_future = asyncio.get_running_loop().create_future()
         try:
-            data = await asyncio.wait_for(self._learning_future, timeout=timeout)
+            data = await self.coordinator.device.async_learn_infrared(timeout)
         except TimeoutError as err:
             raise HomeAssistantError(
                 f"No infrared signal was received within {timeout} seconds"
             ) from err
+        except (ConnectionError, RuntimeError, ValueError) as err:
+            raise HomeAssistantError(str(err)) from err
         finally:
-            self._learning_future = None
             persistent_notification.async_dismiss(
                 self.hass,
                 notification_id=self._notification_id,
@@ -314,18 +294,3 @@ class SeeedHAUniversalRemote(CoordinatorEntity, RemoteEntity):
             "carrier_frequency": carrier_frequency,
             "timings": timings,
         }
-
-    @callback
-    def _handle_device_signal(self, data: dict[str, Any]) -> None:
-        """Complete an active learning request with a valid raw signal."""
-        future = self._learning_future
-        timings = data.get("timings")
-        if (
-            future is None
-            or future.done()
-            or not isinstance(timings, list)
-            or not timings
-            or not all(isinstance(value, int) for value in timings)
-        ):
-            return
-        future.set_result(data)

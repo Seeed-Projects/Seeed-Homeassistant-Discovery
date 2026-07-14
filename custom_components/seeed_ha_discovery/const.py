@@ -122,8 +122,10 @@ MSG_TYPE_IR_TRANSMIT: Final = "ir_transmit"
 # Infrared transmission result | 红外发射结果
 MSG_TYPE_IR_TRANSMIT_RESULT: Final = "ir_transmit_result"
 
-# Infrared signal received by the device | 设备接收到红外信号
-MSG_TYPE_IR_RECEIVED: Final = "ir_received"
+# Infrared learning control and result | 红外学习控制与结果
+MSG_TYPE_IR_LEARN_START: Final = "ir_learn_start"
+MSG_TYPE_IR_LEARN_CANCEL: Final = "ir_learn_cancel"
+MSG_TYPE_IR_LEARN_RESULT: Final = "ir_learn_result"
 
 # =============================================================================
 # 实体订阅配置 | Entity Subscription Configuration

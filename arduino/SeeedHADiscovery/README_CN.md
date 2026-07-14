@@ -155,7 +155,7 @@ void loop() {
 | [HAStateSubscribe](examples/HAStateSubscribe/) | 订阅 HA 实体状态 |
 | [CameraStream](examples/CameraStream/) | MJPEG 摄像头串流（S3 Sense） |
 | [WiFiProvisioning](examples/WiFiProvisioning/) | 基于 Web 的 WiFi 配置 |
-| [IRMateUniversalRemote](examples/IRMateUniversalRemote/) | WiFi 万能红外遥控器 |
+| [XIAO_IR_Mate](examples/XIAO_IR_Mate/) | 支持离线格力控制和 HA 按键学习的万能红外遥控器 |
 | [IoTButtonV2_DeepSleep](examples/IoTButtonV2_DeepSleep/) | 带深度睡眠的电池供电 IoT 按钮 |
 | [reTerminal_E1001_HASubscribe_Display](examples/reTerminal_E1001_HASubscribe_Display/) | E-Paper 显示屏显示 HA 状态 |
 | [reTerminal_E1002_HASubscribe_Display](examples/reTerminal_E1002_HASubscribe_Display/) | 彩色 E-Paper 显示屏显示 HA 状态 |

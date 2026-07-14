@@ -49,7 +49,9 @@ from .const import (
     MSG_TYPE_SLEEP,
     MSG_TYPE_IR_TRANSMIT,
     MSG_TYPE_IR_TRANSMIT_RESULT,
-    MSG_TYPE_IR_RECEIVED,
+    MSG_TYPE_IR_LEARN_START,
+    MSG_TYPE_IR_LEARN_CANCEL,
+    MSG_TYPE_IR_LEARN_RESULT,
     HEARTBEAT_INTERVAL,
     RECONNECT_INTERVAL,
     DEFAULT_HTTP_PORT,
@@ -122,6 +124,9 @@ class SeeedHADevice:
         self._pending_ir_transmits: dict[
             int, asyncio.Future[dict[str, Any]]
         ] = {}
+        # Pending infrared learning sessions keyed by request ID
+        # 以请求 ID 为键保存正在等待的红外学习任务
+        self._pending_ir_learns: dict[int, asyncio.Future[dict[str, Any]]] = {}
         self._next_request_id = 1
 
         # =========================================================================
@@ -293,6 +298,7 @@ class SeeedHADevice:
         _LOGGER.info("Disconnecting: %s", self.host)
         self._connected = False
         self._fail_pending_ir_transmits(ConnectionError("Device disconnected"))
+        self._fail_pending_ir_learns(ConnectionError("Device disconnected"))
 
         # 取消 HA 实体状态监听 | Cancel HA entity state listener
         if self._state_unsub:
@@ -396,6 +402,7 @@ class SeeedHADevice:
             # 连接断开，触发重连
             self._connected = False
             self._fail_pending_ir_transmits(ConnectionError("Device disconnected"))
+            self._fail_pending_ir_learns(ConnectionError("Device disconnected"))
             if not self._reconnect_task:
                 self._reconnect_task = asyncio.create_task(self._async_reconnect())
 
@@ -490,10 +497,26 @@ class SeeedHADevice:
             if future is not None and not future.done():
                 future.set_result(data)
 
-        elif msg_type == MSG_TYPE_IR_RECEIVED:
-            timings = data.get("timings")
-            if not isinstance(timings, list) or not timings:
-                _LOGGER.warning("Received invalid infrared signal payload")
+        elif msg_type == MSG_TYPE_IR_LEARN_RESULT:
+            request_id = data.get("request_id")
+            if data.get("success", False):
+                timings = data.get("timings")
+                if not isinstance(timings, list) or not timings or not all(
+                    isinstance(value, int) for value in timings
+                ):
+                    _LOGGER.warning("Received invalid infrared signal payload")
+                    data = {
+                        "type": MSG_TYPE_IR_LEARN_RESULT,
+                        "request_id": request_id,
+                        "success": False,
+                        "error": "invalid_signal_payload",
+                    }
+
+            future = self._pending_ir_learns.get(request_id)
+            if future is not None and not future.done():
+                future.set_result(data)
+
+            if not data.get("success", False):
                 return
 
             for callback in tuple(self._infrared_receive_callbacks):
@@ -669,12 +692,63 @@ class SeeedHADevice:
             error = result.get("error", "unknown_error")
             raise RuntimeError(f"Infrared transmission failed: {error}")
 
+    async def async_learn_infrared(self, timeout: int) -> dict[str, Any]:
+        """Start one device-side learning session and return its raw signal."""
+        if not 1 <= timeout <= 60:
+            raise ValueError(
+                "Infrared learning timeout must be between 1 and 60 seconds"
+            )
+
+        request_id = self._next_request_id
+        self._next_request_id = 1 if request_id >= 0x7FFFFFFF else request_id + 1
+
+        future = asyncio.get_running_loop().create_future()
+        self._pending_ir_learns[request_id] = future
+
+        sent = await self._async_send(
+            {
+                "type": MSG_TYPE_IR_LEARN_START,
+                "request_id": request_id,
+                "timeout_ms": timeout * 1000,
+            }
+        )
+        if not sent:
+            self._pending_ir_learns.pop(request_id, None)
+            raise ConnectionError("Infrared learning request could not be sent")
+
+        try:
+            result = await asyncio.wait_for(future, timeout=timeout + 2)
+        except (TimeoutError, asyncio.CancelledError):
+            await self._async_send(
+                {
+                    "type": MSG_TYPE_IR_LEARN_CANCEL,
+                    "request_id": request_id,
+                }
+            )
+            raise
+        finally:
+            self._pending_ir_learns.pop(request_id, None)
+
+        if not result.get("success", False):
+            error = result.get("error", "unknown_error")
+            if error == "learning_timeout":
+                raise TimeoutError
+            raise RuntimeError(f"Infrared learning failed: {error}")
+        return result
+
     def _fail_pending_ir_transmits(self, error: Exception) -> None:
         """Fail all infrared transmissions waiting for a device response."""
         for future in self._pending_ir_transmits.values():
             if not future.done():
                 future.set_exception(error)
         self._pending_ir_transmits.clear()
+
+    def _fail_pending_ir_learns(self, error: Exception) -> None:
+        """Fail all infrared learning sessions waiting for a device response."""
+        for future in self._pending_ir_learns.values():
+            if not future.done():
+                future.set_exception(error)
+        self._pending_ir_learns.clear()
 
     # =========================================================================
     # HA 实体状态订阅 | HA Entity State Subscription

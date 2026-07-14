@@ -234,9 +234,9 @@ lib_deps =
 
 安装 `IRremoteESP8266` 2.9.0 或更高版本和 `Adafruit NeoPixel` 1.15.2 或更高版本，然后打开：
 
-`arduino/SeeedHADiscovery/examples/IRMateUniversalRemote/IRMateUniversalRemote.ino`
+`arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/XIAO_IR_Mate.ino`
 
-该示例使用 WiFi 库，在 Home Assistant 中提供红外发射器、红外接收器和可学习遥控器实体。具体操作见 [IR Mate 示例说明](arduino/SeeedHADiscovery/examples/IRMateUniversalRemote/README_CN.md)。
+该示例无需配网即可通过触摸控制格力空调，也可接入 Home Assistant 学习和发送其他红外按键。具体操作见 [IR Mate 示例说明](arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/README_CN.md)。
 
 #### BLE 版本 (SeeedHADiscoveryBLE)
 
