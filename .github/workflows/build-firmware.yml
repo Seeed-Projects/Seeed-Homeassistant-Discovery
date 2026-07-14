@@ -70,7 +70,7 @@ jobs:
               - 'arduino/SeeedHADiscoveryBLE/library.*'
               - '.github/workflows/build-firmware.yml'
             ir-mate:
-              - 'arduino/SeeedHADiscovery/examples/IRMateUniversalRemote/**'
+              - 'arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/**'
             iot-button:
               - 'arduino/SeeedHADiscovery/examples/IoTButtonV2_DeepSleep/**'
             soil-moisture:
@@ -123,7 +123,7 @@ jobs:
       - name: Compile
         run: |
           arduino-cli compile --fqbn "esp32:esp32:XIAO_ESP32C3" \
-            "arduino/SeeedHADiscovery/examples/IRMateUniversalRemote/IRMateUniversalRemote.ino"
+            "arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/XIAO_IR_Mate.ino"
 
   # IoT Button V2 - XIAO ESP32-C6 only
   build-iot-button:
