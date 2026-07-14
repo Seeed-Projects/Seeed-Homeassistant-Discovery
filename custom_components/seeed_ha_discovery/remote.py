@@ -87,7 +87,6 @@ class SeeedHAUniversalRemote(CoordinatorEntity, RemoteEntity):
 
     _attr_has_entity_name = True
     _attr_name = "Universal remote"
-    _attr_entity_registry_enabled_default = False
     _attr_supported_features = (
         RemoteEntityFeature.LEARN_COMMAND | RemoteEntityFeature.DELETE_COMMAND
     )

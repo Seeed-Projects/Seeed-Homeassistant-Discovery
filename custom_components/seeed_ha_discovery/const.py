@@ -155,6 +155,7 @@ PLATFORMS: Final = [
     "camera",
     "infrared",
     "remote",
+    "select",
 ]
 
 # Default carrier frequency used for learned raw signals

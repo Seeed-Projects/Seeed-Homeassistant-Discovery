@@ -3,6 +3,10 @@
  * IR Mate 万能红外遥控器示例
  */
 
+// AP hotspot name broadcast while the device has no saved WiFi yet
+// 设备尚未配网时对外广播的配网热点名称
+const char* PROVISIONING_AP_SSID = "Seeed_IR_Mate";
+
 #include <Adafruit_NeoPixel.h>
 #include <SeeedHADiscovery.h>
 
@@ -230,8 +234,31 @@ void setup() {
     infrared.begin();
     Serial.println("Offline Gree control ready");
 
-    ha.beginWithProvisioning("Seeed_IR_Mate");
+    // Long press the reset button to clear WiFi and restart provisioning
+    // 长按重置按钮可清除 WiFi 并重新进入配网模式
     ha.enableResetButton(RESET_PIN, true);
+
+    // Build a per-device hotspot name from the chip MAC suffix
+    // 用芯片 MAC 后缀拼出每台设备唯一的配网热点名称
+    char apSsid[40];
+    snprintf(
+        apSsid,
+        sizeof(apSsid),
+        "%s_%04X",
+        PROVISIONING_AP_SSID,
+        static_cast<uint16_t>(ESP.getEfuseMac() & 0xFFFF)
+    );
+
+    // Connect using saved credentials, or open the provisioning hotspot
+    // 使用已保存的凭据连接，否则开启配网热点
+    if (ha.beginWithProvisioning(apSsid)) {
+        Serial.printf("WiFi connected: %s\n", ha.getLocalIP().toString().c_str());
+    } else {
+        Serial.printf(
+            "Provisioning hotspot started: %s (open http://192.168.4.1)\n",
+            apSsid
+        );
+    }
 }
 
 void loop() {

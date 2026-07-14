@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from copy import deepcopy
 import json
 from pathlib import Path
@@ -56,6 +57,7 @@ def _default_data() -> dict[str, Any]:
             "triple": _binding(DEFAULT_APPLIANCE_ID, "temperature_down"),
             "long": _binding(DEFAULT_APPLIANCE_ID, "mode"),
         },
+        "active_appliance": DEFAULT_APPLIANCE_ID,
         "revision": 0,
         "device_revision": 0,
         "sync_error": None,
@@ -114,6 +116,28 @@ class IRMateManager:
         self._lock = asyncio.Lock()
         self._sync_lock = asyncio.Lock()
         self._alternative_indexes: dict[str, int] = {}
+        # Listeners notified whenever appliances, commands, or the active
+        # appliance change, so select entities can refresh their options.
+        # 当电器、指令或当前电器变化时通知的监听器，供下拉框实体刷新选项。
+        self._update_listeners: list[Callable[[], None]] = []
+
+    def add_update_listener(
+        self, listener: Callable[[], None]
+    ) -> Callable[[], None]:
+        """Register a listener invoked after any appliance-facing change."""
+        self._update_listeners.append(listener)
+
+        def remove_listener() -> None:
+            """Remove the previously registered listener."""
+            if listener in self._update_listeners:
+                self._update_listeners.remove(listener)
+
+        return remove_listener
+
+    def _notify_update(self) -> None:
+        """Notify all listeners that the manager snapshot changed."""
+        for listener in list(self._update_listeners):
+            listener()
 
     @property
     def supports_ir(self) -> bool:
@@ -187,12 +211,52 @@ class IRMateManager:
             "connected": self.device.connected,
             "profiles": self._profiles,
             "appliances": appliances,
+            "active_appliance": self.get_active_appliance_id(),
             "bindings": deepcopy(self._data["bindings"]),
             "revision": revision,
             "device_revision": device_revision,
             "sync_status": sync_status,
             "sync_error": self._data.get("sync_error"),
         }
+
+    def get_active_appliance_id(self) -> str:
+        """Return the currently selected appliance id (never missing)."""
+        appliances = self._data.get("appliances", {})
+        active = self._data.get("active_appliance", DEFAULT_APPLIANCE_ID)
+        if active in appliances:
+            return active
+        if DEFAULT_APPLIANCE_ID in appliances:
+            return DEFAULT_APPLIANCE_ID
+        return next(iter(appliances), "")
+
+    def list_appliances(self) -> list[tuple[str, str]]:
+        """Return (id, name) pairs for every configured appliance."""
+        return [
+            (appliance["id"], appliance["name"])
+            for appliance in self._data.get("appliances", {}).values()
+        ]
+
+    def list_sendable_commands(self, appliance_id: str) -> list[tuple[str, str]]:
+        """Return (id, name) pairs for commands that can be transmitted now."""
+        appliance = self._data.get("appliances", {}).get(appliance_id)
+        if not appliance:
+            return []
+        commands = []
+        for command in appliance.get("commands", {}).values():
+            sendable = command.get("source") == "builtin" or bool(
+                command.get("signals")
+            )
+            if sendable:
+                commands.append((command["id"], command["name"]))
+        return commands
+
+    async def async_set_active_appliance(self, appliance_id: str) -> None:
+        """Select the appliance targeted by the send dropdown and remote."""
+        await self.async_initialize()
+        self._get_appliance(appliance_id)
+        self._data["active_appliance"] = appliance_id
+        await self._store.async_save(self._data)
+        self._notify_update()
 
     async def async_create_appliance(
         self,
@@ -235,6 +299,7 @@ class IRMateManager:
             "factory": False,
         }
         await self._store.async_save(self._data)
+        self._notify_update()
         return await self.async_snapshot()
 
     async def async_delete_appliance(self, appliance_id: str) -> dict[str, Any]:
@@ -249,11 +314,14 @@ class IRMateManager:
             if binding and binding.get("appliance_id") == appliance_id:
                 self._data["bindings"][gesture] = None
                 changed = True
+        if self._data.get("active_appliance") == appliance_id:
+            self._data["active_appliance"] = DEFAULT_APPLIANCE_ID
         if changed:
             self._mark_pending_sync()
         await self._store.async_save(self._data)
         if changed and self.device.connected:
             await self.async_sync_bindings()
+        self._notify_update()
         return await self.async_snapshot()
 
     async def async_learn_command(
@@ -294,6 +362,7 @@ class IRMateManager:
 
         if self._command_is_bound(appliance_id, target_id) and self.device.connected:
             await self.async_sync_bindings()
+        self._notify_update()
         return await self.async_snapshot()
 
     async def async_delete_command(
@@ -329,6 +398,7 @@ class IRMateManager:
         await self._store.async_save(self._data)
         if changed and self.device.connected:
             await self.async_sync_bindings()
+        self._notify_update()
         return await self.async_snapshot()
 
     async def async_test_command(
@@ -371,6 +441,7 @@ class IRMateManager:
         await self._store.async_save(self._data)
         if self.device.connected:
             await self.async_sync_bindings()
+        self._notify_update()
         return await self.async_snapshot()
 
     async def async_sync_bindings(self) -> None:
@@ -612,6 +683,7 @@ class IRMateManager:
         self._data.setdefault("bindings", defaults["bindings"])
         for gesture in GESTURES:
             self._data["bindings"].setdefault(gesture, None)
+        self._data.setdefault("active_appliance", DEFAULT_APPLIANCE_ID)
         self._data.setdefault("revision", 0)
         self._data.setdefault("device_revision", 0)
         self._data.setdefault("sync_error", None)
