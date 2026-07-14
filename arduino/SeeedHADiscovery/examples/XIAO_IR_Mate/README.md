@@ -42,6 +42,13 @@ The device uses a Gree protocol compatible with YAN-series remotes. Its current 
 
 The infrared receiver is enabled only after Home Assistant starts learning. It is disabled again when learning succeeds, is cancelled, or times out.
 
+## Status feedback
+
+- Successful infrared transmission or learning: green light and one short vibration.
+- Failed infrared transmission or learning: red light and two short vibrations.
+- Provisioning, disconnected, or not yet paired with Home Assistant: blinking blue light.
+- Connected to Home Assistant and idle: status light off.
+
 Example actions:
 
 ```yaml

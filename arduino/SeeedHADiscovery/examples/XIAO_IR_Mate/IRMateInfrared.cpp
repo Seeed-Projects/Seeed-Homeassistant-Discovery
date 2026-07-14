@@ -26,7 +26,8 @@ IRMateInfrared::IRMateInfrared(
     _learningDeadline(0),
     _receiveCallback(nullptr),
     _transmitCallback(nullptr),
-    _learningStateCallback(nullptr)
+    _learningStateCallback(nullptr),
+    _learningResultCallback(nullptr)
 {
 }
 
@@ -151,6 +152,10 @@ void IRMateInfrared::onTransmitCompleted(TransmitCallback callback) {
 
 void IRMateInfrared::onLearningStateChanged(LearningStateCallback callback) {
     _learningStateCallback = callback;
+}
+
+void IRMateInfrared::onLearningCompleted(LearningResultCallback callback) {
+    _learningResultCallback = callback;
 }
 
 void IRMateInfrared::_appendDiscoveryEntities(JsonArray& entities) {
@@ -288,9 +293,6 @@ bool IRMateInfrared::_transmitRaw(
     uint8_t repeatCount
 ) {
     if (!_started || _learning || timings.empty()) {
-        if (_transmitCallback) {
-            _transmitCallback(false);
-        }
         return false;
     }
 
@@ -302,9 +304,6 @@ bool IRMateInfrared::_transmitRaw(
         );
     }
 
-    if (_transmitCallback) {
-        _transmitCallback(true);
-    }
     return true;
 }
 
@@ -313,6 +312,10 @@ void IRMateInfrared::_sendTransmitResult(
     bool success,
     const String& error
 ) {
+    if (_transmitCallback) {
+        _transmitCallback(success);
+    }
+
     JsonDocument doc;
     doc["type"] = "ir_transmit_result";
     doc["request_id"] = requestId;
@@ -353,6 +356,10 @@ void IRMateInfrared::_sendLearningResult(
     const uint16_t* timings,
     uint16_t timingCount
 ) {
+    if (_learningResultCallback) {
+        _learningResultCallback(success);
+    }
+
     JsonDocument doc;
     doc["type"] = "ir_learn_result";
     doc["request_id"] = requestId;

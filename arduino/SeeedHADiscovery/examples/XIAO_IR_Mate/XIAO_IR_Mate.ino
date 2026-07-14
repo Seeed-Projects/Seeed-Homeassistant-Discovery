@@ -17,7 +17,10 @@ constexpr uint8_t RESET_PIN = 9;
 
 constexpr uint32_t TOUCH_DEBOUNCE_MS = 35;
 constexpr uint32_t TOUCH_MULTI_CLICK_MS = 350;
-constexpr uint32_t WIFI_BLINK_INTERVAL_MS = 500;
+constexpr uint32_t UNPAIRED_BLINK_INTERVAL_MS = 500;
+constexpr uint32_t RESULT_LED_DURATION_MS = 400;
+constexpr uint32_t VIBRATION_PULSE_MS = 70;
+constexpr uint32_t VIBRATION_GAP_MS = 70;
 
 SeeedHADiscovery ha;
 IRMateInfrared infrared(ha, IR_TRANSMIT_PIN, IR_RECEIVE_PIN);
@@ -29,9 +32,12 @@ uint32_t touchChangedAt = 0;
 uint32_t lastTouchAt = 0;
 uint8_t touchCount = 0;
 uint32_t feedbackEndsAt = 0;
-uint32_t lastWifiBlinkAt = 0;
+uint32_t vibrationPhaseEndsAt = 0;
+uint32_t lastUnpairedBlinkAt = 0;
 uint32_t currentColor = UINT32_MAX;
-bool wifiBlinkOn = false;
+uint8_t vibrationPulsesRemaining = 0;
+bool vibrationMotorOn = false;
+bool unpairedBlinkOn = false;
 
 void setStatusColor(uint32_t color) {
     if (currentColor == color) {
@@ -42,10 +48,44 @@ void setStatusColor(uint32_t color) {
     statusLed.show();
 }
 
-void startFeedback(uint32_t color, uint32_t durationMs, bool vibrate) {
-    feedbackEndsAt = millis() + durationMs;
-    setStatusColor(color);
-    digitalWrite(VIBRATION_PIN, vibrate ? HIGH : LOW);
+void startVibrationPattern(uint8_t pulseCount) {
+    vibrationPulsesRemaining = pulseCount;
+    vibrationMotorOn = pulseCount > 0;
+    digitalWrite(VIBRATION_PIN, vibrationMotorOn ? HIGH : LOW);
+    vibrationPhaseEndsAt = vibrationMotorOn ? millis() + VIBRATION_PULSE_MS : 0;
+}
+
+/**
+ * Advance the vibration pulse sequence without blocking the main loop
+ * 在不阻塞主循环的情况下推进震动脉冲序列
+ */
+void updateVibrationPattern(uint32_t now) {
+    if (vibrationPhaseEndsAt == 0 ||
+        static_cast<int32_t>(now - vibrationPhaseEndsAt) < 0) {
+        return;
+    }
+
+    if (vibrationMotorOn) {
+        vibrationMotorOn = false;
+        digitalWrite(VIBRATION_PIN, LOW);
+        vibrationPulsesRemaining--;
+        vibrationPhaseEndsAt = vibrationPulsesRemaining > 0
+            ? now + VIBRATION_GAP_MS
+            : 0;
+        return;
+    }
+
+    vibrationMotorOn = true;
+    digitalWrite(VIBRATION_PIN, HIGH);
+    vibrationPhaseEndsAt = now + VIBRATION_PULSE_MS;
+}
+
+void startResultFeedback(bool success) {
+    feedbackEndsAt = millis() + RESULT_LED_DURATION_MS;
+    setStatusColor(
+        success ? statusLed.Color(0, 255, 0) : statusLed.Color(255, 0, 0)
+    );
+    startVibrationPattern(success ? 1 : 2);
 }
 
 void handleTouchButton() {
@@ -99,35 +139,30 @@ void handleTouchAction() {
     }
 
     if (!sent && completedCount <= 3) {
-        startFeedback(statusLed.Color(255, 0, 0), 180, true);
+        startResultFeedback(false);
     }
 }
 
 void updateStatus() {
     uint32_t now = millis();
+    updateVibrationPattern(now);
 
     if (feedbackEndsAt != 0) {
         if (static_cast<int32_t>(now - feedbackEndsAt) < 0) {
             return;
         }
         feedbackEndsAt = 0;
-        digitalWrite(VIBRATION_PIN, LOW);
-    }
-
-    if (infrared.isLearning()) {
-        setStatusColor(statusLed.Color(255, 160, 0));
-        return;
     }
 
     if (ha.isHAConnected()) {
-        setStatusColor(statusLed.Color(180, 180, 180));
+        setStatusColor(0);
         return;
     }
 
-    if (now - lastWifiBlinkAt >= WIFI_BLINK_INTERVAL_MS) {
-        lastWifiBlinkAt = now;
-        wifiBlinkOn = !wifiBlinkOn;
-        setStatusColor(wifiBlinkOn ? statusLed.Color(0, 0, 255) : 0);
+    if (now - lastUnpairedBlinkAt >= UNPAIRED_BLINK_INTERVAL_MS) {
+        lastUnpairedBlinkAt = now;
+        unpairedBlinkOn = !unpairedBlinkOn;
+        setStatusColor(unpairedBlinkOn ? statusLed.Color(0, 0, 255) : 0);
     }
 }
 
@@ -151,21 +186,20 @@ void setup() {
             "IR signal received: %u timings\n",
             static_cast<unsigned int>(timingCount)
         );
-        startFeedback(statusLed.Color(0, 255, 0), 180, true);
     });
     infrared.onTransmitCompleted([](bool success) {
         Serial.printf("IR transmission: %s\n", success ? "success" : "failed");
-        startFeedback(
-            success ? statusLed.Color(0, 180, 255) : statusLed.Color(255, 0, 0),
-            180,
-            true
-        );
+        startResultFeedback(success);
     });
     infrared.onLearningStateChanged([](bool active) {
         if (active) {
             touchCount = 0;
         }
         Serial.printf("IR learning: %s\n", active ? "started" : "stopped");
+    });
+    infrared.onLearningCompleted([](bool success) {
+        Serial.printf("IR learning result: %s\n", success ? "success" : "failed");
+        startResultFeedback(success);
     });
     infrared.begin();
     Serial.println("Offline Gree control ready");

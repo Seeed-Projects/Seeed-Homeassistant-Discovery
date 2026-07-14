@@ -22,6 +22,7 @@ public:
     using ReceiveCallback = std::function<void(size_t timingCount)>;
     using TransmitCallback = std::function<void(bool success)>;
     using LearningStateCallback = std::function<void(bool active)>;
+    using LearningResultCallback = std::function<void(bool success)>;
 
     /**
      * Create an infrared transmitter and receiver pair
@@ -63,6 +64,12 @@ public:
     void onTransmitCompleted(TransmitCallback callback);
     void onLearningStateChanged(LearningStateCallback callback);
 
+    /**
+     * Register a callback for the final learning result
+     * 注册红外学习最终结果的回调函数
+     */
+    void onLearningCompleted(LearningResultCallback callback);
+
 private:
     static constexpr uint16_t MAX_TRANSMIT_ENTRIES = 2048;
     static constexpr uint16_t MIN_LEARN_TIMINGS = 12;
@@ -84,6 +91,7 @@ private:
     ReceiveCallback _receiveCallback;
     TransmitCallback _transmitCallback;
     LearningStateCallback _learningStateCallback;
+    LearningResultCallback _learningResultCallback;
 
     void _appendDiscoveryEntities(JsonArray& entities);
     void _handleTransmitMessage(JsonDocument& doc);
