@@ -250,6 +250,56 @@ class IRMateManager:
                 commands.append((command["id"], command["name"]))
         return commands
 
+    def list_bindable_commands(self) -> list[tuple[str, str, str]]:
+        """Return (appliance_id, command_id, label) for every gesture target."""
+        result = []
+        for appliance in self._data.get("appliances", {}).values():
+            for command in appliance.get("commands", {}).values():
+                sendable = command.get("source") == "builtin" or bool(
+                    command.get("signals")
+                )
+                if sendable:
+                    label = f"{appliance['name']} \u00b7 {command['name']}"
+                    result.append((appliance["id"], command["id"], label))
+        return result
+
+    def get_binding_label(self, gesture: str) -> str | None:
+        """Return the display label of the command bound to a gesture."""
+        binding = self._data.get("bindings", {}).get(gesture)
+        if not binding:
+            return None
+        appliance_id = binding.get("appliance_id")
+        command_id = binding.get("command_id")
+        for bound_appliance, bound_command, label in self.list_bindable_commands():
+            if bound_appliance == appliance_id and bound_command == command_id:
+                return label
+        return None
+
+    async def async_set_gesture_binding(
+        self,
+        gesture: str,
+        appliance_id: str | None,
+        command_id: str | None,
+    ) -> dict[str, Any]:
+        """Bind one gesture to a command and sync all four gestures to NVS."""
+        await self.async_initialize()
+        if gesture not in GESTURES:
+            raise HomeAssistantError(f"Unsupported touch gesture: {gesture}")
+        new_bindings: dict[str, dict[str, str] | None] = {
+            existing_gesture: (dict(binding) if binding else None)
+            for existing_gesture, binding in self._data["bindings"].items()
+        }
+        for known_gesture in GESTURES:
+            new_bindings.setdefault(known_gesture, None)
+        if appliance_id is None or command_id is None:
+            new_bindings[gesture] = None
+        else:
+            new_bindings[gesture] = {
+                "appliance_id": appliance_id,
+                "command_id": command_id,
+            }
+        return await self.async_save_bindings(new_bindings)
+
     async def async_set_active_appliance(self, appliance_id: str) -> None:
         """Select the appliance targeted by the send dropdown and remote."""
         await self.async_initialize()

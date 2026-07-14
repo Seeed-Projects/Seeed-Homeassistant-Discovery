@@ -153,7 +153,6 @@ PLATFORMS: Final = [
     "sensor",
     "switch",
     "camera",
-    "infrared",
     "remote",
     "select",
 ]

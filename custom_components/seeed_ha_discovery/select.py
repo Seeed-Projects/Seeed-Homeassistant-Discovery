@@ -27,6 +27,15 @@ from .ir_manager import IRMateManager
 # 发送下拉框空闲时显示的占位选项。
 IDLE_OPTION = "—"
 
+# Touch gestures exposed as configurable bindings, with display labels.
+# 作为可配置绑定暴露的触摸手势，及其显示名称。
+GESTURE_LABELS: tuple[tuple[str, str, str], ...] = (
+    ("single", "Single tap", "mdi:gesture-tap"),
+    ("double", "Double tap", "mdi:gesture-double-tap"),
+    ("triple", "Triple tap", "mdi:gesture-tap-button"),
+    ("long", "Long press", "mdi:gesture-tap-hold"),
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -53,12 +62,15 @@ async def async_setup_entry(
         )
         if manager is None:
             return
-        async_add_entities(
-            [
-                SeeedIRApplianceSelect(coordinator, entry, manager),
-                SeeedIRCommandSelect(coordinator, entry, manager),
-            ]
+        entities: list[_SeeedIRSelect] = [
+            SeeedIRApplianceSelect(coordinator, entry, manager),
+            SeeedIRCommandSelect(coordinator, entry, manager),
+        ]
+        entities.extend(
+            SeeedIRGestureSelect(coordinator, entry, manager, gesture, label, icon)
+            for gesture, label, icon in GESTURE_LABELS
         )
+        async_add_entities(entities)
         added = True
 
     add_if_supported()
@@ -217,5 +229,58 @@ class SeeedIRCommandSelect(_SeeedIRSelect):
                     await self._manager.async_test_command(active_id, command_id)
                 finally:
                     self.async_write_ha_state()
+                return
+        raise HomeAssistantError("The selected command is no longer available")
+
+
+class SeeedIRGestureSelect(_SeeedIRSelect):
+    """Dropdown that binds one touch gesture and syncs it to device NVS."""
+
+    def __init__(
+        self,
+        coordinator: SeeedHACoordinator,
+        entry: ConfigEntry,
+        manager: IRMateManager,
+        gesture: str,
+        label: str,
+        icon: str,
+    ) -> None:
+        """Initialize the gesture binding selector."""
+        super().__init__(coordinator, entry, manager)
+        self._gesture = gesture
+        self._attr_name = label
+        self._attr_icon = icon
+        device_id = entry.data.get(CONF_DEVICE_ID, "")
+        self._attr_unique_id = f"{device_id}_ir_gesture_{gesture}"
+
+    @property
+    def available(self) -> bool:
+        """Binding changes must reach the device, so require a connection."""
+        return self.coordinator.device.connected
+
+    @property
+    def options(self) -> list[str]:
+        """Return the idle placeholder plus every bindable command label."""
+        return [IDLE_OPTION] + [
+            label for _appliance, _command, label in self._manager.list_bindable_commands()
+        ]
+
+    @property
+    def current_option(self) -> str:
+        """Return the command currently bound to this gesture."""
+        return self._manager.get_binding_label(self._gesture) or IDLE_OPTION
+
+    async def async_select_option(self, option: str) -> None:
+        """Bind the gesture to the chosen command, or clear it."""
+        if option == IDLE_OPTION:
+            await self._manager.async_set_gesture_binding(self._gesture, None, None)
+            self.async_write_ha_state()
+            return
+        for appliance_id, command_id, label in self._manager.list_bindable_commands():
+            if label == option:
+                await self._manager.async_set_gesture_binding(
+                    self._gesture, appliance_id, command_id
+                )
+                self.async_write_ha_state()
                 return
         raise HomeAssistantError("The selected command is no longer available")
