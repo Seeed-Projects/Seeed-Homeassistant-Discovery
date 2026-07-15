@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import datetime, timedelta
 from typing import Any
 
 import aiohttp
@@ -41,6 +42,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
     DOMAIN,
@@ -51,6 +53,7 @@ from .const import (
     CONF_CONNECTION_TYPE,
     CONNECTION_TYPE_WIFI,
     DEFAULT_CAMERA_PORT,
+    CAMERA_AVAILABILITY_SCAN_INTERVAL,
 )
 
 # 创建日志记录器 | Create logger
@@ -198,6 +201,11 @@ class SeeedHACamera(Camera):
     # 不使用 STREAM 功能，改用静态图片刷新模式
     # Don't use STREAM feature, use still image refresh mode instead
 
+    # 可用性由 HTTP 取图通道的可达性决定（独立于 WebSocket 传感器通道）
+    # Availability is decided by the HTTP image channel reachability
+    # (independent of the WebSocket sensor channel)
+    _attr_available = True
+
     def __init__(
         self,
         coordinator,
@@ -256,6 +264,10 @@ class SeeedHACamera(Camera):
         # Frame interval - still image refresh interval
         self._attr_frame_interval = 0.25  # 4 fps | 4fps
 
+        # 初始乐观可用，确保访问令牌立即写入实体属性
+        # Optimistically available at start so the access token is written immediately
+        self._attr_available = True
+
         # 摄像头初始化完成 | Camera initialization complete
         _LOGGER.info(
             "Camera initialized: %s (stream=%s)",
@@ -295,13 +307,76 @@ class SeeedHACamera(Camera):
         
         return info
 
-    @property
-    def available(self) -> bool:
+    async def async_added_to_hass(self) -> None:
         """
-        返回实体是否可用
-        Return if entity is available.
+        实体加入 HA 后启动可达性探测
+        Start reachability probing after the entity is added to HA.
         """
-        return self._coordinator.device.connected
+        await super().async_added_to_hass()
+
+        # 立即探测一次，尽快反映真实可达性
+        # Probe once right away to reflect real reachability quickly
+        self.hass.async_create_task(self._async_update_availability())
+
+        # 定时探测：即使没人观看，也保持可用性与访问令牌为最新
+        # Periodic probe: keep availability and access token fresh even when unwatched
+        self.async_on_remove(
+            async_track_time_interval(
+                self.hass,
+                self._async_scheduled_availability_check,
+                timedelta(seconds=CAMERA_AVAILABILITY_SCAN_INTERVAL),
+            )
+        )
+
+    async def _async_scheduled_availability_check(
+        self, now: datetime | None = None
+    ) -> None:
+        """
+        定时可达性检查回调
+        Scheduled availability check callback.
+
+        参数 | Args:
+            now: 定时器触发时间 | Timer fire time
+        """
+        await self._async_update_availability()
+
+    async def _async_update_availability(self) -> None:
+        """
+        探测 HTTP 取图通道并按结果更新可用性
+        Probe the HTTP image channel and update availability accordingly.
+        """
+        self._set_available(await self._async_probe_still_endpoint())
+
+    async def _async_probe_still_endpoint(self) -> bool:
+        """
+        探测静态图片端点是否可达
+        Probe whether the still image endpoint is reachable.
+
+        返回 | Returns:
+            bool: 端点是否返回 200 | Whether the endpoint returns 200
+        """
+        session = async_get_clientsession(self.hass)
+        try:
+            async with asyncio.timeout(5):
+                async with session.get(self._still_url) as response:
+                    return response.status == 200
+        except (asyncio.TimeoutError, aiohttp.ClientError):
+            return False
+        except Exception as err:
+            _LOGGER.debug("Camera availability probe error: %s", err)
+            return False
+
+    def _set_available(self, available: bool) -> None:
+        """
+        更新可用性，仅在变化时写入状态
+        Update availability, writing state only when it changes.
+
+        参数 | Args:
+            available: 目标可用性 | Target availability
+        """
+        if available != self._attr_available:
+            self._attr_available = available
+            self.async_write_ha_state()
 
     async def async_camera_image(
         self, width: int | None = None, height: int | None = None
@@ -319,6 +394,7 @@ class SeeedHACamera(Camera):
             async with asyncio.timeout(10):
                 async with session.get(self._still_url) as response:
                     if response.status == 200:
+                        self._set_available(True)
                         return await response.read()
                     else:
                         _LOGGER.warning(
@@ -332,6 +408,7 @@ class SeeedHACamera(Camera):
         except Exception as err:
             _LOGGER.error("Unexpected error getting camera image: %s", err)
 
+        self._set_available(False)
         return None
 
     @property

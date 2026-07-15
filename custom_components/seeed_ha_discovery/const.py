@@ -61,6 +61,10 @@ DEFAULT_WS_PORT: Final = 81
 # Default camera server port
 DEFAULT_CAMERA_PORT: Final = 82
 
+# 摄像头可达性探测间隔（秒）
+# Camera reachability probe interval in seconds
+CAMERA_AVAILABILITY_SCAN_INTERVAL: Final = 30
+
 # 重连间隔（秒）| Reconnect interval in seconds
 RECONNECT_INTERVAL: Final = 5
 
