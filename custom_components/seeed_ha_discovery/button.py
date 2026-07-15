@@ -5,8 +5,11 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.button import ButtonEntity
+from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -81,6 +84,7 @@ class SeeedIRLearnButton(CoordinatorEntity, ButtonEntity):
     """A button that learns an IR signal and binds it to one gesture."""
 
     _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,
@@ -107,8 +111,38 @@ class SeeedIRLearnButton(CoordinatorEntity, ButtonEntity):
         return self.coordinator.device.connected
 
     async def async_press(self) -> None:
-        """Learn a signal and store it in this gesture's slot."""
-        await self._manager.async_learn_gesture(self._gesture, LEARN_TIMEOUT)
+        """Learn a signal, store it, and report the result to the user."""
+        try:
+            await self._manager.async_learn_gesture(self._gesture, LEARN_TIMEOUT)
+        except HomeAssistantError as err:
+            self._notify(
+                title=f"{self._attr_name} failed",
+                message=(
+                    f"No signal was captured ({err}). Point the remote at "
+                    "IR Mate, press its button, then try again."
+                ),
+            )
+            raise
+        record = self._manager.get_last_learned()
+        if record:
+            preview = ", ".join(str(value) for value in record["timings"][:8])
+            message = (
+                f"Captured {record['pulse_count']} pulses "
+                f"@{record['carrier_frequency']}Hz and saved to this gesture. "
+                f"Waveform starts with [{preview}, ...]."
+            )
+        else:
+            message = "The signal was learned and saved to this gesture."
+        self._notify(title=f"{self._attr_name} succeeded", message=message)
+
+    def _notify(self, *, title: str, message: str) -> None:
+        """Raise a persistent notification about the learning result."""
+        persistent_notification.async_create(
+            self.hass,
+            message,
+            title=title,
+            notification_id=f"{self._attr_unique_id}_result",
+        )
 
     @property
     def device_info(self) -> DeviceInfo:

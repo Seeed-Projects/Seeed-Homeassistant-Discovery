@@ -768,7 +768,6 @@ void SeeedHADiscovery::_handleWSEvent(uint8_t num, WStype_t type, uint8_t* paylo
         case WStype_TEXT: {
             // Received text message | 收到文本消息
             String message = String((char*)payload);
-            _log("Message received: " + message);
 
             // Parse JSON | 解析 JSON
             JsonDocument doc;
@@ -781,6 +780,12 @@ void SeeedHADiscovery::_handleWSEvent(uint8_t num, WStype_t type, uint8_t* paylo
 
             // Get message type | 获取消息类型
             String msgType = doc["type"].as<String>();
+
+            // Skip logging heartbeat traffic to keep the console readable.
+            // 跳过心跳消息日志，保持串口输出清爽。
+            if (msgType != "ping" && msgType != "pong") {
+                _log("Message received: " + message);
+            }
 
             if (msgType == "ping") {
                 // Heartbeat request, reply pong | 心跳请求，回复 pong

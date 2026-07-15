@@ -50,7 +50,8 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.const import EntityCategory
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -169,6 +170,43 @@ async def _async_setup_wifi_sensors(
 
     # 注册回调
     coordinator.device.add_discovery_callback(handle_discovery)
+
+    # IR Mate 调试传感器 | IR Mate debug sensors
+    _async_setup_ir_debug_sensors(hass, entry, coordinator, async_add_entities)
+
+
+def _async_setup_ir_debug_sensors(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    coordinator,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Add the last-learned and last-transmitted IR debug sensors."""
+    added = False
+
+    def add_if_supported() -> None:
+        """Create the debug sensors once an IR manager is available."""
+        nonlocal added
+        if added:
+            return
+        manager = hass.data[DOMAIN][entry.entry_id].get("ir_manager")
+        if manager is None:
+            return
+        async_add_entities(
+            [
+                SeeedIRDebugSensor(coordinator, entry, manager, "learned"),
+                SeeedIRDebugSensor(coordinator, entry, manager, "transmitted"),
+            ]
+        )
+        added = True
+
+    add_if_supported()
+
+    def handle_ir_discovery(_data: dict[str, Any]) -> None:
+        """Create the debug sensors when IR support is reported later."""
+        add_if_supported()
+
+    coordinator.device.add_discovery_callback(handle_ir_discovery)
 
 
 class SeeedHASensor(CoordinatorEntity, SensorEntity):
@@ -357,3 +395,95 @@ class SeeedHASensor(CoordinatorEntity, SensorEntity):
             return entities[self._entity_id].get("attributes", {})
 
         return {}
+
+
+# =============================================================================
+# IR Mate 调试传感器 | IR Mate debug sensors
+# =============================================================================
+
+# Display metadata for the two IR debug sensors, keyed by their kind.
+# 两个 IR 调试传感器的显示信息,按类别索引。
+_IR_DEBUG_META: dict[str, tuple[str, str, str]] = {
+    "learned": ("Last learned IR signal", "mdi:import", "captured_at"),
+    "transmitted": ("Last transmitted IR signal", "mdi:export", "sent_at"),
+}
+
+
+class SeeedIRDebugSensor(CoordinatorEntity, SensorEntity):
+    """Expose the most recent learned capture or transmitted frame."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _remove_listener: CALLBACK_TYPE | None = None
+
+    def __init__(
+        self,
+        coordinator,
+        entry: ConfigEntry,
+        manager,
+        kind: str,
+    ) -> None:
+        """Initialize one IR debug sensor of the given kind."""
+        super().__init__(coordinator)
+        self._entry = entry
+        self._manager = manager
+        self._kind = kind
+        name, icon, _timestamp_key = _IR_DEBUG_META[kind]
+        self._attr_name = name
+        self._attr_icon = icon
+        device_id = entry.data.get(CONF_DEVICE_ID, "")
+        self._attr_unique_id = f"{device_id}_ir_debug_{kind}"
+
+    async def async_added_to_hass(self) -> None:
+        """Refresh whenever a signal is learned or transmitted."""
+        await super().async_added_to_hass()
+        self._remove_listener = self._manager.add_update_listener(
+            self._handle_manager_update
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Detach the manager update listener."""
+        if self._remove_listener is not None:
+            self._remove_listener()
+            self._remove_listener = None
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_manager_update(self) -> None:
+        """Push the latest debug record to Home Assistant."""
+        self.async_write_ha_state()
+
+    def _record(self) -> dict[str, Any] | None:
+        """Return the manager record backing this sensor."""
+        if self._kind == "learned":
+            return self._manager.get_last_learned()
+        return self._manager.get_last_transmitted()
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the pulse count of the latest record, if any."""
+        record = self._record()
+        if not record:
+            return None
+        return record.get("pulse_count")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the full waveform and metadata of the latest record."""
+        return self._record() or {}
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the parent device information."""
+        device_data = self.coordinator.device.device_info
+        entry_data = self._entry.data
+        info = DeviceInfo(
+            identifiers={(DOMAIN, entry_data.get(CONF_DEVICE_ID, ""))},
+            name=device_data.get("name", "Seeed HA Device"),
+            manufacturer=MANUFACTURER,
+            model=entry_data.get(CONF_MODEL, device_data.get("model", "ESP32")),
+            sw_version=device_data.get("version", "1.0.0"),
+        )
+        if host := entry_data.get("host"):
+            info["configuration_url"] = f"http://{host}"
+        return info

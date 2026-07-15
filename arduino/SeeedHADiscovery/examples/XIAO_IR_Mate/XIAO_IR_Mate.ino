@@ -241,7 +241,10 @@ void setup() {
         Serial.printf("IR learning: %s\n", active ? "started" : "stopped");
     });
     infrared.onLearningCompleted([](bool success) {
-        Serial.printf("IR learning result: %s\n", success ? "success" : "failed");
+        Serial.printf(
+            "IR learning finished: %s\n",
+            success ? "captured and saved" : "no signal (see reason above)"
+        );
         startResultFeedback(success);
     });
     infrared.begin();

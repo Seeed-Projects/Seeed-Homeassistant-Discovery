@@ -6,6 +6,7 @@ from typing import Any
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -236,6 +237,8 @@ class SeeedIRCommandSelect(_SeeedIRSelect):
 class SeeedIRGestureSelect(_SeeedIRSelect):
     """Dropdown that binds one touch gesture and syncs it to device NVS."""
 
+    _attr_entity_category = EntityCategory.CONFIG
+
     def __init__(
         self,
         coordinator: SeeedHACoordinator,
@@ -269,6 +272,11 @@ class SeeedIRGestureSelect(_SeeedIRSelect):
     def current_option(self) -> str:
         """Return the command currently bound to this gesture."""
         return self._manager.get_binding_label(self._gesture) or IDLE_OPTION
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose the stored signal so the binding is not a black box."""
+        return self._manager.get_binding_detail(self._gesture) or {}
 
     async def async_select_option(self, option: str) -> None:
         """Bind the gesture to the chosen command, or clear it."""

@@ -12,6 +12,31 @@ constexpr char TOUCH_SOURCE_KEYS[][9] = {"s_source", "d_source", "t_source", "l_
 constexpr char TOUCH_ACTION_KEYS[][9] = {"s_action", "d_action", "t_action", "l_action"};
 constexpr char TOUCH_FREQUENCY_KEYS[][7] = {"s_freq", "d_freq", "t_freq", "l_freq"};
 constexpr char TOUCH_TIMING_KEYS[][6] = {"s_raw", "d_raw", "t_raw", "l_raw"};
+
+// Print a full timing array so learned and transmitted waveforms can be
+// compared pulse by pulse on the serial console.
+// 打印完整时序数组，便于在串口逐点比对学习到的与发射出的波形。
+void logTimings(
+    const char* label,
+    uint16_t carrierFrequency,
+    const uint16_t* timings,
+    uint16_t count
+) {
+    Serial.printf(
+        "%s: %u pulses @%uHz\n",
+        label,
+        static_cast<unsigned int>(count),
+        static_cast<unsigned int>(carrierFrequency)
+    );
+    Serial.print("  timings: [");
+    for (uint16_t index = 0; index < count; index++) {
+        Serial.print(timings[index]);
+        if (index + 1 < count) {
+            Serial.print(", ");
+        }
+    }
+    Serial.println("]");
+}
 }
 
 IRMateInfrared::IRMateInfrared(
@@ -104,6 +129,7 @@ void IRMateInfrared::handle() {
         return;
     }
 
+    logTimings("IR learn OK", _defaultCarrierFrequency, timings, timingCount);
     _finishLearning(true, "", timings, timingCount);
 
     if (_receiveCallback) {
@@ -461,6 +487,13 @@ bool IRMateInfrared::_transmitRaw(
         return false;
     }
 
+    logTimings(
+        "IR TX",
+        carrierFrequency,
+        timings.data(),
+        static_cast<uint16_t>(timings.size())
+    );
+
     for (uint8_t index = 0; index <= repeatCount; index++) {
         _sender.sendRaw(
             timings.data(),
@@ -507,6 +540,10 @@ void IRMateInfrared::_finishLearning(
     _learning = false;
     _learningRequestId = 0;
     _learningDeadline = 0;
+
+    if (!success && error.length() > 0) {
+        Serial.println("IR learn stopped: " + error);
+    }
 
     if (_learningStateCallback) {
         _learningStateCallback(false);

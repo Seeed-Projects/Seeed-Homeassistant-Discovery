@@ -41,14 +41,22 @@ The device uses a Gree protocol compatible with YAN-series remotes. Its current 
 3. Open `Settings → Devices & services → Seeed HA Discovery`, find the IR Mate config entry, and select Configure.
 4. Select a device type, brand, and model, then add the appliance.
 
-Once an appliance is added, its controls appear directly on the IR Mate device page:
+The brand list is sorted by brand and model so the catalog is easy to scan. Once an appliance is added, its controls appear directly on the IR Mate device page, grouped into sections:
 
-- **Air conditioners** created from the bundled code library get a full climate card with power, mode, temperature, fan, and swing. Each change looks up the matching signal and transmits it.
-- **Appliance** and **Command** dropdowns pick the active appliance and send any of its commands.
-- **Single / Double / Triple / Long press** dropdowns bind a command to each touch gesture and sync the choice to the device.
-- **Learn single / double / triple / long press** buttons capture an infrared signal and store it straight into that gesture slot, which is useful for uncommon remotes.
+- **Controls**: the **Appliance** and **Command** dropdowns pick the active appliance and send any of its commands, and air conditioners from the bundled code library get a full climate card with power, mode, temperature, fan, and swing.
+- **Configuration**: the **Single / Double / Triple / Long press** dropdowns bind a command to each touch gesture and sync the choice to the device, and the **Learn single / double / triple / long press** buttons capture a signal straight into that gesture slot for uncommon remotes.
+- **Diagnostic**: the **Last learned IR signal** and **Last transmitted IR signal** sensors report the pulse count and expose the full waveform as attributes.
 
 The infrared receiver is enabled only while learning is in progress. It is disabled again when learning succeeds, is cancelled, or times out.
+
+## Verifying a learned signal
+
+Learning is fully observable end to end:
+
+1. Press a **Learn** button and press the remote's key while pointing it at IR Mate. A notification reports success with the pulse count and a waveform preview, or explains that no signal was captured.
+2. Open the **Last learned IR signal** sensor to see the captured pulse count and the full `timings` array in its attributes. The same array prints on the device serial console as `IR learn OK`.
+3. Select **Command** (or the gesture's bound command) to transmit. The **Last transmitted IR signal** sensor and the serial `IR TX` line show the emitted waveform.
+4. The learned and transmitted `timings` match pulse for pulse, and the target appliance responding confirms the capture is correct.
 
 ## Air-conditioner code library
 

@@ -15,6 +15,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.storage import Store
+from homeassistant.util import dt as dt_util
 
 from . import ir_library
 from .const import CONF_DEVICE_ID, DEFAULT_IR_CARRIER_FREQUENCY, DOMAIN
@@ -169,6 +170,11 @@ class IRMateManager:
         # appliance change, so select entities can refresh their options.
         # 当电器、指令或当前电器变化时通知的监听器，供下拉框实体刷新选项。
         self._update_listeners: list[Callable[[], None]] = []
+        # Most recent learned capture and transmitted frame, exposed as
+        # diagnostic entities so the learning result is no longer a black box.
+        # 最近一次学习到的波形与最近一次发射的波形,以诊断实体暴露,让学习结果不再是黑盒。
+        self._last_learned: dict[str, Any] | None = None
+        self._last_sent: dict[str, Any] | None = None
 
     def add_update_listener(
         self, listener: Callable[[], None]
@@ -324,6 +330,61 @@ class IRMateManager:
                 return label
         return None
 
+    def get_binding_detail(self, gesture: str) -> dict[str, Any] | None:
+        """Return the stored signal details of a gesture's bound command."""
+        binding = self._data.get("bindings", {}).get(gesture)
+        if not binding:
+            return None
+        try:
+            command = self._get_command(
+                binding["appliance_id"], binding["command_id"]
+            )
+        except HomeAssistantError:
+            return None
+        detail: dict[str, Any] = {
+            "source": command.get("source"),
+            "command": command.get("name"),
+            "label": self.get_binding_label(gesture),
+        }
+        signals = command.get("signals", [])
+        if signals:
+            signal = signals[0]
+            detail["carrier_frequency"] = int(signal["carrier_frequency"])
+            detail["timings"] = list(signal["timings"])
+            detail["pulse_count"] = len(signal["timings"])
+        elif command.get("source") == "builtin":
+            detail["builtin_action"] = command.get("builtin_action")
+        return detail
+
+    def get_last_learned(self) -> dict[str, Any] | None:
+        """Return the most recent learned capture, if any."""
+        return deepcopy(self._last_learned)
+
+    def get_last_transmitted(self) -> dict[str, Any] | None:
+        """Return the most recent transmitted frame, if any."""
+        return deepcopy(self._last_sent)
+
+    def _record_transmission(
+        self,
+        *,
+        label: str,
+        carrier: int | None,
+        timings: list[int],
+        builtin_action: str | None = None,
+    ) -> None:
+        """Store the latest transmitted frame and notify diagnostic entities."""
+        record: dict[str, Any] = {
+            "label": label,
+            "carrier_frequency": int(carrier) if carrier else None,
+            "timings": list(timings),
+            "pulse_count": len(timings),
+            "sent_at": dt_util.utcnow().isoformat(),
+        }
+        if builtin_action is not None:
+            record["builtin_action"] = builtin_action
+        self._last_sent = record
+        self._notify_update()
+
     async def async_set_gesture_binding(
         self,
         gesture: str,
@@ -435,6 +496,11 @@ class IRMateManager:
                 f"This state is not available for the selected model: {err}"
             ) from err
         await self.device.async_transmit_infrared(carrier, timings)
+        self._record_transmission(
+            label=f"Air conditioner ({state.get('hvac_mode', 'off')})",
+            carrier=carrier,
+            timings=timings,
+        )
 
     async def async_learn_gesture(self, gesture: str, timeout: int = 30) -> dict[str, Any]:
         """Learn one signal and bind it directly to a touch gesture."""
@@ -583,6 +649,15 @@ class IRMateManager:
                 "name": command_name.strip(),
                 "source": "learned",
                 "signals": signals,
+            }
+            first_signal = signals[0]
+            self._last_learned = {
+                "appliance": appliance["name"],
+                "command": command_name.strip(),
+                "carrier_frequency": int(first_signal["carrier_frequency"]),
+                "timings": list(first_signal["timings"]),
+                "pulse_count": len(first_signal["timings"]),
+                "captured_at": dt_util.utcnow().isoformat(),
             }
             if self._command_is_bound(appliance_id, target_id):
                 self._mark_pending_sync()
@@ -765,11 +840,19 @@ class IRMateManager:
         command_id: str,
     ) -> None:
         """Send one command through the matching firmware transport."""
+        appliance = self._get_appliance(appliance_id)
         command = self._get_command(appliance_id, command_id)
+        label = f"{appliance['name']} \u00b7 {command['name']}"
         try:
             if command.get("source") == "builtin":
                 await self.device.async_execute_ir_builtin(
                     command["builtin_action"]
+                )
+                self._record_transmission(
+                    label=label,
+                    carrier=None,
+                    timings=[],
+                    builtin_action=command["builtin_action"],
                 )
                 return
             signals = command.get("signals", [])
@@ -781,6 +864,11 @@ class IRMateManager:
             await self.device.async_transmit_infrared(
                 int(signal["carrier_frequency"]),
                 list(signal["timings"]),
+            )
+            self._record_transmission(
+                label=label,
+                carrier=int(signal["carrier_frequency"]),
+                timings=list(signal["timings"]),
             )
             if len(signals) > 1:
                 self._alternative_indexes[key] = alternative_index + 1

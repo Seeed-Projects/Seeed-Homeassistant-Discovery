@@ -807,6 +807,9 @@ class SeeedHAOptionsFlow(config_entries.OptionsFlow):
             }
             for profile in snapshot["profiles"]["profiles"]
         ]
+        # Sort by brand then model so the long catalog is easy to scan.
+        # 按品牌再按型号排序，便于在长目录里定位。
+        profile_options.sort(key=lambda option: option["label"].lower())
         errors: dict[str, str] = {}
         if user_input is not None:
             try:
