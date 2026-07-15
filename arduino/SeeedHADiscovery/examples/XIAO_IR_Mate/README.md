@@ -27,10 +27,15 @@ The included `build_opt.h` enables Gree air-conditioner transmission and raw inf
 
 After flashing `XIAO_IR_Mate.ino`, the touch button controls a Gree air conditioner without Wi-Fi:
 
-- Single touch: toggle power with cooling mode and a 25°C default.
-- Double touch: increase the temperature by 1°C.
-- Triple touch: decrease the temperature by 1°C.
-- Long press: cycle the air-conditioner mode.
+- Single tap: toggle power with cooling mode and a 25°C default.
+- Double tap: increase the temperature by 1°C.
+- Triple tap: decrease the temperature by 1°C.
+- Quadruple tap: cycle the air-conditioner mode.
+
+The onboard touch pad uses a **latching** switch: each tap flips its state, so every tap counts as one action regardless of direction. Tap quickly, then stop and wait about **0.6 seconds** for the gesture to register:
+
+- **Single**: one tap.
+- **Double / triple / quadruple**: two, three, or four quick taps in a row.
 
 The device uses a Gree protocol compatible with YAN-series remotes. Its current air-conditioner state and four touch bindings are stored in ESP32 NVS and remain available while offline and after a restart.
 
@@ -44,7 +49,7 @@ The device uses a Gree protocol compatible with YAN-series remotes. Its current 
 The brand list is sorted by brand and model so the catalog is easy to scan. Once an appliance is added, its controls appear directly on the IR Mate device page, grouped into sections:
 
 - **Controls**: the **Appliance** and **Command** dropdowns pick the active appliance and send any of its commands, and air conditioners from the bundled code library get a full climate card with power, mode, temperature, fan, and swing. Library air conditioners also expose **Power / Temperature up / Temperature down / Mode / Fan speed** actions in the **Command** dropdown, mirroring the built-in Gree keys.
-- **Configuration**: the **Add or manage appliances** button links to the setup flow where the brand catalog lives, the **Single / Double / Triple / Long press** dropdowns bind a command to each touch gesture and sync the choice to the device, and the **Learn single / double / triple / long press** buttons capture a signal straight into that gesture slot for uncommon remotes. Any command, including a library air conditioner's stateful actions, can be bound to a gesture.
+- **Configuration**: the **Add or manage appliances** button links to the setup flow where the brand catalog lives, the **Single / Double / Triple / Quadruple tap** dropdowns bind a command to each touch gesture and sync the choice to the device, and the **Learn single / double / triple / quadruple tap** buttons capture a signal straight into that gesture slot for uncommon remotes. Any command, including a library air conditioner's stateful actions, can be bound to a gesture.
 - **Diagnostic**: the **Last learned IR signal** and **Last transmitted IR signal** sensors report the pulse count and expose the full waveform as attributes.
 
 The infrared receiver is enabled only while learning is in progress. It is disabled again when learning succeeds, is cancelled, or times out.

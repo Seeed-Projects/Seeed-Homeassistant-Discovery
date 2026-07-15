@@ -825,7 +825,7 @@ class SeeedHADevice:
         final: bool,
     ) -> dict[str, Any]:
         """Write one gesture binding and wait for the device acknowledgement."""
-        if gesture not in {"single", "double", "triple", "long"}:
+        if gesture not in {"single", "double", "triple", "quadruple"}:
             raise ValueError("Unsupported touch gesture")
         if binding.get("source") not in {"none", "builtin", "raw", "managed"}:
             raise ValueError("Unsupported touch binding source")

@@ -120,7 +120,7 @@
           "single": "Single tap",
           "double": "Double tap",
           "triple": "Triple tap",
-          "long": "Long press"
+          "quadruple": "Quadruple tap"
         }
       }
     },

@@ -25,7 +25,7 @@ from .device import SeeedHADevice
 _LOGGER = logging.getLogger(__name__)
 
 STORAGE_VERSION = 1
-GESTURES = ("single", "double", "triple", "long")
+GESTURES = ("single", "double", "triple", "quadruple")
 DEFAULT_APPLIANCE_ID = "factory_gree"
 DEFAULT_PROFILE_ID = "gree_yan_yaw1f"
 
@@ -68,7 +68,7 @@ def _default_data() -> dict[str, Any]:
             "single": _binding(DEFAULT_APPLIANCE_ID, "power"),
             "double": _binding(DEFAULT_APPLIANCE_ID, "temperature_up"),
             "triple": _binding(DEFAULT_APPLIANCE_ID, "temperature_down"),
-            "long": _binding(DEFAULT_APPLIANCE_ID, "mode"),
+            "quadruple": _binding(DEFAULT_APPLIANCE_ID, "mode"),
         },
         "active_appliance": DEFAULT_APPLIANCE_ID,
         "revision": 0,
@@ -689,7 +689,7 @@ class IRMateManager:
         if not self.device.connected:
             raise HomeAssistantError("The device must be online to learn a signal")
         self._ensure_capture_appliance()
-        label = f"{gesture.capitalize()} tap" if gesture != "long" else "Long press"
+        label = f"{gesture.capitalize()} tap"
         await self.async_learn_command(
             GESTURE_CAPTURE_APPLIANCE_ID, gesture, label, timeout
         )

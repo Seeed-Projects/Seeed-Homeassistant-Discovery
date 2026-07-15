@@ -34,7 +34,7 @@ GESTURE_LABELS: tuple[tuple[str, str, str], ...] = (
     ("single", "Single tap", "mdi:gesture-tap"),
     ("double", "Double tap", "mdi:gesture-double-tap"),
     ("triple", "Triple tap", "mdi:gesture-tap-button"),
-    ("long", "Long press", "mdi:gesture-tap-hold"),
+    ("quadruple", "Quadruple tap", "mdi:gesture-tap-button"),
 )
 
 

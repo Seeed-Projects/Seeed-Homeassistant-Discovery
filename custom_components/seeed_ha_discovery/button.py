@@ -35,7 +35,7 @@ GESTURE_LEARN_BUTTONS: tuple[tuple[str, str, str], ...] = (
     ("single", "Learn single tap", "mdi:gesture-tap"),
     ("double", "Learn double tap", "mdi:gesture-double-tap"),
     ("triple", "Learn triple tap", "mdi:gesture-tap-button"),
-    ("long", "Learn long press", "mdi:gesture-tap-hold"),
+    ("quadruple", "Learn quadruple tap", "mdi:gesture-tap-button"),
 )
 
 

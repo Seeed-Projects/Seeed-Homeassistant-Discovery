@@ -771,7 +771,7 @@ int8_t IRMateInfrared::_gestureIndex(const String& gesture) const {
     if (gesture == "triple") {
         return 2;
     }
-    if (gesture == "long") {
+    if (gesture == "quadruple") {
         return 3;
     }
     return -1;

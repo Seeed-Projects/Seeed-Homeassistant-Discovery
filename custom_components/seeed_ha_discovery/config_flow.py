@@ -1012,7 +1012,7 @@ class SeeedHAOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             try:
                 bindings: dict[str, dict[str, str] | None] = {}
-                for gesture in ("single", "double", "triple", "long"):
+                for gesture in ("single", "double", "triple", "quadruple"):
                     value = user_input[gesture]
                     if value == "none":
                         bindings[gesture] = None
@@ -1031,7 +1031,7 @@ class SeeedHAOptionsFlow(config_entries.OptionsFlow):
                 errors["base"] = "ir_operation_failed"
 
         defaults = {}
-        for gesture in ("single", "double", "triple", "long"):
+        for gesture in ("single", "double", "triple", "quadruple"):
             binding = snapshot["bindings"].get(gesture)
             defaults[gesture] = (
                 f"{binding['appliance_id']}::{binding['command_id']}"
@@ -1045,7 +1045,7 @@ class SeeedHAOptionsFlow(config_entries.OptionsFlow):
                     vol.Required(gesture, default=defaults[gesture]): self._select(
                         command_options
                     )
-                    for gesture in ("single", "double", "triple", "long")
+                    for gesture in ("single", "double", "triple", "quadruple")
                 }
             ),
             errors=errors,
