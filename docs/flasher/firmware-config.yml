@@ -90,6 +90,33 @@ firmware:
       - "自动连接"
   
   # ============================================================================
+  # ESP32-C3 Based Products | 基于 ESP32-C3 的产品
+  # ============================================================================
+
+  - id: XIAO_IR_Mate
+    name: "XIAO IR Mate"
+    name_zh: "XIAO IR Mate"
+    description: "Universal IR remote for air conditioners and more. Learn and replay IR signals, bind touch gestures, and control from Home Assistant."
+    description_zh: "万能红外遥控器，可控制空调等设备。支持学习并回放红外信号、绑定触摸手势，并在 Home Assistant 中控制。"
+    sketch: "arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/XIAO_IR_Mate.ino"
+    board: "esp32:esp32:XIAO_ESP32C3"
+    board_options: ""
+    platform: "esp32:esp32"
+    platform_url: "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
+    chip_family: "ESP32-C3"
+    icon: "🎛️"
+    features:
+      - "IR Learning"
+      - "Touch Gestures"
+      - "Gree AC"
+      - "Web Provisioning"
+    features_zh:
+      - "红外学习"
+      - "触摸手势"
+      - "格力空调"
+      - "网页配网"
+
+  # ============================================================================
   # ESP32-S3 Based Products | 基于 ESP32-S3 的产品
   # ============================================================================
   
@@ -176,6 +203,7 @@ libraries:
   - "ArduinoJson"
   - "WebSockets"
   - "Adafruit NeoPixel"
+  - "IRremoteESP8266"
   - "WiFiManager"
   - "PubSubClient"
   # Add more as needed | 根据需要添加更多

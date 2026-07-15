@@ -1390,20 +1390,22 @@ void SeeedWiFiProvisioning::_sendMainPageChunked() {
         "<div class=\"section-title\">Available Networks</div>"
         "<div id=\"networks\" class=\"network-list\"><div style=\"text-align:center;padding:20px;color:var(--text2)\">Scanning...</div></div>"
         "<button class=\"btn btn-secondary\" onclick=\"scan()\">Refresh Networks</button>"
+        "<button class=\"btn btn-secondary\" onclick=\"manual()\">Enter Network Manually</button>"
         "</div>"
     ));
     
-    // Chunk 7: Password form
+    // Chunk 7: Connect form (editable SSID supports both scan-select and manual entry)
+    // Chunk 7: 连接表单(可编辑的 SSID 同时支持列表选择和手动输入)
     _webServer->sendContent(F(
         "<div class=\"card\" id=\"connect-form\" style=\"display:none\">"
         "<div class=\"section-title\">Connect to Network</div>"
         "<div class=\"form-group\">"
-        "<label class=\"form-label\">SELECTED NETWORK</label>"
-        "<div id=\"selected-network\" style=\"padding:10px;background:var(--bg);border-radius:8px\"></div>"
+        "<label class=\"form-label\">NETWORK NAME (SSID)</label>"
+        "<input type=\"text\" id=\"ssid-input\" class=\"form-input\" placeholder=\"Enter network name\">"
         "</div>"
         "<div class=\"form-group\">"
         "<label class=\"form-label\">PASSWORD</label>"
-        "<input type=\"password\" id=\"password\" class=\"form-input\" placeholder=\"Enter WiFi password\">"
+        "<input type=\"password\" id=\"password\" class=\"form-input\" placeholder=\"Enter WiFi password (leave blank if open)\">"
         "</div>"
         "<button class=\"btn btn-primary\" id=\"connect-btn\" onclick=\"connect()\">Connect</button>"
         "</div>"
@@ -1412,7 +1414,6 @@ void SeeedWiFiProvisioning::_sendMainPageChunked() {
     // Chunk 8: JavaScript start
     _webServer->sendContent(F(
         "<script>"
-        "let selectedSSID='',selectedSecure=false;"
         "function scan(){"
         "document.getElementById('networks').innerHTML='<div style=\"text-align:center;padding:20px;color:var(--text2)\">Scanning...</div>';"
         "fetch('/scan').then(r=>r.json()).then(d=>{"
@@ -1435,20 +1436,27 @@ void SeeedWiFiProvisioning::_sendMainPageChunked() {
     // Chunk 9: JavaScript select and connect
     _webServer->sendContent(F(
         "function select(ssid,secure){"
-        "selectedSSID=ssid;selectedSecure=secure;"
         "document.querySelectorAll('.network-item').forEach(el=>el.classList.remove('selected'));"
         "event.currentTarget.classList.add('selected');"
-        "document.getElementById('selected-network').textContent=ssid;"
+        "document.getElementById('ssid-input').value=ssid;"
         "document.getElementById('connect-form').style.display='block';"
-        "document.getElementById('password').style.display=secure?'block':'none';"
         "document.getElementById('password').value='';"
+        "document.getElementById('password').focus();"
+        "}"
+        "function manual(){"
+        "document.querySelectorAll('.network-item').forEach(el=>el.classList.remove('selected'));"
+        "document.getElementById('ssid-input').value='';"
+        "document.getElementById('password').value='';"
+        "document.getElementById('connect-form').style.display='block';"
+        "document.getElementById('ssid-input').focus();"
         "}"
         "function connect(){"
+        "let ssid=document.getElementById('ssid-input').value.trim();"
+        "if(!ssid){showStatus('Please enter a network name','error');return;}"
         "let btn=document.getElementById('connect-btn');"
         "btn.disabled=true;btn.innerHTML='<span class=\"spinner\"></span>Connecting...';"
-        "showStatus('Connecting to '+selectedSSID+'...','connecting');"
-        "let data='ssid='+encodeURIComponent(selectedSSID);"
-        "if(selectedSecure)data+='&password='+encodeURIComponent(document.getElementById('password').value);"
+        "showStatus('Connecting to '+ssid+'...','connecting');"
+        "let data='ssid='+encodeURIComponent(ssid)+'&password='+encodeURIComponent(document.getElementById('password').value);"
         "fetch('/connect',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data})"
         ".then(r=>r.json()).then(d=>{"
         "if(d.success){showStatus('Connected! Device will restart...','success');setTimeout(()=>location.reload(),5000);}"
