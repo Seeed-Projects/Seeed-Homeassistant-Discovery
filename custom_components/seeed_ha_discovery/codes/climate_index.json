@@ -1,0 +1,8661 @@
+{
+ "version": 1,
+ "platform": "climate",
+ "count": 342,
+ "devices": [
+  {
+   "code": "1261",
+   "manufacturer": " Toshiba",
+   "models": [
+    "WH-TA05NE",
+    "WH-TA11EJ"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "auto",
+    "fan"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3",
+    "level4",
+    "level5"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1140",
+   "manufacturer": "Actron",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "med",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2720",
+   "manufacturer": "AEG",
+   "models": [
+    "AXP35U538CW"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2000",
+   "manufacturer": "Aeronik",
+   "models": [
+    "ASO-12IL",
+    "ASI-12IL"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2980",
+   "manufacturer": "Agratto",
+   "models": [
+    "ECST12FR4-02",
+    "ECST19QFIR4-02"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 31.0,
+   "precision": 0.5,
+   "operationModes": [
+    "heat",
+    "cool",
+    "auto"
+   ],
+   "fanModes": [
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1440",
+   "manufacturer": "Akai",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "heat_cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1441",
+   "manufacturer": "Akai",
+   "models": [
+    "TEM-26CHSAAK5",
+    "TEM-70CHSAAK5",
+    "TEM-26CHSAKA5",
+    "TEM-35CHSAKA",
+    "TEM-50CHSAKA",
+    "TEM-35CHSABH",
+    "TEM-35CHSF"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 31.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1460",
+   "manufacturer": "Alliance",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "fan_only",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1920",
+   "manufacturer": "Aokesi",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3160",
+   "manufacturer": "AquaThermal",
+   "models": [
+    "LM AURI-12"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 31.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "fan_only",
+    "dry",
+    "heat"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "turbo",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3140",
+   "manufacturer": "Argo",
+   "models": [
+    "Ulisse13"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "fan_only",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2020",
+   "manufacturer": "Ariston",
+   "models": [
+    "A-IFWHxx-IGX"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "low",
+    "mid"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2540",
+   "manufacturer": "Audinac",
+   "models": [
+    "SP3500"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "auto",
+    "heat",
+    "cool",
+    "dry",
+    "sweep"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1960",
+   "manufacturer": "AUX",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1961",
+   "manufacturer": "AUX",
+   "models": [
+    "AUX FREEDOM AUX-09FH"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 32.0,
+   "precision": 0.5,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "silence",
+    "low",
+    "mid",
+    "high",
+    "turbo",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1962",
+   "manufacturer": "AUX",
+   "models": [
+    "iClima ICI-09A"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "dry",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high",
+    "turbo"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1963",
+   "manufacturer": "AUX",
+   "models": [
+    "Kendal Split Inverter"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "silence",
+    "low",
+    "mid",
+    "high",
+    "turbo",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1800",
+   "manufacturer": "Ballu",
+   "models": [
+    "YKR-K/002E"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2380",
+   "manufacturer": "BAXI",
+   "models": [
+    "Unknow"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 32.0,
+   "precision": 0.5,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1600",
+   "manufacturer": "Beko",
+   "models": [
+    "BEVCA 120"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1601",
+   "manufacturer": "Beko",
+   "models": [
+    "BPAK 120"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high",
+    "turbo"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1602",
+   "manufacturer": "Beko",
+   "models": [
+    "BXK 120"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 31.0,
+   "precision": 1.0,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry",
+    "heat",
+    "fan"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1603",
+   "manufacturer": "Beko",
+   "models": [
+    "BXEU 090"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "code": "1604",
+   "manufacturer": "Beko",
+   "models": [
+    "BPEU 120"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high",
+    "turbo"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2920",
+   "manufacturer": "Best",
+   "models": [
+    "BSTS18CNE2"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 31.0,
+   "precision": 1.0,
+   "operationModes": [
+    "fan_only",
+    "dry",
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2220",
+   "manufacturer": "Blueridge",
+   "models": [
+    "RG57A4",
+    "BGEFU1"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 62,
+   "maxTemperature": 82,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "cool",
+    "heat",
+    "dry",
+    "fan"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high",
+    "silent"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2880",
+   "manufacturer": "Bora",
+   "models": [
+    "18SRA-HE"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "mid",
+    "low"
+   ],
+   "swingModes": [
+    "on",
+    "off"
+   ]
+  },
+  {
+   "code": "2740",
+   "manufacturer": "Bosch",
+   "models": [
+    "5000i"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "auto"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3",
+    "level4"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1160",
+   "manufacturer": "Carrier",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "heat_cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1161",
+   "manufacturer": "Carrier",
+   "models": [
+    "40GKX-024RB"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "medium",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1162",
+   "manufacturer": "Carrier",
+   "models": [
+    "42TVGS024-703"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "medium",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1163",
+   "manufacturer": "Carrier",
+   "models": [
+    "40MAQB12B--3",
+    "40MAQB18B--3"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 62,
+   "maxTemperature": 86,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "heat_cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1164",
+   "manufacturer": "Carrier",
+   "models": [
+    "42LUVH025N-1"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "heat",
+    "fan_only",
+    "auto"
+   ],
+   "fanModes": [
+    "low",
+    "medium",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1165",
+   "manufacturer": "Carrier",
+   "models": [
+    "42P250HX",
+    "53P250HX"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 32,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "heat",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1166",
+   "manufacturer": "Carrier",
+   "models": [
+    "CS-A121N"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "medium",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3240",
+   "manufacturer": "Casper",
+   "models": [
+    "SC-09FS32"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "dry",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high",
+    "turbo"
+   ],
+   "swingModes": [
+    "off",
+    "vertical",
+    "horizontal",
+    "both"
+   ]
+  },
+  {
+   "code": "3100",
+   "manufacturer": "Cecotec",
+   "models": [
+    "EnergySilence 12000 AirClima (05290)"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high",
+    "turbo"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1580",
+   "manufacturer": "Chigo",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1581",
+   "manufacturer": "Chigo",
+   "models": [
+    "ZH/TY-01"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1582",
+   "manufacturer": "Chigo",
+   "models": [
+    "ZH/TT-14"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3320",
+   "manufacturer": "Chunlan",
+   "models": [
+    "KFR-25GW/VW (CH-9)"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 15.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1240",
+   "manufacturer": "Consul",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1241",
+   "manufacturer": "Consul",
+   "models": [
+    "CBV12CBBNA",
+    "CBY12DBBNA"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "fan_only",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3120",
+   "manufacturer": "Cooper & Hunter",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "med",
+    "high",
+    "turbo",
+    "auto"
+   ],
+   "swingModes": [
+    "stop",
+    "swing"
+   ]
+  },
+  {
+   "code": "1100",
+   "manufacturer": "Daikin",
+   "models": [
+    "FTXS25CVMB",
+    "FTXS35CVMB",
+    "FTXS60BVMB",
+    "FVXS25BVMB"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1101",
+   "manufacturer": "Daikin",
+   "models": [
+    "FTXS20LVMA",
+    "FTXS25LVMA",
+    "FTXS35LVMA",
+    "FTXS46LVMA",
+    "FTXS50LVMA",
+    "FTXS60LVMA",
+    "FTXS71LVMA",
+    "FTXS85LVMA",
+    "FTXS95LVMA",
+    "FVXS50FV1B",
+    "FTXL35J2V1B",
+    "FTXM25UVMA",
+    "FTXM35UVMA",
+    "FTXD25DVMA",
+    "FTXS35G2V1B",
+    "FTXM71UVMA",
+    "FTM09PV2S"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "dry",
+    "cool",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "night",
+    "low",
+    "lowMedium",
+    "medium",
+    "mediumHigh",
+    "high",
+    "powerful"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1102",
+   "manufacturer": "Daikin",
+   "models": [
+    "FTV20AXV14"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "quiet",
+    "low",
+    "medium",
+    "high",
+    "turbo"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1103",
+   "manufacturer": "Daikin",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 31.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1104",
+   "manufacturer": "Daikin",
+   "models": [
+    "TF25DVM"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "nature",
+    "level1",
+    "level2",
+    "level3",
+    "level4",
+    "level5"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1106",
+   "manufacturer": "Daikin",
+   "models": [
+    "ATX20KV1B",
+    "ATX25KV1B",
+    "ATX35KV1B"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "dry",
+    "cool",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "night",
+    "low",
+    "lowMedium",
+    "medium",
+    "mediumHigh",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1107",
+   "manufacturer": "Daikin",
+   "models": [
+    "FTX25JAV1NB"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "dry",
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "lowMedium",
+    "medium",
+    "mediumHigh",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1108",
+   "manufacturer": "Daikin",
+   "models": [
+    "FTXG25EV1BS",
+    "FTXG35EV1BS",
+    "FTXG35EV1BW"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "dry",
+    "cool",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3",
+    "level4",
+    "level5",
+    "breeze",
+    "powerful"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1109",
+   "manufacturer": "Daikin",
+   "models": [
+    "BRC4C158"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "fan_only",
+    "dry",
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1110",
+   "manufacturer": "Daikin",
+   "models": [
+    "FTC15NV14",
+    "FTC20NV14",
+    "FTC25NV14",
+    "FTC35NV14"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1111",
+   "manufacturer": "Daikin",
+   "models": [
+    "FTE09NV25"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 20,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3",
+    "level4",
+    "level5"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1112",
+   "manufacturer": "Daikin",
+   "models": [
+    "ATKC09TV2S",
+    "FTKQ12TV2S"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "dry",
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "breeze",
+    "level1",
+    "level2",
+    "level3",
+    "level4",
+    "level5",
+    "powerful"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1113",
+   "manufacturer": "Daikin",
+   "models": [
+    "FTXV35AV1B"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto",
+    "turbo"
+   ],
+   "swingModes": [
+    "swing",
+    "stop"
+   ]
+  },
+  {
+   "code": "1114",
+   "manufacturer": "Daikin",
+   "models": [
+    "FTXM35UVMZ"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "dry",
+    "cool",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "night",
+    "low",
+    "lowMedium",
+    "medium",
+    "mediumHigh",
+    "high",
+    "powerful"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1115",
+   "manufacturer": "Daikin",
+   "models": [
+    "ftxb-c"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "dry",
+    "cool",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "quiet",
+    "level1",
+    "level2",
+    "level3",
+    "powerful"
+   ],
+   "swingModes": [
+    "stop_swing",
+    "stop_swing_eko",
+    "swing",
+    "swing_eko"
+   ]
+  },
+  {
+   "code": "1116",
+   "manufacturer": "Daikin",
+   "models": [
+    "FCQ100KAVEA"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "level1",
+    "level2",
+    "level3"
+   ],
+   "swingModes": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "code": "1117",
+   "manufacturer": "Daikin",
+   "models": [
+    "DTXF35TVMA"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 10.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "auto",
+    "fan_only",
+    "dry"
+   ],
+   "fanModes": [
+    "lowest",
+    "low",
+    "mid",
+    "high",
+    "highest",
+    "auto",
+    "econo"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1118",
+   "manufacturer": "Daikin",
+   "models": [
+    "ARC452A21",
+    "FTXS09LVJU",
+    "FTXS12LVJU",
+    "FTXS15LVJU",
+    "FTXS18LVJU",
+    "FTXS24LVJU"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 20.0,
+   "maxTemperature": 26.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1119",
+   "manufacturer": "Daikin",
+   "models": [
+    "FTXS60FVMA"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 24.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "medium"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "5120",
+   "manufacturer": "Daikin",
+   "models": [
+    "ARC433B51"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 10,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "quiet",
+    "low",
+    "medium",
+    "middle",
+    "high",
+    "top"
+   ],
+   "swingModes": [
+    "on",
+    "off"
+   ]
+  },
+  {
+   "code": "1760",
+   "manufacturer": "Daitsu",
+   "models": [
+    "DS12U-RV"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1761",
+   "manufacturer": "Daitsu",
+   "models": [
+    "DS-9KIDT"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "ifeel"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1762",
+   "manufacturer": "Daitsu",
+   "models": [
+    "ASD9KI-DT"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1763",
+   "manufacturer": "Daitsu",
+   "models": [
+    "DOS12KIDB"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "auto"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1764",
+   "manufacturer": "Daitsu",
+   "models": [
+    "DS-12KIDC(WD)"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1105",
+   "manufacturer": "Dalkin",
+   "models": [
+    "FTX12NMVJU"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 64,
+   "maxTemperature": 86,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "dry",
+    "cool",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "comfort",
+    "night",
+    "low",
+    "lowMedium",
+    "medium",
+    "mediumHigh",
+    "high",
+    "powerful"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2240",
+   "manufacturer": "DeLonghi",
+   "models": [
+    "PAC N82ECO",
+    "PAC AN111"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2241",
+   "manufacturer": "DeLonghi",
+   "models": [
+    "PAC EM77"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2242",
+   "manufacturer": "DeLonghi",
+   "models": [
+    "PAC AN140HPEW"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 13,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only",
+    "heat",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "silent",
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2243",
+   "manufacturer": "DeLonghi",
+   "models": [
+    "DL3000"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only",
+    "heat",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3180",
+   "manufacturer": "Devanti",
+   "models": [
+    "WAC-05C-WH"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": [
+    "static",
+    "swing"
+   ]
+  },
+  {
+   "code": "2060",
+   "manufacturer": "Dimplex",
+   "models": [
+    "GDPAC12RC"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 13.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2960",
+   "manufacturer": "EcoAir",
+   "models": [
+    "Split Type Wall Air Conditioner"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1940",
+   "manufacturer": "Electra",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1941",
+   "manufacturer": "Electra",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "fan"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1942",
+   "manufacturer": "Electra",
+   "models": [
+    "Electra Classic"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1943",
+   "manufacturer": "Electra",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1944",
+   "manufacturer": "Electra",
+   "models": [
+    "Electra Platinum Plus Inverter"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1945",
+   "manufacturer": "Electra",
+   "models": [
+    "Electra"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 22.0,
+   "maxTemperature": 27.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "fan"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": [
+    "static",
+    "swing"
+   ]
+  },
+  {
+   "code": "1946",
+   "manufacturer": "Electra",
+   "models": [
+    "RC-3"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1947",
+   "manufacturer": "Electra",
+   "models": [
+    "Electra"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 10.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "high",
+    "med",
+    "low"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1948",
+   "manufacturer": "Electra",
+   "models": [
+    "Classic 10"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "fan_only",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1700",
+   "manufacturer": "Electrolux",
+   "models": [
+    "EACS/I-HAT/N3"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1701",
+   "manufacturer": "Electrolux",
+   "models": [
+    "EACS-HA"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1702",
+   "manufacturer": "Electrolux",
+   "models": [
+    "QI/QE09F",
+    "QI/QE09R",
+    "QI/QE12F",
+    "QI/QE12R",
+    "QI/QE18F",
+    "QI/QE18R",
+    "QI/QE22F",
+    "QI/QE22R",
+    "XI/XE09F",
+    "XI/XE09R",
+    "XI/XE12F",
+    "XI/XE12R",
+    "XI/XE18F",
+    "XI/XE18R",
+    "XI/XE22F",
+    "XI/XE22R"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "heat",
+    "fan_only",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high",
+    "turbo"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1703",
+   "manufacturer": "Electrolux",
+   "models": [
+    "EXP26U758CW"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": [
+    "on",
+    "off"
+   ]
+  },
+  {
+   "code": "1704",
+   "manufacturer": "Electrolux",
+   "models": [
+    "EPI12LEIWI"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1705",
+   "manufacturer": "Electrolux",
+   "models": [
+    "EACM-10 HR/N3"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": [
+    "static",
+    "swing"
+   ]
+  },
+  {
+   "code": "2800",
+   "manufacturer": "ELGIN",
+   "models": [
+    "HVQI18B2IA"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2801",
+   "manufacturer": "ELGIN",
+   "models": [
+    "HVQI12B2FB"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2500",
+   "manufacturer": "Endesa",
+   "models": [
+    "DGR11"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "fan_only",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "min",
+    "mid",
+    "high",
+    "max",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2600",
+   "manufacturer": "Equation",
+   "models": [
+    "RCH-143"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "auto"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1720",
+   "manufacturer": "Erisson",
+   "models": [
+    "EC-S07T2"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "feel",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "7741",
+   "manufacturer": "Family",
+   "models": [
+    "12WIFI"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 31.0,
+   "precision": 1.0,
+   "operationModes": [
+    "feal",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2460",
+   "manufacturer": "FanWorld",
+   "models": [
+    "FW6-3000"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2640",
+   "manufacturer": "Fisher",
+   "models": [
+    "FPR-91DE4-R",
+    "FPR-121DE4-R",
+    "FPR-141DE4-R"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2641",
+   "manufacturer": "Fisher",
+   "models": [
+    "FSOAI-SU-90AE2"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "auto"
+   ],
+   "fanModes": [
+    "lowest",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2360",
+   "manufacturer": "Flouu",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "fan_only",
+    "dry",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3200",
+   "manufacturer": "Friedrich",
+   "models": [
+    "CP12G10B"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 60,
+   "maxTemperature": 86,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only",
+    "money_saver"
+   ],
+   "fanModes": [
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1980",
+   "manufacturer": "Fuji",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1640",
+   "manufacturer": "FUJIKO",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1280",
+   "manufacturer": "Fujitsu",
+   "models": [
+    "AR-RBE1E"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1281",
+   "manufacturer": "Fujitsu",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 29.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": [
+    "swing",
+    "static"
+   ]
+  },
+  {
+   "code": "1282",
+   "manufacturer": "Fujitsu",
+   "models": [
+    "AR-JW11"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1283",
+   "manufacturer": "Fujitsu",
+   "models": [
+    "AR-AB5"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1284",
+   "manufacturer": "Fujitsu",
+   "models": [
+    "AR-REG1U"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1285",
+   "manufacturer": "Fujitsu",
+   "models": [
+    "AR-RCE1E",
+    "AR-PZ2"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1286",
+   "manufacturer": "Fujitsu",
+   "models": [
+    "AR-JE5"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1287",
+   "manufacturer": "Fujitsu",
+   "models": [
+    "ASYG-LMCE",
+    "AR-REB1E",
+    "AR-REM7E",
+    "AR-REW2E"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1288",
+   "manufacturer": "Fujitsu",
+   "models": [
+    "AR-AB8"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1289",
+   "manufacturer": "Fujitsu",
+   "models": [
+    "AR-REW1E"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1290",
+   "manufacturer": "Fujitsu",
+   "models": [
+    "AR-RFL7J"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "auto",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "quiet",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1291",
+   "manufacturer": "Fujitsu",
+   "models": [
+    "AR-REF1E"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1292",
+   "manufacturer": "Fujitsu",
+   "models": [
+    "ASYG18LF",
+    "AR-RY12"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": [
+    "off",
+    "vertical",
+    "horizontal",
+    "both"
+   ]
+  },
+  {
+   "code": "1293",
+   "manufacturer": "Fujitsu",
+   "models": [
+    "ASYG07LM",
+    "ASYG09LM",
+    "AR-REB1E"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": [
+    "off",
+    "vertical"
+   ]
+  },
+  {
+   "code": "1294",
+   "manufacturer": "Fujitsu",
+   "models": [
+    "AR-RY4"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": [
+    "off",
+    "vertical"
+   ]
+  },
+  {
+   "code": "7285",
+   "manufacturer": "Fujitsu",
+   "models": [
+    "AR-RCE1E"
+   ],
+   "encoding": "Raw",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2520",
+   "manufacturer": "Galanz",
+   "models": [
+    "GZ-1002B-E3"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1043",
+   "manufacturer": "General Electric",
+   "models": [
+    "ASWX09LECA"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "highest",
+    "high",
+    "mid",
+    "low"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1044",
+   "manufacturer": "General Electric",
+   "models": [
+    "AHD08LXW1"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 61.0,
+   "maxTemperature": 86.0,
+   "precision": 1.0,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "Quiet",
+    "Medium",
+    "High",
+    "Auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1040",
+   "manufacturer": "Ggeneral Electric",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1041",
+   "manufacturer": "Ggeneral Electric",
+   "models": [
+    "AE1PH09IWF",
+    "AE0PH09IWO",
+    "AE1PH12IWF",
+    "AE0PH12IWO",
+    "AE4PH18IWF",
+    "AE4PH18IWF",
+    "AE5PH18IWO"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1042",
+   "manufacturer": "Ggeneral Electric",
+   "models": [
+    "ASHA09LCC"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "quiet",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2900",
+   "manufacturer": "Goodman",
+   "models": [
+    "MSH123E21AXAA",
+    "MST183E20ACAA",
+    "RG57E1/BGEU1 (remote)"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1180",
+   "manufacturer": "Gree",
+   "models": [
+    "GWH12-KF-K3DNA5G-I"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "fan_only",
+    "dry",
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1181",
+   "manufacturer": "Gree",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "sleep",
+    "powerful"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1182",
+   "manufacturer": "Gree",
+   "models": [
+    "GMV-R45G/NaB-K"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "fan_only",
+    "dry",
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1183",
+   "manufacturer": "Gree",
+   "models": [
+    "Gree Smart inverter models. WiFi off. Health on. Swing modes: [swing]_[led]"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": [
+    "updown",
+    "up",
+    "mid",
+    "down",
+    "updown_off",
+    "up_off",
+    "mid_off",
+    "down_off"
+   ]
+  },
+  {
+   "code": "1184",
+   "manufacturer": "Gree",
+   "models": [
+    "GWH09KF",
+    "GC-EAF09HR"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "fan_only",
+    "dry",
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1185",
+   "manufacturer": "Gree",
+   "models": [
+    "KFR-50LW",
+    "YAP1F2"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1186",
+   "manufacturer": "Gree",
+   "models": [
+    "GWH18ACD-D3DNA 1M"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1187",
+   "manufacturer": "Gree",
+   "models": [
+    "Unknown model"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1188",
+   "manufacturer": "Gree",
+   "models": [
+    "VIR18HP230V1AH"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 61.0,
+   "maxTemperature": 86.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "fan_only",
+    "dry",
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1320",
+   "manufacturer": "Haier",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1321",
+   "manufacturer": "Haier",
+   "models": [
+    "Top-Tech 14"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1322",
+   "manufacturer": "Haier",
+   "models": [
+    "HSU-09HPL03/R03"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2280",
+   "manufacturer": "Hantech",
+   "models": [
+    "A018-12KR2"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 25,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2281",
+   "manufacturer": "Hantech",
+   "models": [
+    "A016-09KR2/A"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3060",
+   "manufacturer": "HappyTree",
+   "models": [
+    "TAC-12CHSD/XA81"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto",
+    "turbo"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1520",
+   "manufacturer": "Hisense",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "fan_only",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1521",
+   "manufacturer": "Hisense",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1522",
+   "manufacturer": "Hisense",
+   "models": [
+    "DGR11R2"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "fan_only",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "min",
+    "mid",
+    "high",
+    "max",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "5520",
+   "manufacturer": "Hisense",
+   "models": [
+    "AS-07UR4SYDD815G"
+   ],
+   "encoding": "Raw",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "max"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1080",
+   "manufacturer": "Hitachi",
+   "models": [
+    "RAC-50HK1"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "dry",
+    "cool"
+   ],
+   "fanModes": [
+    "high",
+    "low",
+    "mid"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1081",
+   "manufacturer": "Hitachi",
+   "models": [
+    "RAC-10EH1",
+    "RAC-18EH1",
+    "RAS-10EH1",
+    "RAS-10EH3",
+    "RAS-18EH1"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "high",
+    "low",
+    "mid",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1082",
+   "manufacturer": "Hitachi",
+   "models": [
+    "RAS-25YHA",
+    "RAS-35YHA"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1084",
+   "manufacturer": "Hitachi",
+   "models": [
+    "RAS-DX18HDK",
+    "RAK-35RPC"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "highest",
+    "high",
+    "mid",
+    "low"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1085",
+   "manufacturer": "Hitachi",
+   "models": [
+    "RPA24B3BL"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1086",
+   "manufacturer": "Hitachi",
+   "models": [
+    "RAC-28NK1",
+    "RAC-36NK1"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "dry",
+    "cool"
+   ],
+   "fanModes": [
+    "high",
+    "low",
+    "mid"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1087",
+   "manufacturer": "Hitachi",
+   "models": [
+    "RAS-E25YHAB",
+    "RAS-E35YHAB",
+    "RAS-E50YHAB"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1088",
+   "manufacturer": "Hitachi",
+   "models": [
+    "RAF-25REX",
+    "RAF-35REX",
+    "RAF-50REX"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1089",
+   "manufacturer": "Hitachi",
+   "models": [
+    "RAK-35RXE"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "humidity",
+    "cold",
+    "fan_only",
+    "auto"
+   ],
+   "fanModes": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1090",
+   "manufacturer": "Hitachi",
+   "models": [
+    "RAK-50RPE"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "heat",
+    "dry",
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "high",
+    "medium",
+    "low",
+    "diffuse",
+    "auto"
+   ],
+   "swingModes": [
+    "both",
+    "vertical",
+    "horizontal",
+    "off"
+   ]
+  },
+  {
+   "code": "1091",
+   "manufacturer": "Hitachi",
+   "models": [
+    "HSPE2700FCINV",
+    "HSPE3200FCINV",
+    "HSPE5400FCINV",
+    "HSPE6400FCINV"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1.0,
+   "operationModes": [
+    "auto",
+    "heat",
+    "dry",
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "highest",
+    "high",
+    "medium",
+    "low",
+    "quiet",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1092",
+   "manufacturer": "Hitachi",
+   "models": [
+    "RAS-E14HB"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2180",
+   "manufacturer": "Hokkaido",
+   "models": [
+    "LA09-DUAL H1"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2840",
+   "manufacturer": "HTW",
+   "models": [
+    "HTWS035IX21D2-R32-I"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1840",
+   "manufacturer": "Hualing",
+   "models": [
+    "KFR-45GW/JNV",
+    "KFR-45G/JNV"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2662",
+   "manufacturer": "Hyndai",
+   "models": [
+    "H-ARI22-09H"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2660",
+   "manufacturer": "Hyundai",
+   "models": [
+    "HSE09PH5V"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2661",
+   "manufacturer": "Hyundai",
+   "models": [
+    "HY6INV"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "auto",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "silent",
+    "low",
+    "mid",
+    "high",
+    "turbo",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2200",
+   "manufacturer": "IGC",
+   "models": [
+    "RAK-12NH",
+    "RAK-18NH"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "medium",
+    "low"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1480",
+   "manufacturer": "Junkers",
+   "models": [
+    "Excellence"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1481",
+   "manufacturer": "Junkers",
+   "models": [
+    "Excellence"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "auto",
+    "heat_cool",
+    "fan_only",
+    "dry",
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3360",
+   "manufacturer": "Kaden",
+   "models": [
+    "KS09",
+    "KS12",
+    "KS18",
+    "KS24",
+    "KS28"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry",
+    "fan",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1740",
+   "manufacturer": "Kelvinator",
+   "models": [
+    "KSV25HRG"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "heat",
+    "cool",
+    "fan_only",
+    "dry"
+   ],
+   "fanModes": [
+    "silent",
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1741",
+   "manufacturer": "Kelvinator",
+   "models": [
+    "KSV26CRC",
+    "KSV26HRC",
+    "KSV35CRC",
+    "KSV35HRC",
+    "KSV53HRC",
+    "KSV62HRC",
+    "KSV70CRC",
+    "KCV70HRC",
+    "KSV80HRC"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "silent",
+    "low",
+    "mid",
+    "high",
+    "turbo"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "7740",
+   "manufacturer": "Kelvinator",
+   "models": [
+    "KSV25HWH"
+   ],
+   "encoding": "Raw",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "heat",
+    "cool",
+    "fan_only",
+    "dry"
+   ],
+   "fanModes": [
+    "silent",
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3020",
+   "manufacturer": "Klasse",
+   "models": [
+    "DOZ-S06JT"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 31.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "med",
+    "low",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2700",
+   "manufacturer": "Kolin",
+   "models": [
+    "RC-M7B1 (remote)",
+    "KSA-D201",
+    "KSA-D252",
+    "KSA-D562",
+    "KSA-D912",
+    "KSA-D202",
+    "KSA-D322",
+    "KSA-D632",
+    "KSA-20D",
+    "KSA-D362",
+    "KSA-D682",
+    "KSA-25D",
+    "KSA-D452",
+    "KSA-D782"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 25,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "low"
+   ],
+   "swingModes": [
+    "auto",
+    "top",
+    "bottom"
+   ]
+  },
+  {
+   "code": "8700",
+   "manufacturer": "Kolin",
+   "models": [
+    "KAG-145RSINV"
+   ],
+   "encoding": "Raw",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2620",
+   "manufacturer": "Komeco",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "heat",
+    "fan_only",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2580",
+   "manufacturer": "KOREL",
+   "models": [
+    "KSAL2-09DCEH"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 32.0,
+   "precision": 0.5,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high",
+    "silent"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2160",
+   "manufacturer": "Lennox",
+   "models": [
+    "2018",
+    "2019"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat_cool",
+    "dry",
+    "fan"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "low",
+    "mid"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2161",
+   "manufacturer": "Lennox",
+   "models": [
+    "LNMTE026V2"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "dry",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2162",
+   "manufacturer": "Lennox",
+   "models": [
+    "LNINVE052",
+    "LNINVC052"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "dry",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto",
+    "turbo",
+    "sleep"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1060",
+   "manufacturer": "LG",
+   "models": [
+    "R09AWN",
+    "R24AWN",
+    "E09EK"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1061",
+   "manufacturer": "LG",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "ai",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "lowest",
+    "low",
+    "mid",
+    "high",
+    "highest",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1062",
+   "manufacturer": "LG",
+   "models": [
+    "P12RK",
+    "A06AWV"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "heat_cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1063",
+   "manufacturer": "LG",
+   "models": [
+    "P12EP1"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "silent",
+    "low",
+    "medium",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1064",
+   "manufacturer": "LG",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1065",
+   "manufacturer": "LG",
+   "models": [
+    "LG080EC",
+    "LG100EC",
+    "LG150EC",
+    "LG200EC"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "auto",
+    "fan_only",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1066",
+   "manufacturer": "LG",
+   "models": [
+    "LA090HYV",
+    "LA120HYV",
+    "LAN090HYV",
+    "LAN120HYV"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3",
+    "level4",
+    "level5"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1067",
+   "manufacturer": "LG",
+   "models": [
+    "W12TCM"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1068",
+   "manufacturer": "LG",
+   "models": [
+    "AKB74295303"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "ai",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "lowest",
+    "low",
+    "mid",
+    "high",
+    "highest",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1069",
+   "manufacturer": "LG",
+   "models": [
+    "AKB74295304"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1070",
+   "manufacturer": "LG",
+   "models": [
+    "PC09SQ NSJ"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "auto"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1083",
+   "manufacturer": "LG",
+   "models": [
+    "RAS-32CNH2"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "7062",
+   "manufacturer": "LG",
+   "models": [
+    "P12RK"
+   ],
+   "encoding": "Raw",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "7065",
+   "manufacturer": "LG",
+   "models": [
+    "LG080EC",
+    "LG100EC",
+    "LG150EC",
+    "LG200EC"
+   ],
+   "encoding": "Raw",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "auto",
+    "fan_only",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1380",
+   "manufacturer": "Midea",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1381",
+   "manufacturer": "Midea",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 28.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1382",
+   "manufacturer": "Midea",
+   "models": [
+    "MSY-12HRDN1"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "fan_only",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1383",
+   "manufacturer": "Midea",
+   "models": [
+    "KFR-35G"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1384",
+   "manufacturer": "Midea",
+   "models": [
+    "MSMACU-18HRFN1-QRD0GW"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 25.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1385",
+   "manufacturer": "Midea",
+   "models": [
+    "R11HG/E"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "heat",
+    "fan",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "med",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1386",
+   "manufacturer": "Midea",
+   "models": [
+    "KFR-32GW"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3",
+    "level4"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1387",
+   "manufacturer": "Midea",
+   "models": [
+    "RG70E/BGEF (Remote)"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1388",
+   "manufacturer": "Midea",
+   "models": [
+    "42MAQA09S5"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "auto"
+   ],
+   "fanModes": [
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1389",
+   "manufacturer": "Midea",
+   "models": [
+    "MAP05R1WWT"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 62.0,
+   "maxTemperature": 86.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat_cool",
+    "fan_only",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1390",
+   "manufacturer": "Midea",
+   "models": [
+    "RG52C1/BGE (Remote)"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1391",
+   "manufacturer": "Midea",
+   "models": [
+    "RG58E3/BGEF"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry",
+    "heat",
+    "fan"
+   ],
+   "fanModes": [
+    "level1",
+    "level2",
+    "level3",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1392",
+   "manufacturer": "Midea",
+   "models": [
+    "MPD-12CRN7"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "auto",
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1393",
+   "manufacturer": "Midea",
+   "models": [
+    "MPPHB-09CRN7-QB6-N"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1394",
+   "manufacturer": "Midea",
+   "models": [
+    "RG70C/BGEF (Remote)"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "heat",
+    "fan",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1395",
+   "manufacturer": "Midea",
+   "models": [
+    "RG10B(D1)/BGEFU1 (Remote)"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "7386",
+   "manufacturer": "Midea",
+   "models": [
+    "KFR-32GW"
+   ],
+   "encoding": "Raw",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high",
+    "static"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2100",
+   "manufacturer": "Mirage",
+   "models": [
+    "Magnum Inverter 19"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2560",
+   "manufacturer": "Mistral",
+   "models": [
+    "MPAC15CY28"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "level1",
+    "level2",
+    "level3"
+   ],
+   "swingModes": [
+    "stop",
+    "swing"
+   ]
+  },
+  {
+   "code": "1122",
+   "manufacturer": "Mitsubishi",
+   "models": [
+    "MSZ-AP50VGKD"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 10,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "quiet",
+    "low",
+    "medium",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1124",
+   "manufacturer": "Mitsubishi",
+   "models": [
+    "MSZ-SF25VE3",
+    "MSZ-SF35VE3",
+    "MSZ-SF42VE3",
+    "MSZ-SF50VE3",
+    "MSZ-AP20VG",
+    "MSZ-AP25VGD"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "quiet",
+    "low",
+    "normal",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1135",
+   "manufacturer": "Mitsubishi",
+   "models": [
+    "MSZ-GE60VAD",
+    "MSZ-GE71VAD",
+    "MSZ-GE80VAD"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "quiet",
+    "low",
+    "normal",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1139",
+   "manufacturer": "Mitsubishi",
+   "models": [
+    "MLZ-KP09NA2",
+    "MLZ-KP18NA2"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 61,
+   "maxTemperature": 88,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "7124",
+   "manufacturer": "Mitsubishi",
+   "models": [
+    "MSZ-SF25VE3",
+    "MSZ-SF35VE3",
+    "MSZ-SF42VE3",
+    "MSZ-SF50VE3",
+    "MSZ-AP20VG",
+    "MSZ-AP25VGD"
+   ],
+   "encoding": "Raw",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "quiet",
+    "low",
+    "normal",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1120",
+   "manufacturer": "Mitsubishi Electric",
+   "models": [
+    "MSZ-GL25VGD",
+    "MSZ-GL35VGD",
+    "MSZ-GL42VGD",
+    "MSZ-GL50VGD",
+    "MSZ-GL60VGD",
+    "MSZ-GL71VGD",
+    "MSZ-GL80VGD"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1121",
+   "manufacturer": "Mitsubishi Electric",
+   "models": [
+    "MSZ-GA35VA"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 31.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1123",
+   "manufacturer": "Mitsubishi Electric",
+   "models": [
+    "SRK25ZSX-SRC25ZSX"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 26.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1125",
+   "manufacturer": "Mitsubishi Electric",
+   "models": [
+    "MLZ-KP25VF",
+    "MLZ-KP35VF",
+    "MLZ-KP50VF"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 31.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1126",
+   "manufacturer": "Mitsubishi Electric",
+   "models": [
+    "MSX09-NV II",
+    "MSH-07RV",
+    "MSH-12RV",
+    "MS-24RV"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1127",
+   "manufacturer": "Mitsubishi Electric",
+   "models": [
+    "MSZ-HJ25VA"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3",
+    "level4"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1128",
+   "manufacturer": "Mitsubishi Electric",
+   "models": [
+    "MSZ-HJ25VA",
+    "MSZ-HJ35VA"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3",
+    "level4"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1130",
+   "manufacturer": "Mitsubishi Electric",
+   "models": [
+    "MS-SGD18VC"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1131",
+   "manufacturer": "Mitsubishi Electric",
+   "models": [
+    "PAR-FL32MA"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 19.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1132",
+   "manufacturer": "Mitsubishi Electric",
+   "models": [
+    "MSC-A12YV"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1134",
+   "manufacturer": "Mitsubishi Electric",
+   "models": [
+    "MG-GN18VF",
+    "MS-GN18VF",
+    "MS-GN13VF"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3",
+    "level4"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1136",
+   "manufacturer": "Mitsubishi Electric",
+   "models": [
+    "MSXY-FP10VG",
+    "MSXY-FP13VG",
+    "MSXY-FP18VG"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 31.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "quiet",
+    "auto",
+    "low",
+    "mid",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1137",
+   "manufacturer": "Mitsubishi Electric",
+   "models": [
+    "MSZ-HR35VF"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3",
+    "level4"
+   ],
+   "swingModes": [
+    "auto",
+    "top",
+    "high",
+    "mid",
+    "low",
+    "bottom",
+    "swing"
+   ]
+  },
+  {
+   "code": "1138",
+   "manufacturer": "Mitsubishi Electric",
+   "models": [
+    "Remote KM09D/166901"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "5140",
+   "manufacturer": "Mitsubishi Electric",
+   "models": [
+    "MSC-A12WV"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3"
+   ],
+   "swingModes": [
+    "auto",
+    "top",
+    "high",
+    "mid",
+    "low",
+    "bottom",
+    "swing"
+   ]
+  },
+  {
+   "code": "1129",
+   "manufacturer": "Mitsubishi Electric ",
+   "models": [
+    "MSZ-GE22VA"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "quiet",
+    "low",
+    "med",
+    "high",
+    "super high"
+   ],
+   "swingModes": [
+    "position 1",
+    "position 2",
+    "position 3",
+    "position 4",
+    "position 5",
+    "swing",
+    "auto"
+   ]
+  },
+  {
+   "code": "1133",
+   "manufacturer": "Mitsubishi Electric Starmex",
+   "models": [
+    "MSXY-FN10VE",
+    "MSXY-FN07VE",
+    "MSXY-FN13VE",
+    "MSXY-FN18VE"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "ifeel",
+    "cool",
+    "cool_econo",
+    "cool_powerful",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "Auto",
+    "Quiet",
+    "Low",
+    "Mid",
+    "High",
+    "Superhigh"
+   ],
+   "swingModes": [
+    "Auto",
+    "Top",
+    "High",
+    "Mid",
+    "Low",
+    "Bottom",
+    "Swing"
+   ]
+  },
+  {
+   "code": "1680",
+   "manufacturer": "Mitsubishi Heavy",
+   "models": [
+    "SRK25ZJ-S1",
+    "SRK13CRV-S1"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "med",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1681",
+   "manufacturer": "Mitsubishi Heavy",
+   "models": [
+    "SRK71ZK-S"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "ultralow",
+    "low",
+    "med",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1682",
+   "manufacturer": "Mitsubishi Heavy",
+   "models": [
+    "SRKM25H",
+    "SRK40HBE",
+    "RKS502A502",
+    "RKS502A503"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "med",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1683",
+   "manufacturer": "Mitsubishi Heavy",
+   "models": [
+    "DXK12ZMA-S"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1685",
+   "manufacturer": "Mitsubishi Heavy",
+   "models": [
+    "SRK50ZS-S"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "ultralow",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1686",
+   "manufacturer": "Mitsubishi Heavy",
+   "models": [
+    "SRK20ZSA-W",
+    "SRK25ZSA-W",
+    "SRK35ZSA-W",
+    "SRK50ZSA-W"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3",
+    "level4"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1687",
+   "manufacturer": "Mitsubishi Heavy",
+   "models": [
+    "SRK35ZJX-S",
+    "SRK20ZJX-S"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "med",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1688",
+   "manufacturer": "Mitsubishi Heavy",
+   "models": [
+    "SRK25ZSP-W",
+    "SRK35ZSP-W",
+    "SRK45ZSP-W"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1689",
+   "manufacturer": "Mitsubishi Heavy",
+   "models": [
+    "DXK12ZSA-W"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high",
+    "highest"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1690",
+   "manufacturer": "Mitsubishi Heavy",
+   "models": [
+    "FDUM VF2"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "ultralow",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1691",
+   "manufacturer": "Mitsubishi Heavy",
+   "models": [
+    "SRK71ZRA-W"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "ultralow",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": [
+    "3dauto",
+    "swing",
+    "center"
+   ]
+  },
+  {
+   "code": "1692",
+   "manufacturer": "Mitsubishi Heavy",
+   "models": [
+    "DXK12Z3-S",
+    "DXK09Z5-S",
+    "DXK15Z5-S"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "mid",
+    "low"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1684",
+   "manufacturer": "Mitsubishi Heavy Industries",
+   "models": [
+    "DXK24ZRA"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "auto",
+    "mid",
+    "high",
+    "low"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3220",
+   "manufacturer": "Mundoclima",
+   "models": [
+    "MUPR-09-H9A",
+    "MUPR-12-H9A",
+    "MUPR-18-H9A",
+    "MUPR-24-H9A",
+    "MUPR-09-H5A",
+    "MUPR-12-H5A",
+    "MUPR-18-H5A",
+    "MUPR-24-H5A"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1020",
+   "manufacturer": "Panasonic",
+   "models": [
+    "CS-CE7HKEW",
+    "CS-CE9HKEW",
+    "CS-CE12HKEW",
+    "CS-PC24MKF",
+    "CS-C24PKF"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "auto",
+    "mid",
+    "high",
+    "low"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1021",
+   "manufacturer": "Panasonic",
+   "models": [
+    "CS-RE9GKE",
+    "CS-RE12GKE",
+    "CS-RE9PKR",
+    "CSCU-Z25TKR"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "auto",
+    "mid",
+    "high",
+    "low"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1022",
+   "manufacturer": "Panasonic",
+   "models": [
+    "CS-Z25TK"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 0.5,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1023",
+   "manufacturer": "Panasonic",
+   "models": [
+    "CS-HE9JKE",
+    "CS-HE12JKE",
+    "CS-HE9LKE"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "heat",
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mediumLow",
+    "mid",
+    "mediumHigh",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1024",
+   "manufacturer": "Panasonic",
+   "models": [
+    "CS-MRE7MKE"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1025",
+   "manufacturer": "Panasonic",
+   "models": [
+    "CS-E18FKR"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 25.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1026",
+   "manufacturer": "Panasonic",
+   "models": [
+    "CS-PC12QKT"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1027",
+   "manufacturer": "Panasonic",
+   "models": [
+    "CS-SA9CKP"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1028",
+   "manufacturer": "Panasonic",
+   "models": [
+    "CS-U9RKR",
+    "CS-U12RKR"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "auto",
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mediumLow",
+    "mid",
+    "mediumHigh",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1029",
+   "manufacturer": "Panasonic",
+   "models": [
+    "CS-LJ22~LJ90BA2(YA2)"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "auto"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mediumLow",
+    "medium",
+    "mediumHigh",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1030",
+   "manufacturer": "Panasonic",
+   "models": [
+    "CS-E12JKDW"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "heat",
+    "cool",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "Quiet",
+    "Low",
+    "Medium",
+    "High",
+    "Maximum"
+   ],
+   "swingModes": [
+    "auto",
+    "Top",
+    "High",
+    "Medium",
+    "Low",
+    "Bottom"
+   ]
+  },
+  {
+   "code": "1031",
+   "manufacturer": "Panasonic",
+   "models": [
+    "SRK25ZMP-S, SRK35ZMP-S, SRK45ZMP-S"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "heat",
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1032",
+   "manufacturer": "Panasonic",
+   "models": [
+    "CS-CU-HU18YKYF"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "quiet",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3300",
+   "manufacturer": "PARKAIR",
+   "models": [
+    "DI-A"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2820",
+   "manufacturer": "Pearl",
+   "models": [
+    "EXGC24FCBC1"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3000",
+   "manufacturer": "Philco",
+   "models": [
+    "Philco AC"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "Auto",
+    "Low",
+    "Mid",
+    "High"
+   ],
+   "swingModes": [
+    "Stop",
+    "Swing"
+   ]
+  },
+  {
+   "code": "2040",
+   "manufacturer": "Pioneer",
+   "models": [
+    "WYS018GMFI17RL",
+    "WYS009GMFI17RL",
+    "CB018GMFILCFHD",
+    "CB012GMFILCFHD"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 62,
+   "maxTemperature": 86,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2041",
+   "manufacturer": "Pioneer",
+   "models": [
+    "WT018GLFI19HLD"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 61,
+   "maxTemperature": 88,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "silent",
+    "level1",
+    "level2",
+    "level3",
+    "level4",
+    "level5",
+    "turbo"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2260",
+   "manufacturer": "Profio",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only",
+    "heat",
+    "auto"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1820",
+   "manufacturer": "Riello",
+   "models": [
+    "WSI XN",
+    "RAR-3U4"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "mid",
+    "low"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2480",
+   "manufacturer": "Rotenso",
+   "models": [
+    "Ukura",
+    "Maze (remote)"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "heat_cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "med",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1660",
+   "manufacturer": "ROYAL",
+   "models": [
+    "08HPN1T1"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1661",
+   "manufacturer": "ROYAL",
+   "models": [
+    "RC-G25HN"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "silent",
+    "low",
+    "mid",
+    "high",
+    "turbo",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2940",
+   "manufacturer": "SAGA",
+   "models": [
+    "SAGA-A-22(CH)"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": [
+    "stop",
+    "hSwing",
+    "vSwing",
+    "swing"
+   ]
+  },
+  {
+   "code": "1400",
+   "manufacturer": "Samsung",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "quiet",
+    "low",
+    "med",
+    "high",
+    "turbo",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1401",
+   "manufacturer": "Samsung",
+   "models": [
+    "AR**HSF/JFS**"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": [
+    "stop",
+    "swing"
+   ]
+  },
+  {
+   "code": "1402",
+   "manufacturer": "Samsung",
+   "models": [
+    "AR**TSHGAWK"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "med",
+    "high",
+    "turbo",
+    "auto"
+   ],
+   "swingModes": [
+    "stop",
+    "swing"
+   ]
+  },
+  {
+   "code": "1403",
+   "manufacturer": "Samsung",
+   "models": [
+    "AR**TXHZ***"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "dry",
+    "cool",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high",
+    "turbo"
+   ],
+   "swingModes": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "code": "1404",
+   "manufacturer": "Samsung",
+   "models": [
+    "AR**TSHZ****"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "Eco",
+    "Quiet",
+    "Low",
+    "Medium",
+    "High",
+    "Turbo"
+   ],
+   "swingModes": [
+    "stop",
+    "swing"
+   ]
+  },
+  {
+   "code": "1405",
+   "manufacturer": "Samsung",
+   "models": [
+    "AR**TSHQBURN"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1.0,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry",
+    "heat",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "med",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1407",
+   "manufacturer": "Samsung",
+   "models": [
+    "AR**NXWS***"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "auto",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "med",
+    "high",
+    "turbo",
+    "auto"
+   ],
+   "swingModes": [
+    "stop",
+    "swing"
+   ]
+  },
+  {
+   "code": "1408",
+   "manufacturer": "Samsung",
+   "models": [
+    "AR18HSFSAWKNEU Ver.01"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "quiet",
+    "low",
+    "med",
+    "high",
+    "turbo",
+    "auto"
+   ],
+   "swingModes": [
+    "stop",
+    "swing"
+   ]
+  },
+  {
+   "code": "1500",
+   "manufacturer": "Sanyo",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "med",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1501",
+   "manufacturer": "Sanyo",
+   "models": [
+    "SAP-KR124EHEA"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat_cool",
+    "heat",
+    "dry",
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "med",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1880",
+   "manufacturer": "Saunier Duval",
+   "models": [
+    "1"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "med",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2080",
+   "manufacturer": "Sendo",
+   "models": [
+    "SND-18/IK"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "level1",
+    "level2",
+    "level3",
+    ""
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2860",
+   "manufacturer": "Senville",
+   "models": [
+    "SENA/12HF/IZ"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "quiet",
+    "level1",
+    "level2",
+    "level3"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1300",
+   "manufacturer": "Sharp",
+   "models": [
+    "AY-B22DM"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "ion"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3",
+    "level4"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1301",
+   "manufacturer": "Sharp",
+   "models": [
+    "AY-X13BE"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "7300",
+   "manufacturer": "SHARP",
+   "models": [
+    "AH-AP9GMY"
+   ],
+   "encoding": "Raw",
+   "minTemperature": 18.0,
+   "maxTemperature": 32.0,
+   "precision": 1.0,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "8800",
+   "manufacturer": "Sigma",
+   "models": [
+    "SGS32H13NE"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "fan",
+    "dry"
+   ],
+   "fanModes": [
+    "low",
+    "medium",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1860",
+   "manufacturer": "Simbio",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 31.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1420",
+   "manufacturer": "Sintech",
+   "models": [
+    "KFR-34GW"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 31.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1360",
+   "manufacturer": "Springer",
+   "models": [
+    "Split Hi Wall Maxiflex"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1220",
+   "manufacturer": "Sungold",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 62.0,
+   "maxTemperature": 86.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1340",
+   "manufacturer": "Tadiran",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1341",
+   "manufacturer": "Tadiran",
+   "models": [
+    "TAC490"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "low",
+    "med",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1342",
+   "manufacturer": "Tadiran",
+   "models": [
+    "Tadiran-10i/15i/inv220a"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "low",
+    "med",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1343",
+   "manufacturer": "Tadiran",
+   "models": [
+    "Alpha Series"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1344",
+   "manufacturer": "Tadiran",
+   "models": [
+    "Remote Control YB1FA",
+    "Tadiran Inverter"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "med",
+    "high",
+    "turbo"
+   ],
+   "swingModes": [
+    "static",
+    "swing",
+    "top",
+    "bottom"
+   ]
+  },
+  {
+   "code": "1345",
+   "manufacturer": "Tadiran",
+   "models": [
+    "TAC 297"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat_cool",
+    "fan_only",
+    "dry",
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1346",
+   "manufacturer": "Tadiran",
+   "models": [
+    "TAC 297H V3.2"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1560",
+   "manufacturer": "Tadiran",
+   "models": [
+    "WIND 3P"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1900",
+   "manufacturer": "TCL",
+   "models": [
+    "TAC-12CHSD/XA21I"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 31.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1901",
+   "manufacturer": "TCL",
+   "models": [
+    "TAC-12CHSD/XA71IN"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 31.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "Auto + Swing",
+    "Auto + No swing"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2120",
+   "manufacturer": "Technibel",
+   "models": [
+    "MPAF13A0R5IAA"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 10,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "heat_cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1620",
+   "manufacturer": "Tornado",
+   "models": [
+    "Super - Inverter A, i",
+    "Inverter",
+    "Inverter A",
+    "Super Design",
+    "Super Plasma",
+    "Gold i",
+    "Multi ON-OFF",
+    "Multi Inverter",
+    "Super Gold i",
+    "Plasma Gold"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "heat",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1621",
+   "manufacturer": "Tornado",
+   "models": [
+    "Super Legend 40"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1622",
+   "manufacturer": "Tornado",
+   "models": [
+    "Master-22 X"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": [
+    "stop",
+    "hSwing",
+    "vSwing",
+    "swing"
+   ]
+  },
+  {
+   "code": "1623",
+   "manufacturer": "Tornado",
+   "models": [
+    "Inverter VRF"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1624",
+   "manufacturer": "Tornado",
+   "models": [
+    "Super Legend 40"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1625",
+   "manufacturer": "Tornado",
+   "models": [
+    "Inverter VRF BOX"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1626",
+   "manufacturer": "Tornado",
+   "models": [
+    "MASTER-35 X 1PH"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1627",
+   "manufacturer": "Tornado",
+   "models": [
+    "MASTER-12A PLUS"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "auto"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1260",
+   "manufacturer": "Toshiba",
+   "models": [
+    "RAS-13NKV-E / RAS-13NAV-E",
+    "RAS-13NKV-A / RAS-13NAV-A",
+    "RAS-16NKV-E / RAS-16NAV-E",
+    "RAS-16NKV-A / RAS-16NAV-A",
+    "RAS-M10SKV-E"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "low",
+    "mid"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1262",
+   "manufacturer": "Toshiba",
+   "models": [
+    "RAC-PD0812CRRU",
+    "RAC-PD1013CWRU",
+    "RAC-PD1213CWRU",
+    "RAC-PD1414CWRU"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 62,
+   "maxTemperature": 86,
+   "precision": 1,
+   "operationModes": [
+    "auto",
+    "cool",
+    "dry",
+    "heat",
+    "fan"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1263",
+   "manufacturer": "Toshiba",
+   "models": [
+    "RAS-B07J2KVSG-E",
+    "RAS-B10J2KVSG-E",
+    "RAS-B13J2KVSG-E",
+    "RAS-B10SKVP-E"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "high",
+    "low",
+    "mid",
+    "HDA",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1264",
+   "manufacturer": "Toshiba",
+   "models": [
+    "RAS-13SKVR-A"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "auto",
+    "fan"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3",
+    "level4",
+    "level5"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1265",
+   "manufacturer": "Toshiba",
+   "models": [
+    "RAS-25SKVP2-ND",
+    "RAS-35SKVP2-ND"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "heat_cool",
+    "fan_only",
+    "off"
+   ],
+   "fanModes": [
+    "high",
+    "l4",
+    "medium",
+    "l2",
+    "low",
+    "auto",
+    "quiet"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "7260",
+   "manufacturer": "Toshiba",
+   "models": [
+    "RAS-18NKV-E / RAS-18NAV-E"
+   ],
+   "encoding": "Raw",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "heat_cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "quiet",
+    "level1",
+    "level2",
+    "level3",
+    "level4",
+    "level5",
+    "hi-power"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1200",
+   "manufacturer": "Tosot",
+   "models": [
+    "T09H-SJ"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "low",
+    "medium",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1000",
+   "manufacturer": "Toyotomi",
+   "models": [
+    "AKIRA GAN/GAG-A128 VL"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1001",
+   "manufacturer": "Toyotomi",
+   "models": [
+    "AKIRA GAN/GAG-A135FW-M"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2760",
+   "manufacturer": "Tristar",
+   "models": [
+    "AC-5400"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 24.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1780",
+   "manufacturer": "Trotec",
+   "models": [
+    "YX1F6"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1781",
+   "manufacturer": "Trotec",
+   "models": [
+    "YX1F"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3",
+    "level4"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1782",
+   "manufacturer": "Trotec",
+   "models": [
+    "RG57H3(B)/BGCEF-M",
+    "PAC 2100 X",
+    "PAC 2600 X"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 17.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "cool",
+    "dry",
+    "auto",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2140",
+   "manufacturer": "Unionaire",
+   "models": [
+    "Artify"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 20,
+   "maxTemperature": 28,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3",
+    "turbo"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2440",
+   "manufacturer": "Vaillant",
+   "models": [
+    "ClimaVair VAI 8-025"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3040",
+   "manufacturer": "Viessmann",
+   "models": [
+    "Vitoclima 300-S"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "8720",
+   "manufacturer": "Viomi",
+   "models": [
+    "KF-26GW/Y4PF5-A5"
+   ],
+   "encoding": "Raw",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high",
+    "turbo"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3080",
+   "manufacturer": "Voltas",
+   "models": [
+    "VOLTAS INV/AC 1.5T 183V MZJ3 3S"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "medium",
+    "high",
+    "auto"
+   ],
+   "swingModes": [
+    "Swing Off",
+    "Horizontal Swing",
+    "Vertical Swing",
+    "Swing"
+   ]
+  },
+  {
+   "code": "2340",
+   "manufacturer": "Vortex",
+   "models": [
+    "VOR-12C3/407"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "low",
+    "med",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2420",
+   "manufacturer": "VS",
+   "models": [
+    "Unknown"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan",
+    "auto"
+   ],
+   "fanModes": [
+    "level1",
+    "level2",
+    "level3",
+    "level4"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "1540",
+   "manufacturer": "Whirlpool",
+   "models": [
+    "SPIS412L"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 18.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "low",
+    "mid",
+    "high",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2320",
+   "manufacturer": "Whynter",
+   "models": [
+    "ARC-08WB",
+    "ARC-10WB",
+    "ARC-126MD",
+    "ARC-126MDB",
+    "ARC-148MS"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 62,
+   "maxTemperature": 88,
+   "precision": 2,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only",
+    "auto"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2321",
+   "manufacturer": "Whynter",
+   "models": [
+    "ARC-12S",
+    "ARC-12SD",
+    "ARC-122DS",
+    "ARC-14S",
+    "ARC-141BG",
+    "ARC-143MX",
+    "ARC-101CW"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3340",
+   "manufacturer": "Wide",
+   "models": [
+    "WDS12ECO"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "ion",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "mid",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2780",
+   "manufacturer": "Xiaomi",
+   "models": [
+    "KFR-35G/F3C1"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 31.0,
+   "precision": 0.5,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "level1",
+    "level2",
+    "level3",
+    "level4",
+    "level5",
+    "level6",
+    "level7",
+    "auto"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2400",
+   "manufacturer": "Yamatsu",
+   "models": [
+    "YAM-12KDA",
+    "AUS-07C53R013L24"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 31,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only"
+   ],
+   "fanModes": [
+    "auto",
+    "level1",
+    "level2",
+    "level3"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2300",
+   "manufacturer": "Zanussi",
+   "models": [
+    "ZH/TT-02"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 30,
+   "precision": 1,
+   "operationModes": [
+    "cool",
+    "heat",
+    "dry",
+    "fan_only",
+    "heat_cool"
+   ],
+   "fanModes": [
+    "auto",
+    "low",
+    "medium",
+    "high"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "2301",
+   "manufacturer": "Zanussi",
+   "models": [
+    "ZACS/I-07 HPF/A17/N1"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16.0,
+   "maxTemperature": 30.0,
+   "precision": 1.0,
+   "operationModes": [
+    "heat",
+    "cool"
+   ],
+   "fanModes": [
+    "auto",
+    "mid",
+    "high",
+    "low",
+    "turbo"
+   ],
+   "swingModes": null
+  },
+  {
+   "code": "3380",
+   "manufacturer": "Zephir",
+   "models": [
+    "DualSplit"
+   ],
+   "encoding": "Base64",
+   "minTemperature": 16,
+   "maxTemperature": 32,
+   "precision": 1,
+   "operationModes": [
+    "heat",
+    "cool",
+    "fan",
+    "auto"
+   ],
+   "fanModes": [
+    "high",
+    "mid",
+    "low",
+    "auto"
+   ],
+   "swingModes": null
+  }
+ ]
+}

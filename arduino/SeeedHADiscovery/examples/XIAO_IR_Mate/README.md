@@ -1,6 +1,6 @@
 # IR Mate Universal Infrared Remote
 
-This example lets IR Mate control a Gree air conditioner offline and connect to Home Assistant to manage appliances, learn infrared commands, and configure touch actions.
+This example lets IR Mate control a Gree air conditioner offline and connect to Home Assistant to control air conditioners from a bundled code library, learn infrared commands, and configure touch actions from the device page.
 
 Home Assistant 2026.7.0 or later is required.
 
@@ -40,14 +40,25 @@ The device uses a Gree protocol compatible with YAN-series remotes. Its current 
 2. Add the discovered `IR Mate` device in Home Assistant.
 3. Open `Settings → Devices & services → Seeed HA Discovery`, find the IR Mate config entry, and select Configure.
 4. Select a device type, brand, and model, then add the appliance.
-5. Select Learn for each command that requires capture and follow the on-screen prompt.
-6. Assign single, double, triple, and long-press actions, then select Save and sync.
 
-The infrared receiver is enabled only after Home Assistant starts learning. It is disabled again when learning succeeds, is cancelled, or times out.
+Once an appliance is added, its controls appear directly on the IR Mate device page:
 
-The Gree YAN / YAW1F profile uses the firmware's built-in codes and is ready to test or bind. Other brand profiles provide common command slots that can be tested, relearned, deleted, or bound after learning. The brand and model catalog is stored in the Home Assistant integration's `ir_profiles.json` file and can be extended.
+- **Air conditioners** created from the bundled code library get a full climate card with power, mode, temperature, fan, and swing. Each change looks up the matching signal and transmits it.
+- **Appliance** and **Command** dropdowns pick the active appliance and send any of its commands.
+- **Single / Double / Triple / Long press** dropdowns bind a command to each touch gesture and sync the choice to the device.
+- **Learn single / double / triple / long press** buttons capture an infrared signal and store it straight into that gesture slot, which is useful for uncommon remotes.
 
-Home Assistant stores the complete learned waveforms in persistent storage. Save and sync copies the four selected touch actions to IR Mate NVS, so the device continues using the last synchronized configuration while offline.
+The infrared receiver is enabled only while learning is in progress. It is disabled again when learning succeeds, is cancelled, or times out.
+
+## Air-conditioner code library
+
+The integration ships with a large air-conditioner code library covering 342 brand and model profiles. Selecting a model in the climate card looks up the correct waveform for the current mode, fan speed, and temperature and transmits it, so most air conditioners work without any learning. For remotes outside the library, use the learn buttons or the remote learning service as a fallback.
+
+The Gree YAN / YAW1F profile uses the firmware's built-in codes and drives the offline touch defaults. The brand and model catalog for learnable appliances is stored in the Home Assistant integration's `ir_profiles.json` file and can be extended.
+
+Home Assistant stores the complete learned waveforms and library selections in persistent storage. Binding a gesture copies the selected touch action to IR Mate NVS, so the device continues using the last synchronized configuration while offline.
+
+The bundled air-conditioner codes are derived from the MIT-licensed [SmartIR](https://github.com/litinoveweedle/SmartIR) project; see `custom_components/seeed_ha_discovery/codes/LICENSE`.
 
 ## Status feedback
 
@@ -56,7 +67,7 @@ Home Assistant stores the complete learned waveforms in persistent storage. Save
 - Provisioning, disconnected, or not yet paired with Home Assistant: blinking blue light.
 - Connected to Home Assistant and idle: status light off.
 
-Automations can also use the standard `remote` services. The remote entity is hidden by default and can be enabled in the entity registry:
+Automations can also use the standard `remote` services on the `Universal remote` entity, which is enabled by default:
 
 ```yaml
 action: remote.learn_command

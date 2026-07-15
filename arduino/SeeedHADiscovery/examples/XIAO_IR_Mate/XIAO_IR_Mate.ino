@@ -5,7 +5,9 @@
 
 // AP hotspot name broadcast while the device has no saved WiFi yet
 // 设备尚未配网时对外广播的配网热点名称
-const char* PROVISIONING_AP_SSID = "Seeed_IR_Mate";
+// const char* PROVISIONING_AP_SSID = "Seeed_IR_Mate";
+const char* WIFI_SSID = "citric_2.4G";
+const char* WIFI_PASSWORD = "15935700";
 
 #include <Adafruit_NeoPixel.h>
 #include <SeeedHADiscovery.h>
@@ -102,6 +104,9 @@ void handleTouchButton() {
     if (rawState != touchRawState) {
         touchRawState = rawState;
         touchChangedAt = now;
+        // Probe: report every raw edge and how long the previous level lasted
+        // 探针:打印每一次原始电平跳变,以及上一电平持续了多久
+        Serial.printf("touch raw -> %s\n", rawState ? "HIGH" : "LOW");
     }
 
     if (now - touchChangedAt < TOUCH_DEBOUNCE_MS || rawState == touchStableState) {
@@ -118,8 +123,16 @@ void handleTouchButton() {
     if (touchStableState) {
         touchPressedAt = now;
         longPressHandled = false;
+        // Probe: a debounced press just started
+        // 探针:一次去抖后的"按下"刚刚开始
+        Serial.println("touch pressed");
         return;
     }
+
+    // Probe: a debounced release, with how long the press was held
+    // 探针:一次去抖后的"松开",附带本次按住的时长
+    Serial.printf("touch released after %lu ms\n",
+                  static_cast<unsigned long>(now - touchPressedAt));
 
     if (longPressHandled) {
         return;
@@ -240,23 +253,24 @@ void setup() {
 
     // Build a per-device hotspot name from the chip MAC suffix
     // 用芯片 MAC 后缀拼出每台设备唯一的配网热点名称
-    char apSsid[40];
-    snprintf(
-        apSsid,
-        sizeof(apSsid),
-        "%s_%04X",
-        PROVISIONING_AP_SSID,
-        static_cast<uint16_t>(ESP.getEfuseMac() & 0xFFFF)
-    );
+    // char apSsid[40];
+    // snprintf(
+    //     apSsid,
+    //     sizeof(apSsid),
+    //     "%s_%04X",
+    //     PROVISIONING_AP_SSID,
+    //     static_cast<uint16_t>(ESP.getEfuseMac() & 0xFFFF)
+    // );
 
     // Connect using saved credentials, or open the provisioning hotspot
     // 使用已保存的凭据连接，否则开启配网热点
-    if (ha.beginWithProvisioning(apSsid)) {
+    // if (ha.beginWithProvisioning(apSsid)) {
+    if (ha.begin(WIFI_SSID, WIFI_PASSWORD)) {
         Serial.printf("WiFi connected: %s\n", ha.getLocalIP().toString().c_str());
     } else {
         Serial.printf(
-            "Provisioning hotspot started: %s (open http://192.168.4.1)\n",
-            apSsid
+            "Provisioning hotspot started: %s (open http://192.168.4.1)\n"
+            // apSsid
         );
     }
 }

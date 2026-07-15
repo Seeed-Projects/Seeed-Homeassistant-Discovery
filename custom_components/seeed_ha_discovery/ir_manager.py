@@ -16,6 +16,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.storage import Store
 
+from . import ir_library
 from .const import CONF_DEVICE_ID, DEFAULT_IR_CARRIER_FREQUENCY, DOMAIN
 from .device import SeeedHADevice
 
@@ -23,6 +24,14 @@ STORAGE_VERSION = 1
 GESTURES = ("single", "double", "triple", "long")
 DEFAULT_APPLIANCE_ID = "factory_gree"
 DEFAULT_PROFILE_ID = "gree_yan_yaw1f"
+
+# Appliance that holds signals learned directly into a touch gesture slot.
+# 存放直接学习进触摸手势槽位的信号所用的电器。
+GESTURE_CAPTURE_APPLIANCE_ID = "touch_captures"
+
+# Prefix marking profiles generated from the bundled climate code library.
+# 标记由内置空调码库动态生成的 profile 的前缀。
+LIBRARY_CLIMATE_PREFIX = "lib_climate_"
 
 
 def _default_data() -> dict[str, Any]:
@@ -80,6 +89,42 @@ def _binding(appliance_id: str, command_id: str) -> dict[str, str]:
     return {"appliance_id": appliance_id, "command_id": command_id}
 
 
+def _library_appliance(
+    appliance_id: str, name: str, profile: dict[str, Any]
+) -> dict[str, Any]:
+    """Build one climate appliance backed by a bundled library code."""
+    climate = dict(profile.get("climate", {}))
+    return {
+        "id": appliance_id,
+        "name": name,
+        "category": profile["category"],
+        "profile_id": profile["id"],
+        "brand": profile["brand"],
+        "model": profile["model"],
+        "source": "library",
+        "library_platform": profile.get("library_platform", "climate"),
+        "library_code": profile["library_code"],
+        "climate": climate,
+        "hvac_state": _climate_default_state(climate),
+        "commands": {},
+        "factory": False,
+    }
+
+
+def _climate_default_state(climate: dict[str, Any]) -> dict[str, Any]:
+    """Return a safe starting HVAC state for a new climate appliance."""
+    min_temp = climate.get("min_temp", 16)
+    max_temp = climate.get("max_temp", 30)
+    fan_modes = climate.get("fan_modes") or []
+    swing_modes = climate.get("swing_modes") or []
+    return {
+        "hvac_mode": "off",
+        "temperature": int((float(min_temp) + float(max_temp)) / 2),
+        "fan_mode": fan_modes[0] if fan_modes else None,
+        "swing_mode": swing_modes[0] if swing_modes else None,
+    }
+
+
 def _slug(value: str) -> str:
     """Convert a user-facing name into a stable command identifier."""
     normalized = re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
@@ -116,6 +161,10 @@ class IRMateManager:
         self._lock = asyncio.Lock()
         self._sync_lock = asyncio.Lock()
         self._alternative_indexes: dict[str, int] = {}
+        # Decoded climate code files are cached per device code to avoid
+        # re-reading gzip data on every command.
+        # 已解压的空调码文件按设备码缓存,避免每次发指令都重新读取 gzip。
+        self._climate_cache: dict[str, dict[str, Any]] = {}
         # Listeners notified whenever appliances, commands, or the active
         # appliance change, so select entities can refresh their options.
         # 当电器、指令或当前电器变化时通知的监听器，供下拉框实体刷新选项。
@@ -300,6 +349,126 @@ class IRMateManager:
             }
         return await self.async_save_bindings(new_bindings)
 
+    def list_climate_appliances(self) -> list[str]:
+        """Return the id of every library-backed climate appliance."""
+        return [
+            appliance["id"]
+            for appliance in self._data.get("appliances", {}).values()
+            if appliance.get("library_platform") == "climate"
+            and appliance.get("library_code")
+        ]
+
+    def get_climate_appliance(self, appliance_id: str) -> dict[str, Any]:
+        """Return one climate appliance record."""
+        appliance = self._get_appliance(appliance_id)
+        if appliance.get("library_platform") != "climate":
+            raise HomeAssistantError(f"Appliance {appliance_id} is not a climate device")
+        return appliance
+
+    def get_climate_config(self, appliance_id: str) -> dict[str, Any]:
+        """Return the temperature and mode metadata of a climate appliance."""
+        return dict(self.get_climate_appliance(appliance_id).get("climate", {}))
+
+    def get_hvac_state(self, appliance_id: str) -> dict[str, Any]:
+        """Return the last stored HVAC state of a climate appliance."""
+        appliance = self.get_climate_appliance(appliance_id)
+        state = appliance.get("hvac_state")
+        if not isinstance(state, dict):
+            state = _climate_default_state(appliance.get("climate", {}))
+            appliance["hvac_state"] = state
+        return dict(state)
+
+    async def async_set_hvac_state(
+        self,
+        appliance_id: str,
+        *,
+        hvac_mode: str | None = None,
+        temperature: float | None = None,
+        fan_mode: str | None = None,
+        swing_mode: str | None = None,
+    ) -> None:
+        """Update one field of a climate state, transmit it, and persist it."""
+        await self.async_initialize()
+        appliance = self.get_climate_appliance(appliance_id)
+        state = self.get_hvac_state(appliance_id)
+        if hvac_mode is not None:
+            state["hvac_mode"] = hvac_mode
+        if temperature is not None:
+            state["temperature"] = temperature
+        if fan_mode is not None:
+            state["fan_mode"] = fan_mode
+        if swing_mode is not None:
+            state["swing_mode"] = swing_mode
+
+        # Adjusting temperature or fan while the unit is off only stores the
+        # preference; a frame is transmitted when a mode is active or set.
+        # 关机状态下改温度/风速只保存偏好;当有运行模式或切换模式时才发射整帧。
+        if state.get("hvac_mode") != "off" or hvac_mode is not None:
+            await self._async_send_climate(appliance["library_code"], state)
+        appliance["hvac_state"] = state
+        await self._store.async_save(self._data)
+        self._notify_update()
+
+    async def _async_send_climate(
+        self, library_code: str, state: dict[str, Any]
+    ) -> None:
+        """Resolve a climate state into a signal and transmit it."""
+
+        def _resolve() -> tuple[int, list[int]]:
+            """Load the cached code file and decode the matching signal."""
+            device_data = self._climate_cache.get(library_code)
+            if device_data is None:
+                device_data = ir_library.load_climate_device(library_code)
+                self._climate_cache[library_code] = device_data
+            return ir_library.resolve_climate_signal(
+                device_data,
+                state.get("hvac_mode", "off"),
+                state.get("fan_mode"),
+                state.get("temperature"),
+                state.get("swing_mode"),
+            )
+
+        try:
+            carrier, timings = await self.hass.async_add_executor_job(_resolve)
+        except ir_library.IRCodeError as err:
+            raise HomeAssistantError(
+                f"This state is not available for the selected model: {err}"
+            ) from err
+        await self.device.async_transmit_infrared(carrier, timings)
+
+    async def async_learn_gesture(self, gesture: str, timeout: int = 30) -> dict[str, Any]:
+        """Learn one signal and bind it directly to a touch gesture."""
+        await self.async_initialize()
+        if gesture not in GESTURES:
+            raise HomeAssistantError(f"Unsupported touch gesture: {gesture}")
+        if not self.device.connected:
+            raise HomeAssistantError("The device must be online to learn a signal")
+        self._ensure_capture_appliance()
+        label = f"{gesture.capitalize()} tap" if gesture != "long" else "Long press"
+        await self.async_learn_command(
+            GESTURE_CAPTURE_APPLIANCE_ID, gesture, label, timeout
+        )
+        return await self.async_set_gesture_binding(
+            gesture, GESTURE_CAPTURE_APPLIANCE_ID, gesture
+        )
+
+    def _ensure_capture_appliance(self) -> dict[str, Any]:
+        """Create the hidden appliance that stores learned gesture signals."""
+        appliances = self._data["appliances"]
+        if GESTURE_CAPTURE_APPLIANCE_ID not in appliances:
+            appliances[GESTURE_CAPTURE_APPLIANCE_ID] = {
+                "id": GESTURE_CAPTURE_APPLIANCE_ID,
+                "name": "Touch captures",
+                "category": "custom",
+                "profile_id": "custom_learning",
+                "brand": "Custom",
+                "model": "Touch gesture captures",
+                "source": "learning",
+                "commands": {},
+                "factory": False,
+            }
+        return appliances[GESTURE_CAPTURE_APPLIANCE_ID]
+
     async def async_set_active_appliance(self, appliance_id: str) -> None:
         """Select the appliance targeted by the send dropdown and remote."""
         await self.async_initialize()
@@ -320,6 +489,15 @@ class IRMateManager:
             raise HomeAssistantError("Appliance name cannot be empty")
         profile = self._find_profile(profile_id)
         appliance_id = f"{_slug(name)}_{uuid4().hex[:6]}"
+
+        if profile.get("source") == "library":
+            self._data["appliances"][appliance_id] = _library_appliance(
+                appliance_id, name, profile
+            )
+            await self._store.async_save(self._data)
+            self._notify_update()
+            return await self.async_snapshot()
+
         commands: dict[str, dict[str, Any]] = {}
         for profile_command in profile.get("commands", []):
             command_id = profile_command["id"]
@@ -740,10 +918,40 @@ class IRMateManager:
 
 
 def _load_profiles() -> dict[str, Any]:
-    """Load the bundled infrared profile catalog from disk."""
+    """Load the profile catalog, merging bundled climate library devices."""
     path = Path(__file__).with_name("ir_profiles.json")
     with path.open(encoding="utf-8") as profile_file:
         data = json.load(profile_file)
     if not isinstance(data, dict):
         raise ValueError("Infrared profile catalog must contain an object")
+    data.setdefault("profiles", [])
+    data["profiles"].extend(_library_climate_profiles())
     return data
+
+
+def _library_climate_profiles() -> list[dict[str, Any]]:
+    """Turn each bundled climate code file into a selectable profile."""
+    profiles: list[dict[str, Any]] = []
+    for device in ir_library.load_climate_index():
+        models = device.get("models") or ["Unknown"]
+        profiles.append(
+            {
+                "id": f"{LIBRARY_CLIMATE_PREFIX}{device['code']}",
+                "category": "air_conditioner",
+                "brand": device.get("manufacturer", "Unknown"),
+                "model": models[0],
+                "source": "library",
+                "library_platform": "climate",
+                "library_code": device["code"],
+                "climate": {
+                    "min_temp": device.get("minTemperature", 16),
+                    "max_temp": device.get("maxTemperature", 30),
+                    "precision": device.get("precision", 1.0),
+                    "operation_modes": device.get("operationModes", []),
+                    "fan_modes": device.get("fanModes", []),
+                    "swing_modes": device.get("swingModes") or [],
+                },
+                "commands": [],
+            }
+        )
+    return profiles

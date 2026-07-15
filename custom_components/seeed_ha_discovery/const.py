@@ -155,6 +155,8 @@ PLATFORMS: Final = [
     "camera",
     "remote",
     "select",
+    "climate",
+    "button",
 ]
 
 # Default carrier frequency used for learned raw signals
