@@ -43,20 +43,22 @@ The device uses a Gree protocol compatible with YAN-series remotes. Its current 
 
 The brand list is sorted by brand and model so the catalog is easy to scan. Once an appliance is added, its controls appear directly on the IR Mate device page, grouped into sections:
 
-- **Controls**: the **Appliance** and **Command** dropdowns pick the active appliance and send any of its commands, and air conditioners from the bundled code library get a full climate card with power, mode, temperature, fan, and swing.
-- **Configuration**: the **Single / Double / Triple / Long press** dropdowns bind a command to each touch gesture and sync the choice to the device, and the **Learn single / double / triple / long press** buttons capture a signal straight into that gesture slot for uncommon remotes.
+- **Controls**: the **Appliance** and **Command** dropdowns pick the active appliance and send any of its commands, and air conditioners from the bundled code library get a full climate card with power, mode, temperature, fan, and swing. Library air conditioners also expose **Power / Temperature up / Temperature down / Mode / Fan speed** actions in the **Command** dropdown, mirroring the built-in Gree keys.
+- **Configuration**: the **Add or manage appliances** button links to the setup flow where the brand catalog lives, the **Single / Double / Triple / Long press** dropdowns bind a command to each touch gesture and sync the choice to the device, and the **Learn single / double / triple / long press** buttons capture a signal straight into that gesture slot for uncommon remotes. Any command, including a library air conditioner's stateful actions, can be bound to a gesture.
 - **Diagnostic**: the **Last learned IR signal** and **Last transmitted IR signal** sensors report the pulse count and expose the full waveform as attributes.
 
 The infrared receiver is enabled only while learning is in progress. It is disabled again when learning succeeds, is cancelled, or times out.
 
-## Verifying a learned signal
+## Learning a signal (two matching presses)
 
-Learning is fully observable end to end:
+Learning captures each key twice and saves it only when both presses agree, so the result is trustworthy:
 
-1. Press a **Learn** button and press the remote's key while pointing it at IR Mate. A notification reports success with the pulse count and a waveform preview, or explains that no signal was captured.
-2. Open the **Last learned IR signal** sensor to see the captured pulse count and the full `timings` array in its attributes. The same array prints on the device serial console as `IR learn OK`.
-3. Select **Command** (or the gesture's bound command) to transmit. The **Last transmitted IR signal** sensor and the serial `IR TX` line show the emitted waveform.
-4. The learned and transmitted `timings` match pulse for pulse, and the target appliance responding confirms the capture is correct.
+1. Press a **Learn** button. IR Mate turns its status light **white** to signal that it is ready.
+2. Point the remote at IR Mate and press the key once. IR Mate buzzes once and briefly re-shows the **white** light to ask for a confirmation press.
+3. Press the **same** key again. Two matching captures light the status **green** and save the signal to the gesture; a mismatch (or no signal) lights it **red**, and the gesture keeps its previous binding.
+4. A Home Assistant notification reports the outcome, including the pulse count and a waveform preview on success.
+5. Open the **Last learned IR signal** sensor to see the captured pulse count and the full `timings` array. The device serial console prints both `IR learn pass 1` and `IR learn pass 2` for comparison.
+6. Select **Command** (or the gesture's bound command) to transmit. The **Last transmitted IR signal** sensor and the serial `IR TX` line show the emitted waveform, which matches the learned one pulse for pulse.
 
 ## Air-conditioner code library
 
@@ -66,12 +68,15 @@ The Gree YAN / YAW1F profile uses the firmware's built-in codes and drives the o
 
 Home Assistant stores the complete learned waveforms and library selections in persistent storage. Binding a gesture copies the selected touch action to IR Mate NVS, so the device continues using the last synchronized configuration while offline.
 
+Built-in Gree actions and learned signals run entirely on the device, so their gestures work with or without a network. A library air conditioner's stateful actions (temperature step, mode cycle) are computed by Home Assistant: while online, a physical gesture reports to Home Assistant, which resolves the next frame from the current state and transmits it; while offline, the device emits the fixed fallback frame captured for that gesture at binding time.
+
 The bundled air-conditioner codes are derived from the MIT-licensed [SmartIR](https://github.com/litinoveweedle/SmartIR) project; see `custom_components/seeed_ha_discovery/codes/LICENSE`.
 
 ## Status feedback
 
-- Successful infrared transmission or learning: green light and one short vibration.
-- Failed infrared transmission or learning: red light and two short vibrations.
+- Learning in progress, ready for a key press: white light (re-shown before the confirmation press).
+- Successful infrared transmission, or a signal verified by two matching presses: green light and one short vibration.
+- Failed infrared transmission, or a learning attempt whose two presses did not match: red light and two short vibrations.
 - Provisioning, disconnected, or not yet paired with Home Assistant: blinking blue light.
 - Connected to Home Assistant and idle: status light off.
 

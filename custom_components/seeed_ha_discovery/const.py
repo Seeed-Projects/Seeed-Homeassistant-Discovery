@@ -135,6 +135,10 @@ MSG_TYPE_IR_TOUCH_BINDING_RESULT: Final = "ir_touch_binding_result"
 MSG_TYPE_IR_TOUCH_STATUS_REQUEST: Final = "ir_touch_status_request"
 MSG_TYPE_IR_TOUCH_STATUS_RESULT: Final = "ir_touch_status_result"
 
+# Physical touch gesture reported by the device for online stateful handling
+# 设备上报的物理触摸手势,供在线有状态处理
+MSG_TYPE_IR_GESTURE: Final = "ir_gesture"
+
 # =============================================================================
 # 实体订阅配置 | Entity Subscription Configuration
 # =============================================================================

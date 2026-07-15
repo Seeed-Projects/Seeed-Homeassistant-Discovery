@@ -57,6 +57,7 @@ from .const import (
     MSG_TYPE_IR_TOUCH_BINDING_RESULT,
     MSG_TYPE_IR_TOUCH_STATUS_REQUEST,
     MSG_TYPE_IR_TOUCH_STATUS_RESULT,
+    MSG_TYPE_IR_GESTURE,
     HEARTBEAT_INTERVAL,
     RECONNECT_INTERVAL,
     DEFAULT_HTTP_PORT,
@@ -115,6 +116,10 @@ class SeeedHADevice:
         # Infrared signal callbacks | 红外信号回调
         self._infrared_receive_callbacks: list[
             Callable[[dict[str, Any]], None]
+        ] = []
+        # Physical touch gesture callbacks (coroutine functions) | 物理触摸手势回调(协程函数)
+        self._infrared_gesture_callbacks: list[
+            Callable[[str], Any]
         ] = []
 
         # 设备上报的实体数据
@@ -229,6 +234,19 @@ class SeeedHADevice:
         def remove_callback() -> None:
             """Remove the infrared receive callback."""
             self._infrared_receive_callbacks.remove(callback)
+
+        return remove_callback
+
+    def add_infrared_gesture_callback(
+        self, callback: Callable[[str], Any]
+    ) -> Callable[[], None]:
+        """Register a coroutine callback for physical touch gesture events."""
+        self._infrared_gesture_callbacks.append(callback)
+
+        def remove_callback() -> None:
+            """Remove the infrared gesture callback."""
+            if callback in self._infrared_gesture_callbacks:
+                self._infrared_gesture_callbacks.remove(callback)
 
         return remove_callback
 
@@ -550,6 +568,15 @@ class SeeedHADevice:
             if future is not None and not future.done():
                 future.set_result(data)
 
+        elif msg_type == MSG_TYPE_IR_GESTURE:
+            # A physical gesture fired on the device; hand it to the IR manager
+            # as a background task so a long transmission never blocks receiving.
+            # 设备触发了物理手势;作为后台任务交给 IR 管理器,避免长发射阻塞接收。
+            gesture = data.get("gesture")
+            if isinstance(gesture, str):
+                for callback in tuple(self._infrared_gesture_callbacks):
+                    self.hass.async_create_task(callback(gesture))
+
     async def _async_reconnect(self) -> None:
         """
         自动重连（固定间隔）
@@ -800,7 +827,7 @@ class SeeedHADevice:
         """Write one gesture binding and wait for the device acknowledgement."""
         if gesture not in {"single", "double", "triple", "long"}:
             raise ValueError("Unsupported touch gesture")
-        if binding.get("source") not in {"none", "builtin", "raw"}:
+        if binding.get("source") not in {"none", "builtin", "raw", "managed"}:
             raise ValueError("Unsupported touch binding source")
 
         request_id = self._next_request_id

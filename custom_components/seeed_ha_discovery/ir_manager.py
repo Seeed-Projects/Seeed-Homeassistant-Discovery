@@ -6,6 +6,7 @@ import asyncio
 from collections.abc import Callable
 from copy import deepcopy
 import json
+import logging
 from pathlib import Path
 import re
 from typing import Any
@@ -20,6 +21,8 @@ from homeassistant.util import dt as dt_util
 from . import ir_library
 from .const import CONF_DEVICE_ID, DEFAULT_IR_CARRIER_FREQUENCY, DOMAIN
 from .device import SeeedHADevice
+
+_LOGGER = logging.getLogger(__name__)
 
 STORAGE_VERSION = 1
 GESTURES = ("single", "double", "triple", "long")
@@ -85,6 +88,56 @@ def _builtin_command(command_id: str, name: str, action: str) -> dict[str, Any]:
     }
 
 
+def _managed_command(command_id: str, name: str, action: str) -> dict[str, Any]:
+    """Build one Home-Assistant-computed climate action record.
+
+    A managed command is resolved on the Home Assistant side from the
+    appliance HVAC state and the bundled code library, so stateful actions
+    (power toggle, temperature step, mode cycle) work while online.
+    HA 端根据空调状态与码库解析的动作;开关/温度步进/模式循环等有状态动作在线可用。
+    """
+    return {
+        "id": command_id,
+        "name": name,
+        "source": "managed",
+        "managed_action": action,
+        "signals": [],
+    }
+
+
+def _managed_climate_commands(climate: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Return the stateful action set available for a climate appliance."""
+    commands: dict[str, dict[str, Any]] = {
+        "power": _managed_command("power", "Power", "power"),
+    }
+    operation_modes = climate.get("operation_modes") or []
+    if operation_modes:
+        commands["mode"] = _managed_command("mode", "Mode", "mode")
+    try:
+        has_range = float(climate.get("max_temp", 30)) > float(
+            climate.get("min_temp", 16)
+        )
+    except (TypeError, ValueError):
+        has_range = True
+    if has_range:
+        commands["temperature_up"] = _managed_command(
+            "temperature_up", "Temperature up", "temperature_up"
+        )
+        commands["temperature_down"] = _managed_command(
+            "temperature_down", "Temperature down", "temperature_down"
+        )
+    if climate.get("fan_modes"):
+        commands["fan"] = _managed_command("fan", "Fan speed", "fan")
+    return commands
+
+
+def _is_sendable(command: dict[str, Any]) -> bool:
+    """Return whether a command can be transmitted right now."""
+    return command.get("source") in ("builtin", "managed") or bool(
+        command.get("signals")
+    )
+
+
 def _binding(appliance_id: str, command_id: str) -> dict[str, str]:
     """Build one touch binding reference."""
     return {"appliance_id": appliance_id, "command_id": command_id}
@@ -107,7 +160,7 @@ def _library_appliance(
         "library_code": profile["library_code"],
         "climate": climate,
         "hvac_state": _climate_default_state(climate),
-        "commands": {},
+        "commands": _managed_climate_commands(climate),
         "factory": False,
     }
 
@@ -219,6 +272,9 @@ class IRMateManager:
             self._data = _default_data()
             await self._async_migrate_legacy_codes()
             await self._store.async_save(self._data)
+        # Handle physical gestures reported by the device (online stateful path).
+        # 处理设备上报的物理手势(在线有状态路径)。
+        self.device.add_infrared_gesture_callback(self.async_handle_gesture)
         self._loaded = True
 
     async def async_snapshot(self, refresh_status: bool = False) -> dict[str, Any]:
@@ -236,8 +292,7 @@ class IRMateManager:
                         "id": command["id"],
                         "name": command["name"],
                         "source": command["source"],
-                        "learned": bool(command.get("signals"))
-                        or command["source"] == "builtin",
+                        "learned": _is_sendable(command),
                         "signal_count": len(command.get("signals", [])),
                     }
                 )
@@ -298,10 +353,7 @@ class IRMateManager:
             return []
         commands = []
         for command in appliance.get("commands", {}).values():
-            sendable = command.get("source") == "builtin" or bool(
-                command.get("signals")
-            )
-            if sendable:
+            if _is_sendable(command):
                 commands.append((command["id"], command["name"]))
         return commands
 
@@ -310,10 +362,7 @@ class IRMateManager:
         result = []
         for appliance in self._data.get("appliances", {}).values():
             for command in appliance.get("commands", {}).values():
-                sendable = command.get("source") == "builtin" or bool(
-                    command.get("signals")
-                )
-                if sendable:
+                if _is_sendable(command):
                     label = f"{appliance['name']} \u00b7 {command['name']}"
                     result.append((appliance["id"], command["id"], label))
         return result
@@ -354,6 +403,9 @@ class IRMateManager:
             detail["pulse_count"] = len(signal["timings"])
         elif command.get("source") == "builtin":
             detail["builtin_action"] = command.get("builtin_action")
+        elif command.get("source") == "managed":
+            detail["managed_action"] = command.get("managed_action")
+            detail["computed_by"] = "home_assistant"
         return detail
 
     def get_last_learned(self) -> dict[str, Any] | None:
@@ -470,27 +522,30 @@ class IRMateManager:
         await self._store.async_save(self._data)
         self._notify_update()
 
+    def _resolve_climate_frame(
+        self, library_code: str, state: dict[str, Any]
+    ) -> tuple[int, list[int]]:
+        """Decode the infrared frame for one climate state (blocking)."""
+        device_data = self._climate_cache.get(library_code)
+        if device_data is None:
+            device_data = ir_library.load_climate_device(library_code)
+            self._climate_cache[library_code] = device_data
+        return ir_library.resolve_climate_signal(
+            device_data,
+            state.get("hvac_mode", "off"),
+            state.get("fan_mode"),
+            state.get("temperature"),
+            state.get("swing_mode"),
+        )
+
     async def _async_send_climate(
         self, library_code: str, state: dict[str, Any]
     ) -> None:
         """Resolve a climate state into a signal and transmit it."""
-
-        def _resolve() -> tuple[int, list[int]]:
-            """Load the cached code file and decode the matching signal."""
-            device_data = self._climate_cache.get(library_code)
-            if device_data is None:
-                device_data = ir_library.load_climate_device(library_code)
-                self._climate_cache[library_code] = device_data
-            return ir_library.resolve_climate_signal(
-                device_data,
-                state.get("hvac_mode", "off"),
-                state.get("fan_mode"),
-                state.get("temperature"),
-                state.get("swing_mode"),
-            )
-
         try:
-            carrier, timings = await self.hass.async_add_executor_job(_resolve)
+            carrier, timings = await self.hass.async_add_executor_job(
+                self._resolve_climate_frame, library_code, dict(state)
+            )
         except ir_library.IRCodeError as err:
             raise HomeAssistantError(
                 f"This state is not available for the selected model: {err}"
@@ -501,6 +556,130 @@ class IRMateManager:
             carrier=carrier,
             timings=timings,
         )
+
+    def _managed_state_change(
+        self,
+        action: str,
+        state: dict[str, Any],
+        climate: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Compute the HVAC state fields changed by one managed action."""
+        operation_modes = list(climate.get("operation_modes") or [])
+        fan_modes = list(climate.get("fan_modes") or [])
+        current_mode = state.get("hvac_mode", "off")
+
+        if action == "power":
+            if current_mode == "off":
+                return {"hvac_mode": self._default_on_mode(operation_modes)}
+            return {"hvac_mode": "off"}
+
+        if action == "mode":
+            if not operation_modes:
+                return {}
+            if current_mode == "off" or current_mode not in operation_modes:
+                return {"hvac_mode": operation_modes[0]}
+            index = operation_modes.index(current_mode)
+            return {"hvac_mode": operation_modes[(index + 1) % len(operation_modes)]}
+
+        if action in ("temperature_up", "temperature_down"):
+            try:
+                step = float(climate.get("precision", 1.0)) or 1.0
+            except (TypeError, ValueError):
+                step = 1.0
+            min_temp = float(climate.get("min_temp", 16))
+            max_temp = float(climate.get("max_temp", 30))
+            current = state.get("temperature")
+            current = (
+                float(current)
+                if current is not None
+                else (min_temp + max_temp) / 2
+            )
+            delta = step if action == "temperature_up" else -step
+            new_temp = min(max(current + delta, min_temp), max_temp)
+            if float(new_temp).is_integer():
+                new_temp = int(new_temp)
+            return {"temperature": new_temp}
+
+        if action == "fan":
+            if not fan_modes:
+                return {}
+            current_fan = state.get("fan_mode")
+            if current_fan in fan_modes:
+                index = fan_modes.index(current_fan)
+                return {"fan_mode": fan_modes[(index + 1) % len(fan_modes)]}
+            return {"fan_mode": fan_modes[0]}
+
+        raise HomeAssistantError(f"Unknown managed action: {action}")
+
+    @staticmethod
+    def _default_on_mode(operation_modes: list[str]) -> str:
+        """Return a sensible operation mode to use when powering on."""
+        for preferred in ("cool", "heat", "auto"):
+            if preferred in operation_modes:
+                return preferred
+        return operation_modes[0] if operation_modes else "cool"
+
+    async def _async_execute_managed(self, appliance_id: str, action: str) -> None:
+        """Compute and transmit one Home-Assistant-managed climate action."""
+        appliance = self.get_climate_appliance(appliance_id)
+        climate = appliance.get("climate", {})
+        state = self.get_hvac_state(appliance_id)
+        changes = self._managed_state_change(action, state, climate)
+        if not changes:
+            return
+        await self.async_set_hvac_state(appliance_id, **changes)
+
+    def _managed_fallback_signal(
+        self, appliance_id: str, action: str
+    ) -> dict[str, Any] | None:
+        """Resolve a single fixed frame used when the device is offline."""
+        try:
+            appliance = self.get_climate_appliance(appliance_id)
+        except HomeAssistantError:
+            return None
+        climate = appliance.get("climate", {})
+        state = dict(self.get_hvac_state(appliance_id))
+        try:
+            changes = self._managed_state_change(action, state, climate)
+        except HomeAssistantError:
+            return None
+        state.update(changes)
+        powers_off = action == "power" and changes.get("hvac_mode") == "off"
+        if state.get("hvac_mode", "off") == "off" and not powers_off:
+            return None
+        try:
+            carrier, timings = self._resolve_climate_frame(
+                appliance["library_code"], state
+            )
+        except ir_library.IRCodeError:
+            return None
+        return {"carrier_frequency": int(carrier), "timings": list(timings)}
+
+    async def async_handle_gesture(self, gesture: str) -> None:
+        """Execute a physical gesture reported by the device while online."""
+        await self.async_initialize()
+        if gesture not in GESTURES:
+            return
+        binding = self._data.get("bindings", {}).get(gesture)
+        if not binding:
+            return
+        try:
+            command = self._get_command(
+                binding["appliance_id"], binding["command_id"]
+            )
+        except HomeAssistantError:
+            return
+        # Only managed commands are computed by Home Assistant; the device
+        # runs built-in and learned bindings on its own, so nothing else here.
+        # 只有 managed 指令由 HA 计算;内置与学习类绑定由设备本地执行,此处不处理。
+        if command.get("source") != "managed":
+            return
+        try:
+            await self._async_execute_managed(
+                binding["appliance_id"], command["managed_action"]
+            )
+        except HomeAssistantError as err:
+            _LOGGER.warning("Managed gesture '%s' failed: %s", gesture, err)
 
     async def async_learn_gesture(self, gesture: str, timeout: int = 30) -> dict[str, Any]:
         """Learn one signal and bind it directly to a touch gesture."""
@@ -524,7 +703,7 @@ class IRMateManager:
         if GESTURE_CAPTURE_APPLIANCE_ID not in appliances:
             appliances[GESTURE_CAPTURE_APPLIANCE_ID] = {
                 "id": GESTURE_CAPTURE_APPLIANCE_ID,
-                "name": "Touch captures",
+                "name": "Learned signals",
                 "category": "custom",
                 "profile_id": "custom_learning",
                 "brand": "Custom",
@@ -677,7 +856,7 @@ class IRMateManager:
         await self.async_initialize()
         appliance = self._get_appliance(appliance_id)
         command = self._get_command(appliance_id, command_id)
-        if command.get("source") == "builtin":
+        if command.get("source") in ("builtin", "managed"):
             raise HomeAssistantError("Built-in commands cannot be deleted")
 
         self._alternative_indexes.pop(f"{appliance_id}:{command_id}", None)
@@ -731,9 +910,7 @@ class IRMateManager:
             appliance_id = value.get("appliance_id")
             command_id = value.get("command_id")
             command = self._get_command(appliance_id, command_id)
-            if command.get("source") == "unlearned" or not (
-                command.get("source") == "builtin" or command.get("signals")
-            ):
+            if command.get("source") == "unlearned" or not _is_sendable(command):
                 raise HomeAssistantError(
                     f"Command '{command_id}' must be learned before binding"
                 )
@@ -842,6 +1019,11 @@ class IRMateManager:
         """Send one command through the matching firmware transport."""
         appliance = self._get_appliance(appliance_id)
         command = self._get_command(appliance_id, command_id)
+        if command.get("source") == "managed":
+            await self._async_execute_managed(
+                appliance_id, command["managed_action"]
+            )
+            return
         label = f"{appliance['name']} \u00b7 {command['name']}"
         try:
             if command.get("source") == "builtin":
@@ -912,6 +1094,17 @@ class IRMateManager:
                 "source": "builtin",
                 "action": command["builtin_action"],
             }
+        if command.get("source") == "managed":
+            payload: dict[str, Any] = {
+                "source": "managed",
+                "action": command["managed_action"],
+            }
+            fallback = self._managed_fallback_signal(
+                binding["appliance_id"], command["managed_action"]
+            )
+            if fallback is not None:
+                payload["fallback"] = fallback
+            return payload
         signals = command.get("signals", [])
         if not signals:
             raise HomeAssistantError("A bound command has not been learned")
@@ -1003,6 +1196,18 @@ class IRMateManager:
         self._data.setdefault("revision", 0)
         self._data.setdefault("device_revision", 0)
         self._data.setdefault("sync_error", None)
+        self._ensure_managed_commands()
+
+    def _ensure_managed_commands(self) -> None:
+        """Add stateful managed actions to library climate appliances."""
+        for appliance in self._data.get("appliances", {}).values():
+            if appliance.get("library_platform") != "climate":
+                continue
+            commands = appliance.setdefault("commands", {})
+            for command_id, command in _managed_climate_commands(
+                appliance.get("climate", {})
+            ).items():
+                commands.setdefault(command_id, command)
 
 
 def _load_profiles() -> dict[str, Any]:

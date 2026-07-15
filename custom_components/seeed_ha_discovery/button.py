@@ -1,4 +1,4 @@
-"""Button platform to learn an IR signal straight into a touch gesture."""
+"""Button platform for IR Mate: learn gestures and open appliance setup."""
 
 from __future__ import annotations
 
@@ -64,10 +64,14 @@ async def async_setup_entry(
         )
         if manager is None:
             return
-        async_add_entities(
+        entities: list[ButtonEntity] = [
+            SeeedIRAddApplianceButton(coordinator, entry)
+        ]
+        entities.extend(
             SeeedIRLearnButton(coordinator, entry, manager, gesture, label, icon)
             for gesture, label, icon in GESTURE_LEARN_BUTTONS
         )
+        async_add_entities(entities)
         added = True
 
     add_if_supported()
@@ -78,6 +82,60 @@ async def async_setup_entry(
         add_if_supported()
 
     coordinator.device.add_discovery_callback(handle_discovery)
+
+
+class SeeedIRAddApplianceButton(CoordinatorEntity, ButtonEntity):
+    """A shortcut that guides the user to the appliance setup flow."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_icon = "mdi:plus-box"
+    _attr_name = "Add or manage appliances"
+
+    def __init__(
+        self,
+        coordinator: SeeedHACoordinator,
+        entry: ConfigEntry,
+    ) -> None:
+        """Initialize the appliance setup shortcut button."""
+        super().__init__(coordinator)
+        self._entry = entry
+        device_id = entry.data.get(CONF_DEVICE_ID, "")
+        self._attr_unique_id = f"{device_id}_ir_add_appliance"
+
+    async def async_press(self) -> None:
+        """Point the user to the brand catalog in the setup flow."""
+        message = (
+            "To add another brand (air conditioner, TV, fan, ...):\n\n"
+            "1. Open [Seeed HA Discovery]"
+            "(/config/integrations/integration/seeed_ha_discovery).\n"
+            "2. On the IR Mate entry, select Configure.\n"
+            "3. Choose Add appliance, pick the brand and model, then submit.\n\n"
+            "Air conditioners appear as a climate card in Controls. For other "
+            "remotes, use the Learn buttons to capture individual keys."
+        )
+        persistent_notification.async_create(
+            self.hass,
+            message,
+            title="Add an appliance to IR Mate",
+            notification_id=f"{self._attr_unique_id}_help",
+        )
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the parent device information."""
+        device_data = self.coordinator.device.device_info
+        entry_data = self._entry.data
+        info = DeviceInfo(
+            identifiers={(DOMAIN, entry_data.get(CONF_DEVICE_ID, ""))},
+            name=device_data.get("name", "Seeed HA Device"),
+            manufacturer=MANUFACTURER,
+            model=entry_data.get(CONF_MODEL, device_data.get("model", "ESP32")),
+            sw_version=device_data.get("version", "1.0.0"),
+        )
+        if host := entry_data.get("host"):
+            info["configuration_url"] = f"http://{host}"
+        return info
 
 
 class SeeedIRLearnButton(CoordinatorEntity, ButtonEntity):
@@ -112,14 +170,24 @@ class SeeedIRLearnButton(CoordinatorEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Learn a signal, store it, and report the result to the user."""
+        self._notify(
+            title=f"{self._attr_name} started",
+            message=(
+                "IR Mate shows a white light. Point the remote at it and press "
+                "the key once. When the white light returns, press the SAME key "
+                "again. Two matching presses save the signal (green light); a "
+                "mismatch keeps the previous binding (red light)."
+            ),
+        )
         try:
             await self._manager.async_learn_gesture(self._gesture, LEARN_TIMEOUT)
         except HomeAssistantError as err:
             self._notify(
                 title=f"{self._attr_name} failed",
                 message=(
-                    f"No signal was captured ({err}). Point the remote at "
-                    "IR Mate, press its button, then try again."
+                    f"The signal was not saved ({err}). This gesture keeps its "
+                    "previous binding. Point the remote at IR Mate and, on each "
+                    "white light, press the SAME key once (twice in total)."
                 ),
             )
             raise
@@ -127,12 +195,12 @@ class SeeedIRLearnButton(CoordinatorEntity, ButtonEntity):
         if record:
             preview = ", ".join(str(value) for value in record["timings"][:8])
             message = (
-                f"Captured {record['pulse_count']} pulses "
-                f"@{record['carrier_frequency']}Hz and saved to this gesture. "
+                f"Verified with two matching presses: {record['pulse_count']} "
+                f"pulses @{record['carrier_frequency']}Hz saved to this gesture. "
                 f"Waveform starts with [{preview}, ...]."
             )
         else:
-            message = "The signal was learned and saved to this gesture."
+            message = "The signal was verified and saved to this gesture."
         self._notify(title=f"{self._attr_name} succeeded", message=message)
 
     def _notify(self, *, title: str, message: str) -> None:

@@ -12,6 +12,7 @@ constexpr char TOUCH_SOURCE_KEYS[][9] = {"s_source", "d_source", "t_source", "l_
 constexpr char TOUCH_ACTION_KEYS[][9] = {"s_action", "d_action", "t_action", "l_action"};
 constexpr char TOUCH_FREQUENCY_KEYS[][7] = {"s_freq", "d_freq", "t_freq", "l_freq"};
 constexpr char TOUCH_TIMING_KEYS[][6] = {"s_raw", "d_raw", "t_raw", "l_raw"};
+constexpr char TOUCH_MANAGED_KEYS[][6] = {"s_mgd", "d_mgd", "t_mgd", "l_mgd"};
 
 // Print a full timing array so learned and transmitted waveforms can be
 // compared pulse by pulse on the serial console.
@@ -59,6 +60,9 @@ IRMateInfrared::IRMateInfrared(
     _transmitCallback(nullptr),
     _learningStateCallback(nullptr),
     _learningResultCallback(nullptr),
+    _learningPromptCallback(nullptr),
+    _learningPass(0),
+    _pass2ReadyAt(0),
     _touchRevision(0)
 {
 }
@@ -117,6 +121,14 @@ void IRMateInfrared::handle() {
         return;
     }
 
+    // Skip echoes of the first press so the second pass captures a fresh push.
+    // 跳过第一次按键的回声,让第二遍采集到全新的一次按压。
+    if (_learningPass == 2 &&
+        static_cast<int32_t>(millis() - _pass2ReadyAt) < 0) {
+        _receiver.resume();
+        return;
+    }
+
     uint16_t timingCount = getCorrectedRawLength(&_capture);
     if (timingCount < MIN_LEARN_TIMINGS || timingCount > MAX_TRANSMIT_ENTRIES) {
         _receiver.resume();
@@ -129,14 +141,66 @@ void IRMateInfrared::handle() {
         return;
     }
 
-    logTimings("IR learn OK", _defaultCarrierFrequency, timings, timingCount);
-    _finishLearning(true, "", timings, timingCount);
-
-    if (_receiveCallback) {
-        _receiveCallback(timingCount);
+    if (_learningPass <= 1) {
+        // First pass: remember this capture, then ask for a second press.
+        // 第一遍:记住这段波形,然后请求再按一次。
+        logTimings("IR learn pass 1", _defaultCarrierFrequency, timings, timingCount);
+        _firstCapture.assign(timings, timings + timingCount);
+        delete[] timings;
+        _learningPass = 2;
+        _pass2ReadyAt = millis() + LEARN_PASS_GAP_MS;
+        _receiver.resume();
+        if (_learningPromptCallback) {
+            _learningPromptCallback(2);
+        }
+        return;
     }
 
+    // Second pass: keep the signal only when both captures agree.
+    // 第二遍:仅当两段波形一致时才保留该信号。
+    std::vector<uint16_t> secondCapture(timings, timings + timingCount);
+    logTimings("IR learn pass 2", _defaultCarrierFrequency, timings, timingCount);
     delete[] timings;
+
+    if (!_timingsMatch(_firstCapture, secondCapture)) {
+        Serial.println("IR learn mismatch: the two presses did not match");
+        _finishLearning(false, "learn_mismatch");
+        return;
+    }
+
+    size_t matchedCount = _firstCapture.size();
+    _finishLearning(
+        true,
+        "",
+        _firstCapture.data(),
+        static_cast<uint16_t>(matchedCount)
+    );
+
+    if (_receiveCallback) {
+        _receiveCallback(matchedCount);
+    }
+}
+
+bool IRMateInfrared::_timingsMatch(
+    const std::vector<uint16_t>& first,
+    const std::vector<uint16_t>& second
+) const {
+    if (first.size() != second.size() || first.empty()) {
+        return false;
+    }
+    for (size_t index = 0; index < first.size(); index++) {
+        uint16_t high = first[index] > second[index] ? first[index] : second[index];
+        uint16_t low = first[index] > second[index] ? second[index] : first[index];
+        uint32_t tolerance = static_cast<uint32_t>(high) *
+                             LEARN_MATCH_TOLERANCE_PERCENT / 100;
+        if (tolerance < LEARN_MATCH_TOLERANCE_US) {
+            tolerance = LEARN_MATCH_TOLERANCE_US;
+        }
+        if (static_cast<uint32_t>(high - low) > tolerance) {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool IRMateInfrared::toggleDefaultGreePower() {
@@ -214,6 +278,23 @@ bool IRMateInfrared::executeTouchGesture(const String& gesture) {
     if (binding.source == TouchBindingSource::Builtin) {
         return _executeBuiltinAction(binding.action);
     }
+    if (binding.source == TouchBindingSource::Managed) {
+        // Online: let Home Assistant compute the stateful frame; offline: emit
+        // the stored fallback frame so the gesture still does something useful.
+        // 在线:交给 HA 计算有状态帧;离线:发射存好的兜底帧,让手势仍有作用。
+        if (_ha.isHAConnected()) {
+            _sendGestureUplink(gesture, binding.managedAction);
+            return true;
+        }
+        if (binding.timings.empty()) {
+            return false;
+        }
+        bool success = _transmitRaw(binding.timings, binding.carrierFrequency, 0);
+        if (_transmitCallback) {
+            _transmitCallback(success);
+        }
+        return success;
+    }
     if (binding.source != TouchBindingSource::Raw || binding.timings.empty()) {
         return false;
     }
@@ -245,6 +326,10 @@ void IRMateInfrared::onLearningStateChanged(LearningStateCallback callback) {
 
 void IRMateInfrared::onLearningCompleted(LearningResultCallback callback) {
     _learningResultCallback = callback;
+}
+
+void IRMateInfrared::onLearningPrompt(LearningPromptCallback callback) {
+    _learningPromptCallback = callback;
 }
 
 void IRMateInfrared::_appendDiscoveryEntities(JsonArray& entities) {
@@ -334,10 +419,16 @@ void IRMateInfrared::_handleLearnStartMessage(JsonDocument& doc) {
     _learning = true;
     _learningRequestId = requestId;
     _learningDeadline = millis() + timeoutMs;
+    _learningPass = 1;
+    _firstCapture.clear();
+    _pass2ReadyAt = 0;
     _receiver.enableIRIn();
 
     if (_learningStateCallback) {
         _learningStateCallback(true);
+    }
+    if (_learningPromptCallback) {
+        _learningPromptCallback(1);
     }
 }
 
@@ -395,6 +486,27 @@ void IRMateInfrared::_handleTouchBindingMessage(JsonDocument& doc) {
         }
         binding.source = TouchBindingSource::Raw;
         binding.carrierFrequency = static_cast<uint16_t>(carrierFrequency);
+    } else if (source == "managed") {
+        String action = bindingData["action"] | "";
+        if (action.length() == 0) {
+            _sendTouchBindingResult(requestId, false, gesture, "invalid_managed_action");
+            return;
+        }
+        binding.source = TouchBindingSource::Managed;
+        binding.managedAction = action;
+        // Optional offline fallback frame emitted when Home Assistant is away.
+        // 可选的离线兜底帧,当 Home Assistant 不在线时发射。
+        JsonObject fallback = bindingData["fallback"].as<JsonObject>();
+        if (!fallback.isNull()) {
+            uint32_t carrierFrequency = fallback["carrier_frequency"] | 0;
+            std::vector<uint16_t> fallbackTimings;
+            String error;
+            if (carrierFrequency >= 1000 && carrierFrequency <= UINT16_MAX &&
+                _parseTimings(fallback["timings"].as<JsonArray>(), fallbackTimings, error)) {
+                binding.carrierFrequency = static_cast<uint16_t>(carrierFrequency);
+                binding.timings = std::move(fallbackTimings);
+            }
+        }
     } else {
         _sendTouchBindingResult(requestId, false, gesture, "unsupported_binding_source");
         return;
@@ -550,6 +662,13 @@ void IRMateInfrared::_finishLearning(
     }
 
     _sendLearningResult(requestId, success, error, timings, timingCount);
+
+    // Clear the two-pass buffers only after the result has been serialized,
+    // because the success payload points at the first capture above.
+    // 在结果序列化之后再清空两遍缓冲,因为上面的成功负载指向第一段波形。
+    _learningPass = 0;
+    _pass2ReadyAt = 0;
+    _firstCapture.clear();
 }
 
 void IRMateInfrared::_sendLearningResult(
@@ -718,7 +837,7 @@ void IRMateInfrared::_loadTouchBindings() {
             TOUCH_SOURCE_KEYS[index],
             static_cast<uint8_t>(TouchBindingSource::None)
         );
-        if (sourceValue > static_cast<uint8_t>(TouchBindingSource::Raw)) {
+        if (sourceValue > static_cast<uint8_t>(TouchBindingSource::Managed)) {
             continue;
         }
 
@@ -733,23 +852,38 @@ void IRMateInfrared::_loadTouchBindings() {
              binding.action > BuiltinAction::GreeMode)) {
             continue;
         }
+        if (binding.source == TouchBindingSource::Managed) {
+            binding.managedAction = preferences.getString(
+                TOUCH_MANAGED_KEYS[index],
+                ""
+            );
+            if (binding.managedAction.length() == 0) {
+                continue;
+            }
+        }
         binding.carrierFrequency = preferences.getUShort(
             TOUCH_FREQUENCY_KEYS[index],
             _defaultCarrierFrequency
         );
 
-        if (binding.source == TouchBindingSource::Raw) {
+        if (binding.source == TouchBindingSource::Raw ||
+            binding.source == TouchBindingSource::Managed) {
             size_t byteCount = preferences.getBytesLength(TOUCH_TIMING_KEYS[index]);
-            if (byteCount == 0 || byteCount % sizeof(uint16_t) != 0 ||
-                byteCount > MAX_TRANSMIT_ENTRIES * sizeof(uint16_t)) {
+            bool validTimings = byteCount > 0 &&
+                byteCount % sizeof(uint16_t) == 0 &&
+                byteCount <= MAX_TRANSMIT_ENTRIES * sizeof(uint16_t);
+            if (validTimings) {
+                binding.timings.resize(byteCount / sizeof(uint16_t));
+                preferences.getBytes(
+                    TOUCH_TIMING_KEYS[index],
+                    binding.timings.data(),
+                    byteCount
+                );
+            } else if (binding.source == TouchBindingSource::Raw) {
+                // A raw binding without a valid frame is unusable; keep default.
+                // 无有效波形的 raw 绑定不可用;保留默认值。
                 continue;
             }
-            binding.timings.resize(byteCount / sizeof(uint16_t));
-            preferences.getBytes(
-                TOUCH_TIMING_KEYS[index],
-                binding.timings.data(),
-                byteCount
-            );
         }
         _touchBindings[index] = std::move(binding);
     }
@@ -778,7 +912,18 @@ bool IRMateInfrared::_saveTouchBinding(size_t index) {
         TOUCH_FREQUENCY_KEYS[index],
         binding.carrierFrequency
     ) == sizeof(uint16_t) && success;
-    if (binding.source == TouchBindingSource::Raw && !binding.timings.empty()) {
+    if (binding.source == TouchBindingSource::Managed) {
+        success = preferences.putString(
+            TOUCH_MANAGED_KEYS[index],
+            binding.managedAction
+        ) == binding.managedAction.length() && success;
+    } else {
+        preferences.remove(TOUCH_MANAGED_KEYS[index]);
+    }
+    bool storesTimings = (binding.source == TouchBindingSource::Raw ||
+                          binding.source == TouchBindingSource::Managed) &&
+                         !binding.timings.empty();
+    if (storesTimings) {
         size_t byteCount = binding.timings.size() * sizeof(uint16_t);
         success = preferences.putBytes(
             TOUCH_TIMING_KEYS[index],
@@ -820,6 +965,14 @@ void IRMateInfrared::_sendTouchBindingResult(
     if (!success && error.length() > 0) {
         doc["error"] = error;
     }
+    _ha.sendProtocolMessage(doc);
+}
+
+void IRMateInfrared::_sendGestureUplink(const String& gesture, const String& action) {
+    JsonDocument doc;
+    doc["type"] = "ir_gesture";
+    doc["gesture"] = gesture;
+    doc["action"] = action;
     _ha.sendProtocolMessage(doc);
 }
 

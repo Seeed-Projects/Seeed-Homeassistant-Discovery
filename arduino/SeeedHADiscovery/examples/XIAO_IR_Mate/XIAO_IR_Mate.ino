@@ -47,6 +47,10 @@ uint8_t vibrationPulsesRemaining = 0;
 bool vibrationMotorOn = false;
 bool unpairedBlinkOn = false;
 bool longPressHandled = false;
+bool learningActive = false;
+// While set, briefly blank the white light so a second-press prompt is visible
+// 置位期间短暂熄灭白灯,让"再按一次"的提示可见
+uint32_t learningPromptBlankUntil = 0;
 
 void setStatusColor(uint32_t color) {
     if (currentColor == color) {
@@ -197,6 +201,18 @@ void updateStatus() {
         feedbackEndsAt = 0;
     }
 
+    if (learningActive) {
+        bool blanking = learningPromptBlankUntil != 0 &&
+                        static_cast<int32_t>(now - learningPromptBlankUntil) < 0;
+        if (blanking) {
+            setStatusColor(0);
+        } else {
+            learningPromptBlankUntil = 0;
+            setStatusColor(statusLed.Color(255, 255, 255));
+        }
+        return;
+    }
+
     if (ha.isHAConnected()) {
         setStatusColor(0);
         return;
@@ -235,15 +251,28 @@ void setup() {
         startResultFeedback(success);
     });
     infrared.onLearningStateChanged([](bool active) {
+        learningActive = active;
         if (active) {
             touchCount = 0;
+        } else {
+            learningPromptBlankUntil = 0;
         }
         Serial.printf("IR learning: %s\n", active ? "started" : "stopped");
+    });
+    infrared.onLearningPrompt([](uint8_t pass) {
+        // White light means "press the remote key now"; the second pass adds a
+        // short blank + buzz so the user knows to repeat the same key.
+        // 白灯代表"现在按遥控键";第二遍加一次短熄灭+震动,提示用户重复按同一个键。
+        Serial.printf("IR learning: press the remote key now (%u/2)\n", pass);
+        if (pass >= 2) {
+            startVibrationPattern(1);
+            learningPromptBlankUntil = millis() + 180;
+        }
     });
     infrared.onLearningCompleted([](bool success) {
         Serial.printf(
             "IR learning finished: %s\n",
-            success ? "captured and saved" : "no signal (see reason above)"
+            success ? "verified and saved" : "not saved (see reason above)"
         );
         startResultFeedback(success);
     });
