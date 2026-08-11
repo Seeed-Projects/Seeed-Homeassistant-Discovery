@@ -241,6 +241,12 @@ lib_deps =
 
 该示例通过网页配网连接 WiFi，出厂内置格力空调离线控制（单击/双击/三击/四击触摸手势）。接入 Home Assistant 后，在 `设置 → 设备与服务 → Seeed HA Discovery → 配置` 中选择品牌与型号、学习和测试遥控命令，并把单击、双击、三击、四击配置同步到设备供离线使用。具体操作见 [IR Mate 示例说明](arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/README_CN.md)。
 
+#### XIAO ESP32-C3 SCD41 空气质量显示示例
+
+本地显示示例读取 Grove SCD41 的 CO₂、温度和湿度数据，并将数据展示在 1.47 英寸 ST7789 LCD 上。示例提供横屏仪表盘、空气质量颜色分级、传感器预热提示，以及 I²C 连接恢复后的自动重试。
+
+打开 `arduino/SeeedHADiscovery/examples/XIAO_ESP32C3_SCD41_AirQuality_Display/XIAO_ESP32C3_SCD41_AirQuality_Display.ino`，并按照[示例说明](arduino/SeeedHADiscovery/examples/XIAO_ESP32C3_SCD41_AirQuality_Display/README_CN.md)完成接线、依赖安装和验证。
+
 #### BLE 版本 (SeeedHADiscoveryBLE)
 
 **Arduino IDE:**
@@ -642,6 +648,7 @@ seeed-ha-discovery/
 │   │   │   ├── ButtonSwitch/         # 按钮开关示例 (v1.1)
 │   │   │   ├── CameraStream/         # 摄像头推流示例 (v1.3)
 │   │   │   ├── XIAO_IR_Mate/          # 万能红外遥控器示例 (IR Mate)
+│   │   │   ├── XIAO_ESP32C3_SCD41_AirQuality_Display/  # SCD41 LCD 空气质量显示
 │   │   │   ├── IoTButtonV2_DeepSleep/  # IoT Button V2 深睡眠示例
 │   │   │   └── reTerminal_E1001_HASubscribe_Display/  # reTerminal E1001 墨水屏示例 (WiFi 配网)
 │   │   ├── library.json

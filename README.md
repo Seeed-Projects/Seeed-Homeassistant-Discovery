@@ -241,6 +241,12 @@ Install `IRremoteESP8266` 2.9.0 or later and `Adafruit NeoPixel` 1.15.2 or later
 
 The example connects to WiFi through the web provisioning portal and ships with built-in Gree AC offline control (single/double/triple/quadruple tap gestures). After connecting to Home Assistant, open `Settings → Devices & services → Seeed HA Discovery → Configure` to select a brand and model, learn and test commands, and synchronize single, double, triple, and quadruple-tap actions for offline use. See the [IR Mate example guide](arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/README.md).
 
+#### XIAO ESP32-C3 SCD41 Air Quality Display Example
+
+The local-display example reads CO₂, temperature, and humidity from a Grove SCD41 and presents them on a 1.47-inch ST7789 LCD. It includes a landscape dashboard, color-coded air-quality levels, sensor warm-up feedback, and automatic recovery after an I²C connection failure.
+
+Open `arduino/SeeedHADiscovery/examples/XIAO_ESP32C3_SCD41_AirQuality_Display/XIAO_ESP32C3_SCD41_AirQuality_Display.ino` and follow the [example guide](arduino/SeeedHADiscovery/examples/XIAO_ESP32C3_SCD41_AirQuality_Display/README.md) for wiring, dependencies, and verification steps.
+
 #### BLE Version (SeeedHADiscoveryBLE)
 
 **Arduino IDE:**
@@ -642,6 +648,7 @@ seeed-ha-discovery/
 │   │   │   ├── ButtonSwitch/         # Button switch example (v1.2)
 │   │   │   ├── CameraStream/         # Camera streaming example (v1.3)
 │   │   │   ├── XIAO_IR_Mate/          # Universal IR remote example (IR Mate)
+│   │   │   ├── XIAO_ESP32C3_SCD41_AirQuality_Display/  # SCD41 LCD air-quality display
 │   │   │   ├── IoTButtonV2_DeepSleep/  # IoT Button V2 deep sleep example
 │   │   │   └── reTerminal_E1001_HASubscribe_Display/  # reTerminal E1001 E-Paper example (WiFi provisioning)
 │   │   ├── library.json
