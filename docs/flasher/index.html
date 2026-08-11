@@ -355,7 +355,7 @@
             <h2>📋 <span data-en="Quick Start" data-zh="快速开始">Quick Start</span></h2>
             <ol>
                 <li data-en="Connect your device via USB" data-zh="通过 USB 连接设备">Connect your device via USB</li>
-                <li data-en="Click 'Install' on the firmware card" data-zh="点击固件卡片上的"安装"">Click "Install" on the firmware card</li>
+                <li data-en="Click 'Install' on the firmware card" data-zh="点击固件卡片上的“安装”">Click "Install" on the firmware card</li>
                 <li data-en="Select the correct serial port" data-zh="选择正确的串口">Select the correct serial port</li>
                 <li data-en="Wait for flashing to complete" data-zh="等待烧录完成">Wait for flashing to complete</li>
             </ol>
@@ -393,6 +393,32 @@
                         <span class="feature-tag" data-en="Gree AC" data-zh="格力空调">Gree AC</span>
                     </div>
                     <esp-web-install-button manifest="./firmware/XIAO_IR_Mate/manifest.json">
+                        <button slot="activate" data-en="Install Firmware" data-zh="安装固件">Install Firmware</button>
+                    </esp-web-install-button>
+                    <div class="unsupported" data-en="Browser not supported" data-zh="浏览器不支持">Browser not supported</div>
+                </div>
+
+                <!-- SCD41 Air Quality Display -->
+                <div class="firmware-card">
+                    <div class="card-header">
+                        <div class="card-icon">🌿</div>
+                        <div>
+                            <div class="card-title" data-en="SCD41 Air Quality Display" data-zh="SCD41 空气质量显示">SCD41 Air Quality Display</div>
+                            <div class="card-chips">
+                                <span class="card-chip seeed">XIAO ESP32-C3</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="card-description" data-en="Indoor air-quality monitor with a 1.47-inch LCD dashboard, SCD41 measurements, web provisioning, and Home Assistant sensors." data-zh="室内空气质量监测器，通过 1.47 英寸 LCD 显示 SCD41 数据，支持网页配网和 Home Assistant 传感器。">
+                        Indoor air-quality monitor with a 1.47-inch LCD dashboard, SCD41 measurements, web provisioning, and Home Assistant sensors.
+                    </p>
+                    <div class="card-features">
+                        <span class="feature-tag" data-en="CO2 Monitor" data-zh="CO2 监测">CO2 Monitor</span>
+                        <span class="feature-tag" data-en="LCD Dashboard" data-zh="LCD 仪表板">LCD Dashboard</span>
+                        <span class="feature-tag" data-en="Web Provisioning" data-zh="网页配网">Web Provisioning</span>
+                        <span class="feature-tag">Home Assistant</span>
+                    </div>
+                    <esp-web-install-button manifest="./firmware/XIAO_ESP32C3_SCD41_AirQuality_Display/manifest.json">
                         <button slot="activate" data-en="Install Firmware" data-zh="安装固件">Install Firmware</button>
                     </esp-web-install-button>
                     <div class="unsupported" data-en="Browser not supported" data-zh="浏览器不支持">Browser not supported</div>

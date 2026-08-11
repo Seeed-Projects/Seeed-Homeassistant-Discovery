@@ -91,6 +91,7 @@ Desktop.ini
 .vscode/
 *.elf
 *.bin
+!docs/flasher/firmware/**/*.bin
 *.hex
 
 # =============================================================================
@@ -114,4 +115,3 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
-

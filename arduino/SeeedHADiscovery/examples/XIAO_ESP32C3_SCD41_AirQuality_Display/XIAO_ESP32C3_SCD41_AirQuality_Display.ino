@@ -4,18 +4,19 @@
  * XIAO ESP32-C3 + SCD41 空气质量显示
  * ============================================================================
  *
- * Displays CO2, temperature, and humidity from an SCD41 sensor on a
- * 1.47-inch 172x320 ST7789 LCD in landscape orientation.
- * 将 SCD41 的二氧化碳、温度和湿度数据显示在横屏模式的
- * 1.47 英寸 172x320 ST7789 LCD 上。
+ * Displays SCD41 measurements on a 1.47-inch ST7789 LCD and publishes
+ * CO2, temperature, and humidity to Home Assistant over WiFi.
+ * 在 1.47 英寸 ST7789 LCD 上显示 SCD41 测量值，并通过 WiFi
+ * 将二氧化碳、温度和湿度发布到 Home Assistant。
  *
  * @author Seeed Studio
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7789.h>
 #include <SensirionI2cScd4x.h>
+#include <SeeedHADiscovery.h>
 #include <SPI.h>
 #include <Wire.h>
 
@@ -35,6 +36,11 @@ constexpr int8_t LCD_MOSI_PIN = D10;
 // SCD41 I2C pins | SCD41 I2C 引脚
 constexpr int8_t SENSOR_SDA_PIN = D4;
 constexpr int8_t SENSOR_SCL_PIN = D5;
+
+// WiFi provisioning access point | WiFi 配网热点
+const char* AP_SSID = "Seeed_AirMonitor_AP";
+// BOOT button for WiFi reprovisioning | 用于重新配网的 BOOT 按键
+constexpr int8_t RESET_BUTTON_PIN = D9;
 
 // Sensor timing | 传感器时间配置
 constexpr unsigned long SENSOR_POLL_INTERVAL_MS = 500;
@@ -58,12 +64,28 @@ struct AirQualityStyle {
     uint16_t color;
 };
 
+enum class ConnectionBadgeState : uint8_t {
+    Unknown,
+    Setup,
+    Offline,
+    Wifi,
+    HomeAssistantOnline,
+};
+
 Adafruit_ST7789 display(&SPI, LCD_CS_PIN, LCD_DC_PIN, LCD_RST_PIN);
 SensirionI2cScd4x scd41;
+SeeedHADiscovery ha;
+
+SeeedHASensor* co2Sensor = nullptr;
+SeeedHASensor* temperatureSensor = nullptr;
+SeeedHASensor* humiditySensor = nullptr;
 
 bool sensorRunning = false;
+bool homeAssistantSensorsReady = false;
 unsigned long lastSensorPollMs = 0;
 unsigned long lastSensorRetryMs = 0;
+ConnectionBadgeState lastConnectionBadgeState =
+    ConnectionBadgeState::Unknown;
 
 /**
  * Draw text centered inside a rectangular area.
@@ -104,6 +126,47 @@ void drawHeaderBadge(const char* label, uint16_t color) {
 }
 
 /**
+ * Update the header badge from the current WiFi and HA connection state.
+ * 根据当前 WiFi 和 HA 连接状态更新标题栏标签。
+ */
+void updateConnectionBadge(bool forceRedraw = false) {
+    ConnectionBadgeState currentState = ConnectionBadgeState::Offline;
+
+    if (ha.isProvisioningActive()) {
+        currentState = ConnectionBadgeState::Setup;
+    } else if (!ha.isWiFiConnected()) {
+        currentState = ConnectionBadgeState::Offline;
+    } else if (ha.isHAConnected()) {
+        currentState = ConnectionBadgeState::HomeAssistantOnline;
+    } else {
+        currentState = ConnectionBadgeState::Wifi;
+    }
+
+    if (!forceRedraw && currentState == lastConnectionBadgeState) {
+        return;
+    }
+
+    lastConnectionBadgeState = currentState;
+    switch (currentState) {
+        case ConnectionBadgeState::Setup:
+            drawHeaderBadge("SETUP", COLOR_FAIR);
+            break;
+        case ConnectionBadgeState::Offline:
+            drawHeaderBadge("OFFLINE", COLOR_BAD);
+            break;
+        case ConnectionBadgeState::Wifi:
+            drawHeaderBadge("WIFI", COLOR_INFO);
+            break;
+        case ConnectionBadgeState::HomeAssistantOnline:
+            drawHeaderBadge("HA ONLINE", COLOR_GOOD);
+            break;
+        case ConnectionBadgeState::Unknown:
+            drawHeaderBadge("START", COLOR_INFO);
+            break;
+    }
+}
+
+/**
  * Draw the fixed header and background.
  * 绘制固定的标题栏和背景。
  */
@@ -114,7 +177,7 @@ void drawStaticLayout() {
     display.setTextColor(COLOR_TEXT_PRIMARY);
     display.setCursor(12, 12);
     display.print("AIR QUALITY");
-    drawHeaderBadge("LOCAL", COLOR_INFO);
+    drawHeaderBadge("START", COLOR_INFO);
 }
 
 /**
@@ -221,7 +284,6 @@ void drawMeasurement(uint16_t co2Ppm, float temperature,
     const AirQualityStyle style = classifyAirQuality(co2Ppm);
     snprintf(co2Text, sizeof(co2Text), "%u", co2Ppm);
 
-    drawHeaderBadge("LOCAL", COLOR_INFO);
     display.fillRoundRect(cardX, cardY, cardWidth, cardHeight, 12,
                           COLOR_SURFACE);
     display.drawRoundRect(cardX, cardY, cardWidth, cardHeight, 12,
@@ -249,7 +311,6 @@ void drawMeasurement(uint16_t co2Ppm, float temperature,
  * 绘制传感器预热状态。
  */
 void drawWaitingScreen() {
-    drawHeaderBadge("LOCAL", COLOR_INFO);
     drawMessageCard("WARMING UP", "FIRST READING IN ABOUT 5 SECONDS",
                     COLOR_INFO);
     drawMetricPlaceholder(8, "TEMPERATURE");
@@ -261,7 +322,6 @@ void drawWaitingScreen() {
  * 绘制传感器错误状态。
  */
 void drawSensorError() {
-    drawHeaderBadge("ERROR", COLOR_BAD);
     drawMessageCard("SENSOR ERROR", "CHECK POWER AND I2C WIRING", COLOR_BAD);
     drawMetricPlaceholder(8, "TEMPERATURE");
     drawMetricPlaceholder(164, "HUMIDITY");
@@ -335,6 +395,75 @@ bool initializeSensor() {
 }
 
 /**
+ * Create the Home Assistant sensor entities.
+ * 创建 Home Assistant 传感器实体。
+ */
+void registerHomeAssistantSensors() {
+    co2Sensor =
+        ha.addSensor("carbon_dioxide", "Carbon Dioxide", "carbon_dioxide",
+                     "ppm");
+    co2Sensor->setPrecision(0);
+    co2Sensor->setIcon("mdi:molecule-co2");
+
+    temperatureSensor =
+        ha.addSensor("temperature", "Temperature", "temperature", "°C");
+    temperatureSensor->setPrecision(1);
+
+    humiditySensor = ha.addSensor("humidity", "Humidity", "humidity", "%");
+    humiditySensor->setPrecision(1);
+
+    homeAssistantSensorsReady = true;
+    Serial.println("Home Assistant sensor entities registered");
+}
+
+/**
+ * Start WiFi provisioning and Home Assistant discovery services.
+ * 启动 WiFi 配网和 Home Assistant 发现服务。
+ */
+void initializeHomeAssistant() {
+    ha.setDeviceInfo("SCD41 Air Quality Monitor", "XIAO ESP32-C3", "1.1.0");
+    ha.enableDebug(true);
+    ha.enableResetButton(RESET_BUTTON_PIN);
+
+    Serial.print("WiFi reset button enabled on GPIO");
+    Serial.println(RESET_BUTTON_PIN);
+    Serial.println("Hold the BOOT button for 6 seconds to reconfigure WiFi");
+
+    drawHeaderBadge("WIFI...", COLOR_INFO);
+    const bool wifiConnected = ha.beginWithProvisioning(AP_SSID);
+
+    if (!wifiConnected) {
+        Serial.println("WiFi provisioning is active");
+        Serial.print("Connect to access point: ");
+        Serial.println(AP_SSID);
+        Serial.println("Open: http://192.168.4.1");
+        updateConnectionBadge(true);
+        return;
+    }
+
+    registerHomeAssistantSensors();
+    Serial.print("WiFi connected, device IP: ");
+    Serial.println(ha.getLocalIP());
+    Serial.println("Add the Seeed HA Discovery integration in Home Assistant");
+    updateConnectionBadge(true);
+}
+
+/**
+ * Publish one SCD41 measurement to Home Assistant.
+ * 将一组 SCD41 测量值发布到 Home Assistant。
+ */
+void publishMeasurementToHomeAssistant(uint16_t co2Ppm, float temperature,
+                                       float relativeHumidity) {
+    if (!homeAssistantSensorsReady) {
+        return;
+    }
+
+    co2Sensor->setValue(co2Ppm);
+    temperatureSensor->setValue(temperature);
+    humiditySensor->setValue(relativeHumidity);
+}
+
+/**
  * Read and display a new SCD41 measurement when available.
  * 在新数据可用时读取并显示 SCD41 测量值。
  */
@@ -381,6 +510,7 @@ void updateSensorMeasurement() {
     Serial.println(" %");
 
     drawMeasurement(co2Ppm, temperature, relativeHumidity);
+    publishMeasurementToHomeAssistant(co2Ppm, temperature, relativeHumidity);
 }
 
 void setup() {
@@ -409,10 +539,15 @@ void setup() {
         drawSensorError();
         lastSensorRetryMs = millis();
     }
+
+    initializeHomeAssistant();
 }
 
 void loop() {
     const unsigned long now = millis();
+
+    ha.handle();
+    updateConnectionBadge();
 
     if (!sensorRunning) {
         if (now - lastSensorRetryMs >= SENSOR_RETRY_INTERVAL_MS) {

@@ -67,6 +67,7 @@ Click the button below to add this integration to your Home Assistant:
 | Category | Firmware | Supported Chips |
 |----------|----------|-----------------|
 | 🏷️ **Seeed Products** | XIAO IR Mate | ESP32-C3 |
+| 🏷️ **Seeed Products** | SCD41 Air Quality Display | ESP32-C3 |
 | 🏷️ **Seeed Products** | IoT Button V2 | ESP32-C6 |
 | 🏷️ **Seeed Products** | XIAO Soil Moisture Sensor | ESP32-C6 |
 | 🏷️ **Seeed Products** | CameraStream | ESP32-S3 Sense |
@@ -243,7 +244,7 @@ The example connects to WiFi through the web provisioning portal and ships with 
 
 #### XIAO ESP32-C3 SCD41 Air Quality Display Example
 
-The local-display example reads CO₂, temperature, and humidity from a Grove SCD41 and presents them on a 1.47-inch ST7789 LCD. It includes a landscape dashboard, color-coded air-quality levels, sensor warm-up feedback, and automatic recovery after an I²C connection failure.
+The example reads CO₂, temperature, and humidity from a Grove SCD41 and presents them on a 1.47-inch ST7789 LCD. It includes a landscape dashboard, hotspot-based WiFi provisioning, Home Assistant sensor entities and connection status, plus automatic recovery after an I²C connection failure.
 
 Open `arduino/SeeedHADiscovery/examples/XIAO_ESP32C3_SCD41_AirQuality_Display/XIAO_ESP32C3_SCD41_AirQuality_Display.ino` and follow the [example guide](arduino/SeeedHADiscovery/examples/XIAO_ESP32C3_SCD41_AirQuality_Display/README.md) for wiring, dependencies, and verification steps.
 
