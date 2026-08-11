@@ -159,6 +159,7 @@ void loop() {
 | [IoTButtonV2_DeepSleep](examples/IoTButtonV2_DeepSleep/) | 带深度睡眠的电池供电 IoT 按钮 |
 | [reTerminal_E1001_HASubscribe_Display](examples/reTerminal_E1001_HASubscribe_Display/) | E-Paper 显示屏显示 HA 状态 |
 | [reTerminal_E1002_HASubscribe_Display](examples/reTerminal_E1002_HASubscribe_Display/) | 彩色 E-Paper 显示屏显示 HA 状态 |
+| [SenseCAP_Indicator_HA_Dashboard](examples/SenseCAP_Indicator_HA_Dashboard/) | SenseCAP Indicator 480 x 480 LCD 硬件点屏 |
 
 IR Mate 的红外实现和可选依赖均放在示例目录内。
 

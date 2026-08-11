@@ -248,6 +248,10 @@ The example reads CO₂, temperature, and humidity from a Grove SCD41 and presen
 
 Open `arduino/SeeedHADiscovery/examples/XIAO_ESP32C3_SCD41_AirQuality_Display/XIAO_ESP32C3_SCD41_AirQuality_Display.ino` and follow the [example guide](arduino/SeeedHADiscovery/examples/XIAO_ESP32C3_SCD41_AirQuality_Display/README.md) for wiring, dependencies, and verification steps.
 
+#### SenseCAP Indicator HA Dashboard Example
+
+The first stage initializes the SenseCAP Indicator 480 x 480 ST7701 LCD with a standard Arduino sketch and displays a static hardware verification screen. Follow the [example guide](arduino/SeeedHADiscovery/examples/SenseCAP_Indicator_HA_Dashboard/README.md) for the pinned dependencies, board settings, and build command.
+
 #### BLE Version (SeeedHADiscoveryBLE)
 
 **Arduino IDE:**
@@ -650,6 +654,7 @@ seeed-ha-discovery/
 │   │   │   ├── CameraStream/         # Camera streaming example (v1.3)
 │   │   │   ├── XIAO_IR_Mate/          # Universal IR remote example (IR Mate)
 │   │   │   ├── XIAO_ESP32C3_SCD41_AirQuality_Display/  # SCD41 LCD air-quality display
+│   │   │   ├── SenseCAP_Indicator_HA_Dashboard/  # SenseCAP Indicator LCD dashboard
 │   │   │   ├── IoTButtonV2_DeepSleep/  # IoT Button V2 deep sleep example
 │   │   │   └── reTerminal_E1001_HASubscribe_Display/  # reTerminal E1001 E-Paper example (WiFi provisioning)
 │   │   ├── library.json

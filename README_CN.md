@@ -248,6 +248,10 @@ lib_deps =
 
 打开 `arduino/SeeedHADiscovery/examples/XIAO_ESP32C3_SCD41_AirQuality_Display/XIAO_ESP32C3_SCD41_AirQuality_Display.ino`，并按照[示例说明](arduino/SeeedHADiscovery/examples/XIAO_ESP32C3_SCD41_AirQuality_Display/README_CN.md)完成接线、依赖安装和验证。
 
+#### SenseCAP Indicator HA 看板示例
+
+第一阶段使用标准 Arduino 程序初始化 SenseCAP Indicator 的 480 x 480 ST7701 LCD，并显示静态硬件验证界面。依赖版本、开发板设置和编译命令见[示例说明](arduino/SeeedHADiscovery/examples/SenseCAP_Indicator_HA_Dashboard/README_CN.md)。
+
 #### BLE 版本 (SeeedHADiscoveryBLE)
 
 **Arduino IDE:**
@@ -650,6 +654,7 @@ seeed-ha-discovery/
 │   │   │   ├── CameraStream/         # 摄像头推流示例 (v1.3)
 │   │   │   ├── XIAO_IR_Mate/          # 万能红外遥控器示例 (IR Mate)
 │   │   │   ├── XIAO_ESP32C3_SCD41_AirQuality_Display/  # SCD41 LCD 空气质量显示
+│   │   │   ├── SenseCAP_Indicator_HA_Dashboard/  # SenseCAP Indicator LCD 看板
 │   │   │   ├── IoTButtonV2_DeepSleep/  # IoT Button V2 深睡眠示例
 │   │   │   └── reTerminal_E1001_HASubscribe_Display/  # reTerminal E1001 墨水屏示例 (WiFi 配网)
 │   │   ├── library.json
