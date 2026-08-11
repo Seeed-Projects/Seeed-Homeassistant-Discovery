@@ -30,6 +30,7 @@
 | 📤 **上报传感器数据** | 设备 → HA | ✅ | ✅ |
 | 📥 **接收控制命令** | HA → 设备 | ✅ | ✅ (GATT) |
 | 📷 **摄像头推流** | 设备 → HA | ✅ (ESP32-S3) | ❌ |
+| 🎛️ **红外遥控** | 设备 ↔ HA | ✅ (IR Mate) | ❌ |
 | 🔄 **获取 HA 状态** | HA → 设备 | ✅ (v2.3 新增) | ✅ (v2.4 新增) |
 | 🔋 **超低功耗** | - | ❌ | ✅ (广播模式) |
 
@@ -52,7 +53,7 @@
 
 **不想配置 Arduino IDE？** 使用我们的网页烧录器，直接在浏览器中为你的设备烧录固件！
 
-🌐 **[打开网页烧录器](https://limengdu.github.io/Seeed-Homeassistant-Discovery/)**
+🌐 **[打开网页烧录器](https://seeed-projects.github.io/Seeed-Homeassistant-Discovery/flasher/)**
 
 | 特点 | 说明 |
 |------|------|
@@ -65,6 +66,7 @@
 
 | 分类 | 固件名称 | 支持芯片 |
 |------|----------|----------|
+| 🏷️ **Seeed 产品** | XIAO IR Mate | ESP32-C3 |
 | 🏷️ **Seeed 产品** | IoT Button V2 | ESP32-C6 |
 | 🏷️ **Seeed 产品** | 土壤湿度传感器 | ESP32-C6 |
 | 🏷️ **Seeed 产品** | 摄像头推流 | ESP32-S3 Sense |
@@ -87,6 +89,7 @@
 - 🌡️ **传感器支持** - 支持温度、湿度等各类传感器（上行数据）
 - 💡 **开关控制** - 支持 LED、继电器等开关控制（下行命令）
 - 📷 **摄像头推流** - 支持 XIAO ESP32-S3 Sense 摄像头实时画面 (v2.2 新增)
+- 🎛️ **万能红外遥控** - IR Mate 支持红外学习、触摸手势与 342 品牌空调码库 (v3.7+ 新增)
 - 🔄 **HA 状态订阅** - 设备可订阅 HA 实体状态，适合显示屏应用 (v2.3 新增)
 - 📱 **状态页面** - 内置 Web 页面查看设备状态
 
@@ -236,7 +239,7 @@ lib_deps =
 
 `arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/XIAO_IR_Mate.ino`
 
-该示例无需配网即可通过触摸控制格力空调。接入 Home Assistant 后，在 `设置 → 设备与服务 → Seeed HA Discovery → 配置` 中选择品牌与型号、学习和测试遥控命令，并把单击、双击、三击、长按配置同步到设备供离线使用。具体操作见 [IR Mate 示例说明](arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/README_CN.md)。
+该示例通过网页配网连接 WiFi，出厂内置格力空调离线控制（单击/双击/三击/四击触摸手势）。接入 Home Assistant 后，在 `设置 → 设备与服务 → Seeed HA Discovery → 配置` 中选择品牌与型号、学习和测试遥控命令，并把单击、双击、三击、四击配置同步到设备供离线使用。具体操作见 [IR Mate 示例说明](arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/README_CN.md)。
 
 #### BLE 版本 (SeeedHADiscoveryBLE)
 
@@ -489,7 +492,7 @@ WiFi 和 BLE 设备都可以订阅 Home Assistant 中的实体状态，这对于
 | `setDeviceInfo(name, model, version)` | 设置设备信息 |
 | `enableDebug(enable)` | 启用调试输出 |
 | `begin(ssid, password)` | 连接 WiFi 并启动服务 |
-| `beginWithProvisioning(apName)` | 启用网页配网模式 |
+| `beginWithProvisioning(apName)` | 启用网页配网模式（支持扫描列表与手动输入 SSID/密码）|
 | `enableResetButton(pin)` | 启用重置按钮（长按6秒清除凭据）|
 | `clearWiFiCredentials()` | 清除已保存的 WiFi 凭据 |
 | `addSensor(id, name, deviceClass, unit)` | 添加传感器（上行数据）|
@@ -614,7 +617,7 @@ seeed-ha-discovery/
 ├── custom_components/
 │   └── seeed_ha_discovery/       # Home Assistant 集成
 │       ├── __init__.py           # 主入口
-│       ├── manifest.json         # 集成清单 (v2.3.0)
+│       ├── manifest.json         # 集成清单 (v3.9.0)
 │       ├── config_flow.py        # 配置流程
 │       ├── const.py              # 常量定义
 │       ├── coordinator.py        # 数据协调器
@@ -622,6 +625,10 @@ seeed-ha-discovery/
 │       ├── sensor.py             # 传感器平台
 │       ├── switch.py             # 开关平台
 │       ├── camera.py             # 摄像头平台 (v2.2 新增)
+│       ├── climate.py            # 空调平台 (IR Mate)
+│       ├── select.py             # 下拉选择 (IR Mate 电器/命令/手势)
+│       ├── button.py             # 按钮 (IR Mate 学习与配置)
+│       ├── ir_manager.py         # 红外电器与码库管理
 │       ├── strings.json          # 字符串
 │       └── translations/         # 翻译文件
 ├── arduino/
@@ -634,6 +641,7 @@ seeed-ha-discovery/
 │   │   │   ├── LEDSwitch/            # LED 开关示例
 │   │   │   ├── ButtonSwitch/         # 按钮开关示例 (v1.1)
 │   │   │   ├── CameraStream/         # 摄像头推流示例 (v1.3)
+│   │   │   ├── XIAO_IR_Mate/          # 万能红外遥控器示例 (IR Mate)
 │   │   │   ├── IoTButtonV2_DeepSleep/  # IoT Button V2 深睡眠示例
 │   │   │   └── reTerminal_E1001_HASubscribe_Display/  # reTerminal E1001 墨水屏示例 (WiFi 配网)
 │   │   ├── library.json
@@ -652,6 +660,7 @@ seeed-ha-discovery/
 │       ├── library.json
 │       └── library.properties
 ├── hacs.json
+├── docs/flasher/                 # 网页固件烧录器
 └── README.md
 ```
 
@@ -791,7 +800,7 @@ ble.addSwitch("led", "LED");  // 可以添加开关等可控实体
 - MJPEG 视频流: `http://<设备IP>:82/stream`
 
 **在 Home Assistant 中：**
-设备被发现后，会自动添加一个摄像头实体，以 4 FPS 刷新率显示画面。
+设备被发现后，会自动添加一个摄像头实体，以 4 FPS 刷新率显示画面。若出现 `camera_proxy_stream` 返回 403 且 URL 中 `token=undefined`，请通过 HACS 更新集成至 **v3.9.0** 或更高版本。
 
 ### Q8: 多个设备使用相同代码，HA 能区分吗？
 

@@ -30,6 +30,7 @@ With just a few lines of code in **Arduino IDE** or **PlatformIO** for your **XI
 | 📤 **Report Sensor Data** | Device → HA | ✅ | ✅ |
 | 📥 **Receive Control Commands** | HA → Device | ✅ | ✅ (GATT) |
 | 📷 **Camera Streaming** | Device → HA | ✅ (ESP32-S3) | ❌ |
+| 🎛️ **IR Remote** | Device ↔ HA | ✅ (IR Mate) | ❌ |
 | 🔄 **Get HA States** | HA → Device | ✅ (v2.3 New) | ✅ (v2.4 New) |
 | 🔋 **Ultra-Low Power** | - | ❌ | ✅ (Broadcast Mode) |
 
@@ -52,7 +53,7 @@ Click the button below to add this integration to your Home Assistant:
 
 **Don't want to set up Arduino IDE?** Use our web-based firmware flasher to program your device directly from the browser!
 
-🌐 **[Open Web Flasher](https://seeed-projects.github.io/Seeed-Homeassistant-Discovery/)**
+🌐 **[Open Web Flasher](https://seeed-projects.github.io/Seeed-Homeassistant-Discovery/flasher/)**
 
 | Feature | Description |
 |---------|-------------|
@@ -65,6 +66,7 @@ Click the button below to add this integration to your Home Assistant:
 
 | Category | Firmware | Supported Chips |
 |----------|----------|-----------------|
+| 🏷️ **Seeed Products** | XIAO IR Mate | ESP32-C3 |
 | 🏷️ **Seeed Products** | IoT Button V2 | ESP32-C6 |
 | 🏷️ **Seeed Products** | XIAO Soil Moisture Sensor | ESP32-C6 |
 | 🏷️ **Seeed Products** | CameraStream | ESP32-S3 Sense |
@@ -87,6 +89,7 @@ Click the button below to add this integration to your Home Assistant:
 - 🌡️ **Sensor Support** - Support for temperature, humidity, and various other sensors (upstream data)
 - 💡 **Switch Control** - Support for LED, relay, and other switch controls (downstream commands)
 - 📷 **Camera Streaming** - Support XIAO ESP32-S3 Sense camera live feed (v2.2 New)
+- 🎛️ **Universal IR Remote** - IR Mate supports IR learning, touch gestures, and a 342-brand AC code library (v3.7+ New)
 - 🔄 **HA State Subscription** - Device can subscribe to HA entity states, ideal for display applications (v2.3 New)
 - 📱 **Status Page** - Built-in web page to view device status
 
@@ -236,7 +239,7 @@ Install `IRremoteESP8266` 2.9.0 or later and `Adafruit NeoPixel` 1.15.2 or later
 
 `arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/XIAO_IR_Mate.ino`
 
-The example controls a Gree air conditioner by touch without WiFi. After connecting to Home Assistant, open `Settings → Devices & services → Seeed HA Discovery → Configure` to select a brand and model, learn and test commands, and synchronize single, double, triple, and long-press actions for offline use. See the [IR Mate example guide](arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/README.md).
+The example connects to WiFi through the web provisioning portal and ships with built-in Gree AC offline control (single/double/triple/quadruple tap gestures). After connecting to Home Assistant, open `Settings → Devices & services → Seeed HA Discovery → Configure` to select a brand and model, learn and test commands, and synchronize single, double, triple, and quadruple-tap actions for offline use. See the [IR Mate example guide](arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/README.md).
 
 #### BLE Version (SeeedHADiscoveryBLE)
 
@@ -489,7 +492,7 @@ Both WiFi and BLE devices can subscribe to Home Assistant entity states, which i
 | `setDeviceInfo(name, model, version)` | Set device information |
 | `enableDebug(enable)` | Enable debug output |
 | `begin(ssid, password)` | Connect to WiFi and start service |
-| `beginWithProvisioning(apName)` | Enable web-based WiFi provisioning mode |
+| `beginWithProvisioning(apName)` | Enable web-based WiFi provisioning (scan list + manual SSID/password entry) |
 | `enableResetButton(pin)` | Enable reset button (long press 6s to clear credentials) |
 | `clearWiFiCredentials()` | Clear saved WiFi credentials |
 | `addSensor(id, name, deviceClass, unit)` | Add sensor (upstream data) |
@@ -614,7 +617,7 @@ seeed-ha-discovery/
 ├── custom_components/
 │   └── seeed_ha_discovery/       # Home Assistant Integration
 │       ├── __init__.py           # Main entry
-│       ├── manifest.json         # Integration manifest (v2.3.0)
+│       ├── manifest.json         # Integration manifest (v3.9.0)
 │       ├── config_flow.py        # Configuration flow
 │       ├── const.py              # Constants definition
 │       ├── coordinator.py        # Data coordinator
@@ -622,6 +625,10 @@ seeed-ha-discovery/
 │       ├── sensor.py             # Sensor platform
 │       ├── switch.py             # Switch platform
 │       ├── camera.py             # Camera platform (v2.2 New)
+│       ├── climate.py            # Climate platform (IR Mate)
+│       ├── select.py             # Select entities (IR Mate appliances/commands/gestures)
+│       ├── button.py             # Buttons (IR Mate learn & configure)
+│       ├── ir_manager.py         # IR appliance and code library management
 │       ├── strings.json          # Strings
 │       └── translations/         # Translation files
 ├── arduino/
@@ -634,6 +641,7 @@ seeed-ha-discovery/
 │   │   │   ├── LEDSwitch/            # LED switch example
 │   │   │   ├── ButtonSwitch/         # Button switch example (v1.2)
 │   │   │   ├── CameraStream/         # Camera streaming example (v1.3)
+│   │   │   ├── XIAO_IR_Mate/          # Universal IR remote example (IR Mate)
 │   │   │   ├── IoTButtonV2_DeepSleep/  # IoT Button V2 deep sleep example
 │   │   │   └── reTerminal_E1001_HASubscribe_Display/  # reTerminal E1001 E-Paper example (WiFi provisioning)
 │   │   ├── library.json
@@ -652,6 +660,7 @@ seeed-ha-discovery/
 │       ├── library.json
 │       └── library.properties
 ├── hacs.json
+├── docs/flasher/                 # Web firmware flasher
 └── README.md
 ```
 
@@ -791,7 +800,7 @@ Refer to [Home Assistant Sensor Documentation](https://www.home-assistant.io/int
 - MJPEG stream: `http://<device_ip>:82/stream`
 
 **In Home Assistant:**
-Once the device is discovered, a camera entity will be automatically added with 4 FPS refresh rate.
+Once the device is discovered, a camera entity will be automatically added with 4 FPS refresh rate. If `camera_proxy_stream` returns 403 with `token=undefined` in the URL, update the integration to **v3.9.0** or newer via HACS.
 
 ### Q8: Multiple devices using the same code, can HA distinguish them?
 
