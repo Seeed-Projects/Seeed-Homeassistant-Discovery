@@ -35,11 +35,14 @@ arduino-cli compile \
   arduino/SeeedHADiscovery/examples/SenseCAP_Indicator_HA_Dashboard
 ```
 
-上传后，屏幕会显示深色会议室仪表盘，包含四张数值卡片和一张触摸测试卡片。
-Home Assistant 尚未下发实体状态时，数值显示为 `--`。点击底部卡片后，计数器
-会加一，标题变为 `Touch confirmed`，串口监视器会输出
-`Touch test count: 1`。串口波特率为 115200，成功启动的最后一条日志为
-`LVGL dashboard ready`。
+上传后，屏幕会显示 106 会议室仪表盘。Overview 页面包含人员状态、
+Home Assistant 状态、CO2、温度、湿度、人体传感器电量、电动窗户、电视电源
+和本月用电。本阶段显示的是界面演示数据，下一阶段再替换为 HA 实体实时值。
+
+底部导航可以切换 Overview、Controls 和 Energy 页面。点击窗户与电视卡片时，
+界面会立即更新本地演示状态。点击 `Leave Room` 后会先弹出确认窗口，确认后
+才会将两个演示控制项设置为关闭。串口波特率为 115200，成功启动的最后一条
+日志为 `LVGL dashboard ready`。
 
 第一次按下屏幕时，串口还会显示原始坐标和方向转换后的坐标。例如：
 
@@ -52,8 +55,9 @@ Touch pressed: raw=(292, 85), mapped=(187, 394)
 
 ## 当前范围
 
-这一阶段建立可复用的 Arduino 屏幕、LVGL 界面和触摸输入模块。后续阶段会
-逐步加入热点配网、Home Assistant 状态下发、实体选择和可控实体操作。
+这一阶段完成 106 会议室三页 UI，以及可复用的 Arduino 屏幕、LVGL 和触摸
+模块。后续阶段会逐步加入热点配网、Home Assistant 状态下发、实体选择和
+可控实体命令。
 
 ## 参考资料
 

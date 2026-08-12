@@ -36,12 +36,16 @@ arduino-cli compile \
   arduino/SeeedHADiscovery/examples/SenseCAP_Indicator_HA_Dashboard
 ```
 
-After uploading, the screen shows a dark meeting-room dashboard with four
-metric cards and a touch test card. Values remain `--` until the Home Assistant
-stage supplies entity states. Tap the bottom card: the tap counter increments,
-the title changes to `Touch confirmed`, and the serial monitor prints
-`Touch test count: 1`. At 115200 baud, successful startup ends with
-`LVGL dashboard ready`.
+After uploading, the screen shows the Room 106 meeting-room dashboard. The
+Overview page presents occupancy, Home Assistant status, CO2, temperature,
+humidity, motion-sensor battery, electric-window state, television power, and
+monthly energy. The values are demonstration data until the Home Assistant
+stage supplies live entity states.
+
+The bottom navigation opens Overview, Controls, and Energy pages. Window and
+TV cards update their local demonstration state immediately. `Leave Room`
+opens a confirmation dialog before setting both demonstration controls to off.
+At 115200 baud, successful startup ends with `LVGL dashboard ready`.
 
 The first touch also prints its raw and mapped coordinates. For example:
 
@@ -55,9 +59,9 @@ after repeated read failures. A successful recovery prints
 
 ## Scope
 
-This stage establishes reusable Arduino display, LVGL UI, and touch input
-modules. Wi-Fi provisioning, Home Assistant state delivery, entity selection,
-and controllable-entity actions will be added in later stages.
+This stage establishes the three-page Room 106 UI and reusable display, LVGL,
+and touch modules. Wi-Fi provisioning, Home Assistant state delivery, entity
+selection, and controllable-entity commands will be added in later stages.
 
 ## Reference
 
