@@ -33,6 +33,7 @@ from typing import Any, Callable
 import aiohttp
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -46,6 +47,8 @@ from .const import (
     MSG_TYPE_COMMAND,
     MSG_TYPE_HA_STATE,
     MSG_TYPE_HA_STATE_CLEAR,
+    MSG_TYPE_HA_ENTITY_COMMAND,
+    MSG_TYPE_HA_ENTITY_COMMAND_RESULT,
     MSG_TYPE_SLEEP,
     MSG_TYPE_IR_TRANSMIT,
     MSG_TYPE_IR_TRANSMIT_RESULT,
@@ -62,6 +65,7 @@ from .const import (
     RECONNECT_INTERVAL,
     DEFAULT_HTTP_PORT,
 )
+from .entity_control import EntityCommandError, parse_entity_command
 
 # 创建日志记录器
 _LOGGER = logging.getLogger(__name__)
@@ -525,6 +529,9 @@ class SeeedHADevice:
             if not self._reconnect_task:
                 self._reconnect_task = asyncio.create_task(self._async_reconnect())
 
+        elif msg_type == MSG_TYPE_HA_ENTITY_COMMAND:
+            await self._async_handle_ha_entity_command(data)
+
         elif msg_type == MSG_TYPE_IR_TRANSMIT_RESULT:
             request_id = data.get("request_id")
             future = self._pending_ir_transmits.get(request_id)
@@ -576,6 +583,61 @@ class SeeedHADevice:
             if isinstance(gesture, str):
                 for callback in tuple(self._infrared_gesture_callbacks):
                     self.hass.async_create_task(callback(gesture))
+
+    async def _async_handle_ha_entity_command(
+        self, data: dict[str, Any]
+    ) -> None:
+        """Validate and execute an entity action requested by the device."""
+
+        request_id = data.get("request_id")
+        try:
+            command = parse_entity_command(data, self._subscribed_entities)
+            await self.hass.services.async_call(
+                "homeassistant",
+                command.action,
+                {ATTR_ENTITY_ID: list(command.entity_ids)},
+                blocking=True,
+            )
+        except EntityCommandError as err:
+            _LOGGER.warning(
+                "Rejected HA entity command from %s: %s", self.host, err.code
+            )
+            await self._async_send_entity_command_result(
+                request_id, False, err.code
+            )
+            return
+        except Exception as err:
+            _LOGGER.error(
+                "HA entity command failed for %s: %s", self.host, err
+            )
+            await self._async_send_entity_command_result(
+                request_id, False, "service_call_failed"
+            )
+            return
+
+        _LOGGER.info(
+            "Executed HA entity command from %s: %s -> %s",
+            self.host,
+            command.action,
+            command.entity_ids,
+        )
+        await self._async_send_entity_command_result(
+            command.request_id, True, ""
+        )
+
+    async def _async_send_entity_command_result(
+        self, request_id: Any, success: bool, error: str
+    ) -> None:
+        """Return one stable control result to the requesting device."""
+
+        await self._async_send(
+            {
+                "type": MSG_TYPE_HA_ENTITY_COMMAND_RESULT,
+                "request_id": request_id if type(request_id) is int else 0,
+                "success": success,
+                "error": error,
+            }
+        )
 
     async def _async_reconnect(self) -> None:
         """

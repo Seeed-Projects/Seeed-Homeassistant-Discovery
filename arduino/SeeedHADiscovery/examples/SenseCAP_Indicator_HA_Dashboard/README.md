@@ -52,9 +52,9 @@ humidity, motion-sensor battery, electric-window state, television power, and
 monthly energy. The Energy page also presents today's energy and live TV power.
 
 The bottom navigation opens Overview, Controls, and Energy pages. Window and TV
-cards provide touch feedback while device state remains synchronized with Home
-Assistant updates. `Leave Room` opens a confirmation dialog. HA control commands
-will be added in the next stage.
+cards request Home Assistant to toggle their mapped entities. After confirmation,
+`Leave Room` requests Home Assistant to turn off five configured room devices.
+Window and TV state labels only change after Home Assistant sends the real state.
 
 ## Wi-Fi provisioning
 
@@ -94,6 +94,21 @@ entities on its Home Assistant configuration page:
 | Today's energy | `sensor.cuco_v3_3244_power_cost_today_2` |
 | Monthly energy | `sensor.cuco_v3_3244_power_cost_month_2` |
 
+Window, TV, and `Leave Room` controls use the same entity selection as their
+authorization boundary. Also select these entities:
+
+| Control target | Home Assistant entity |
+| --- | --- |
+| Left room switch | `switch.xiaomi_2wpro2_37c3_left_switch_service_2` |
+| Right room switch | `switch.xiaomi_2wpro2_37c3_right_switch_service_2` |
+| TV power | `switch.cuco_v3_3244_switch_2` |
+| Room light | `light.liyan_liyan_4d07_light_2` |
+| Room media player | `media_player.xiaomi_lx06_3740_play_control_2` |
+
+The window and TV entities already appear in the display table. The integration
+only executes device actions for entities selected on this page. Temperature
+and humidity are rounded to one decimal place on the display.
+
 To reuse the firmware in another room, edit the room name, provisioning AP name,
 and entity IDs in `RoomDashboardConfig.h`. The display driver, UI, and HA state
 handling remain unchanged.
@@ -116,9 +131,9 @@ after repeated read failures. A successful recovery prints
 
 ## Scope
 
-This stage adds Wi-Fi provisioning, HA connection status, and live Room 106
-entity state display. Home Assistant commands for the window, TV, and
-`Leave Room` will be added in the next stage.
+The example includes Wi-Fi provisioning, HA connection status, live Room 106
+entity state display, window and TV touch control, and the confirmed
+`Leave Room` batch turn-off action.
 
 ## Reference
 

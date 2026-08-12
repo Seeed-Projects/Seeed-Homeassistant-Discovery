@@ -250,7 +250,7 @@ lib_deps =
 
 #### SenseCAP Indicator HA 看板示例
 
-第一阶段使用标准 Arduino 程序初始化 SenseCAP Indicator 的 480 x 480 ST7701 LCD，并显示静态硬件验证界面。依赖版本、开发板设置和编译命令见[示例说明](arduino/SeeedHADiscovery/examples/SenseCAP_Indicator_HA_Dashboard/README_CN.md)。
+该示例使用标准 Arduino 程序初始化 SenseCAP Indicator 的 480 x 480 ST7701 LCD 和 FT5x06 触摸控制器，并提供 HA 实体显示与触摸控制的 LVGL 会议室看板。依赖版本、开发板设置、实体配置和验证步骤见[示例说明](arduino/SeeedHADiscovery/examples/SenseCAP_Indicator_HA_Dashboard/README_CN.md)。
 
 #### BLE 版本 (SeeedHADiscoveryBLE)
 
@@ -628,7 +628,7 @@ seeed-ha-discovery/
 ├── custom_components/
 │   └── seeed_ha_discovery/       # Home Assistant 集成
 │       ├── __init__.py           # 主入口
-│       ├── manifest.json         # 集成清单 (v3.9.0)
+│       ├── manifest.json         # 集成清单 (v3.10.0)
 │       ├── config_flow.py        # 配置流程
 │       ├── const.py              # 常量定义
 │       ├── coordinator.py        # 数据协调器

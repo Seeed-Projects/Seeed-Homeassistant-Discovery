@@ -250,7 +250,7 @@ Open `arduino/SeeedHADiscovery/examples/XIAO_ESP32C3_SCD41_AirQuality_Display/XI
 
 #### SenseCAP Indicator HA Dashboard Example
 
-The example initializes the SenseCAP Indicator 480 x 480 ST7701 LCD and FT5x06 touch controller with Arduino, then presents a polished LVGL meeting-room dashboard. Follow the [example guide](arduino/SeeedHADiscovery/examples/SenseCAP_Indicator_HA_Dashboard/README.md) for the pinned dependencies, board settings, build command, and touch verification steps.
+The example initializes the SenseCAP Indicator 480 x 480 ST7701 LCD and FT5x06 touch controller with Arduino, then presents a polished LVGL meeting-room dashboard with HA entity display and touch control. Follow the [example guide](arduino/SeeedHADiscovery/examples/SenseCAP_Indicator_HA_Dashboard/README.md) for dependencies, board settings, entity configuration, and verification steps.
 
 #### BLE Version (SeeedHADiscoveryBLE)
 
@@ -628,7 +628,7 @@ seeed-ha-discovery/
 ├── custom_components/
 │   └── seeed_ha_discovery/       # Home Assistant Integration
 │       ├── __init__.py           # Main entry
-│       ├── manifest.json         # Integration manifest (v3.9.0)
+│       ├── manifest.json         # Integration manifest (v3.10.0)
 │       ├── config_flow.py        # Configuration flow
 │       ├── const.py              # Constants definition
 │       ├── coordinator.py        # Data coordinator

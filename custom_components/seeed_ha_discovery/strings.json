@@ -36,14 +36,14 @@
     "step": {
       "init": {
         "title": "Configure Entity Subscription",
-        "description": "Select Home Assistant entities to push to **{device_name}**.\n\nThe selected entities' states will be sent to your Arduino device in real-time, allowing your device to display or use these values.",
+        "description": "Select Home Assistant entities for **{device_name}**.\n\nTheir states are sent to the Arduino device in real-time. Controllable entities selected here can also receive actions from the device.",
         "data": {
           "subscribed_entities": "Entities to subscribe"
         }
       },
       "wifi_entities": {
         "title": "Configure Entity Subscription",
-        "description": "Select Home Assistant entities to push to **{device_name}**.\n\nThe selected entities' states will be sent to your Arduino device in real-time, allowing your device to display or use these values.",
+        "description": "Select Home Assistant entities for **{device_name}**.\n\nTheir states are sent to the Arduino device in real-time. Controllable entities selected here can also receive actions from the device.",
         "data": {
           "subscribed_entities": "Entities to subscribe"
         }

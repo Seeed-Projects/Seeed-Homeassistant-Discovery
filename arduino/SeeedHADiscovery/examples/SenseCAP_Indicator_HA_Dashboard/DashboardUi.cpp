@@ -276,17 +276,13 @@ void handleWindowPressed(lv_event_t* event) {
     return;
   }
   if (!controlsEnabled) {
-    showNotice("HA control comes next");
-    invokeAction(DashboardAction::WindowToggle);
-    Serial.println("Dashboard window control pending");
+    showNotice("HA unavailable");
+    Serial.println("Dashboard window control unavailable");
     return;
   }
-  windowOpen = !windowOpen;
-  windowStateKnown = true;
-  updateControlLabels();
+  showNotice("Sending to HA...");
   invokeAction(DashboardAction::WindowToggle);
-  Serial.println(windowOpen ? "Dashboard window opened"
-                            : "Dashboard window closed");
+  Serial.println("Dashboard window toggle requested");
 }
 
 void handleTvPressed(lv_event_t* event) {
@@ -294,17 +290,13 @@ void handleTvPressed(lv_event_t* event) {
     return;
   }
   if (!controlsEnabled) {
-    showNotice("HA control comes next");
-    invokeAction(DashboardAction::TvPowerToggle);
-    Serial.println("Dashboard TV control pending");
+    showNotice("HA unavailable");
+    Serial.println("Dashboard TV control unavailable");
     return;
   }
-  tvPowerOn = !tvPowerOn;
-  tvPowerStateKnown = true;
-  updateControlLabels();
+  showNotice("Sending to HA...");
   invokeAction(DashboardAction::TvPowerToggle);
-  Serial.println(tvPowerOn ? "Dashboard TV turned on"
-                           : "Dashboard TV turned off");
+  Serial.println("Dashboard TV toggle requested");
 }
 
 void closeConfirmation() {
@@ -326,20 +318,15 @@ void handleConfirmationAccept(lv_event_t* event) {
     return;
   }
   if (!controlsEnabled) {
-    invokeAction(DashboardAction::LeaveRoom);
     closeConfirmation();
-    showNotice("HA control comes next");
-    Serial.println("Leave Room control pending");
+    showNotice("HA unavailable");
+    Serial.println("Leave Room control unavailable");
     return;
   }
-  windowOpen = false;
-  tvPowerOn = false;
-  windowStateKnown = true;
-  tvPowerStateKnown = true;
-  updateControlLabels();
   invokeAction(DashboardAction::LeaveRoom);
   closeConfirmation();
-  Serial.println("Leave Room confirmed");
+  showNotice("Sending to HA...");
+  Serial.println("Leave Room turn-off requested");
 }
 
 void showLeaveConfirmation() {
@@ -368,7 +355,7 @@ void showLeaveConfirmation() {
                                 &lv_font_montserrat_22, kColorTextPrimary);
   lv_obj_set_pos(title, 78, 27);
   lv_obj_t* detail = createLabel(
-      dialog, "Turn off the TV and close\nthe electric window.",
+      dialog, "Turn off the configured\nroom devices.",
       &lv_font_montserrat_16, kColorTextSecondary);
   lv_obj_set_pos(detail, 28, 77);
   lv_obj_set_style_text_line_space(detail, 6, 0);
@@ -822,6 +809,12 @@ void dashboardUiSetTouchAvailable(bool available) {
 
 void dashboardUiSetControlsEnabled(bool enabled) {
   controlsEnabled = enabled;
+}
+
+void dashboardUiShowNotice(const char* message) {
+  if (message != nullptr && message[0] != '\0') {
+    showNotice(message);
+  }
 }
 
 void dashboardUiOnAction(DashboardActionCallback callback) {

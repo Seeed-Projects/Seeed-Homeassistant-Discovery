@@ -31,6 +31,9 @@ constexpr int8_t kBacklightPin = 45;
 constexpr const char* kProvisioningAddress = "192.168.4.1";
 constexpr uint32_t kNetworkStartupDelayMs = 2000;
 constexpr uint32_t kNetworkTaskStackSize = 12288;
+constexpr const char* kEntityCommandType = "ha_entity_command";
+constexpr const char* kEntityCommandResultType =
+    "ha_entity_command_result";
 
 constexpr PCA95x5::Port::Port kLcdChipSelectPort = PCA95x5::Port::P04;
 constexpr PCA95x5::Port::Port kLcdResetPort = PCA95x5::Port::P05;
@@ -72,6 +75,7 @@ DashboardConnectionState lastConnectionState =
 SeeedHADiscovery* ha = nullptr;
 TaskHandle_t networkTaskHandle = nullptr;
 uint32_t dashboardReadyAt = 0;
+uint32_t nextEntityCommandId = 1;
 
 enum class NetworkStartupState : uint8_t {
   Idle,
@@ -206,6 +210,8 @@ void updateConnectionUi() {
   const DashboardConnectionState state = getConnectionState();
   if (!connectionStateInitialized || state != lastConnectionState) {
     dashboardUiSetConnectionState(state);
+    dashboardUiSetControlsEnabled(
+        state == DashboardConnectionState::Online);
     lastConnectionState = state;
     connectionStateInitialized = true;
     Serial.printf("Dashboard connection state: %u\n",
@@ -221,11 +227,37 @@ void updateConnectionUi() {
   }
 }
 
-// TODO(control-stage): Route these actions to Home Assistant service calls.
-// TODO(control-stage): 在控制阶段将这些动作接入 Home Assistant 服务调用。
+// Sends one authorized entity action through the HA integration.
+// 通过 HA 集成发送一个已授权的实体动作。
+void sendEntityCommand(const char* action, const char* const* entityIds,
+                       size_t entityCount) {
+  if (ha == nullptr || !ha->isHAConnected()) {
+    dashboardUiShowNotice("HA unavailable");
+    return;
+  }
+
+  JsonDocument document;
+  document["type"] = kEntityCommandType;
+  document["request_id"] = nextEntityCommandId++;
+  document["action"] = action;
+  JsonArray entities = document["entity_ids"].to<JsonArray>();
+  for (size_t index = 0; index < entityCount; ++index) {
+    entities.add(entityIds[index]);
+  }
+  ha->sendProtocolMessage(document);
+}
+
 void handleDashboardAction(DashboardAction action) {
-  Serial.printf("Dashboard action reserved for control stage: %u\n",
-                static_cast<uint8_t>(action));
+  if (action == DashboardAction::WindowToggle) {
+    const char* entities[] = {kWindowEntity};
+    sendEntityCommand("toggle", entities, 1);
+  } else if (action == DashboardAction::TvPowerToggle) {
+    const char* entities[] = {kTvPowerEntity};
+    sendEntityCommand("toggle", entities, 1);
+  } else if (action == DashboardAction::LeaveRoom) {
+    sendEntityCommand("turn_off", kLeaveRoomEntities,
+                      kLeaveRoomEntityCount);
+  }
 }
 
 // Starts blocking WiFi provisioning on the other CPU core.
@@ -250,6 +282,20 @@ void runNetworkStartup(void* parameter) {
                          JsonObject& attributes) {
     roomDashboardStateUpdate(entityId, state, attributes);
   });
+  instance->onProtocolMessage(
+      kEntityCommandResultType, [](JsonDocument& document) {
+        const bool success = document["success"] | false;
+        const char* error = document["error"] | "";
+        if (success) {
+          dashboardUiShowNotice("HA action completed");
+        } else if (strcmp(error, "entity_not_subscribed") == 0) {
+          dashboardUiShowNotice("Select entity in HA");
+        } else {
+          dashboardUiShowNotice("HA action failed");
+        }
+        Serial.printf("HA action result: success=%s, error=%s\n",
+                      success ? "true" : "false", error);
+      });
 
   Serial0.println("Network stage: WiFi provisioning starting");
   const bool wifiConnected =

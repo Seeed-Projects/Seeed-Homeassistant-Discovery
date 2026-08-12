@@ -1087,7 +1087,16 @@ class SeeedHAOptionsFlow(config_entries.OptionsFlow):
                             # 允许选择多个实体 | Allow multiple selection
                             multiple=True,
                             # 可以选择的实体域 | Allowed entity domains
-                            domain=["sensor", "binary_sensor", "switch", "light", "climate", "weather"],
+                            domain=[
+                                "sensor",
+                                "binary_sensor",
+                                "switch",
+                                "light",
+                                "cover",
+                                "media_player",
+                                "climate",
+                                "weather",
+                            ],
                         )
                     ),
                 }

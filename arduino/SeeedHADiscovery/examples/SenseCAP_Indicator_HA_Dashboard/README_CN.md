@@ -49,9 +49,9 @@ Home Assistant 状态、CO2、温度、湿度、人体传感器电量、电动�
 和本月用电。Energy 页面还会显示今日用电和电视实时功率。
 
 底部导航可以切换 Overview、Controls 和 Energy 页面。点击窗户与电视卡片时，
-卡片会显示触摸反馈和 `HA control comes next` 提示，但设备状态只跟随
-Home Assistant 下发的数据变化。点击 `Leave Room` 后会先弹出确认窗口。
-控制命令将在下一阶段接入。
+设备会请求 Home Assistant 切换对应实体。点击 `Leave Room` 并确认后，设备会
+请求 Home Assistant 关闭配置中的 5 个会议室设备。屏幕上的窗户和电视状态只
+跟随 Home Assistant 回传的真实状态变化。
 
 ## Wi-Fi 热点配网
 
@@ -88,6 +88,19 @@ ESP32-S3 的另一个 CPU 核心上，因此屏幕刷新和触摸处理会持续
 | 今日用电 | `sensor.cuco_v3_3244_power_cost_today_2` |
 | 本月用电 | `sensor.cuco_v3_3244_power_cost_month_2` |
 
+窗户、电视和 `Leave Room` 控制使用同一份实体选择作为权限范围。请继续选择：
+
+| 控制内容 | Home Assistant 实体 |
+| --- | --- |
+| 离开会议室左侧开关 | `switch.xiaomi_2wpro2_37c3_left_switch_service_2` |
+| 离开会议室右侧开关 | `switch.xiaomi_2wpro2_37c3_right_switch_service_2` |
+| 离开会议室电视电源 | `switch.cuco_v3_3244_switch_2` |
+| 离开会议室灯光 | `light.liyan_liyan_4d07_light_2` |
+| 离开会议室播放器 | `media_player.xiaomi_lx06_3740_play_control_2` |
+
+窗户与电视实体已经出现在前面的显示订阅表中。插件只执行设备针对已选择实体
+发起的操作。温度和湿度会在屏幕上四舍五入并保留一位小数。
+
 如果同一套固件要用于另一个会议室，只需要修改
 `RoomDashboardConfig.h` 中的房间名、热点名和实体 ID，屏幕驱动、UI 与 HA
 状态处理代码可以保持不变。
@@ -109,8 +122,8 @@ Touch pressed: raw=(292, 85), mapped=(187, 394)
 
 ## 当前范围
 
-这一阶段完成热点配网、HA 连接状态和 106 会议室实体实时显示。窗户、电视和
-`Leave Room` 的 Home Assistant 控制命令将在下一阶段加入。
+示例包含热点配网、HA 连接状态、106 会议室实体实时显示、窗户与电视触摸控制，
+以及带确认步骤的 `Leave Room` 批量关闭操作。
 
 ## 参考资料
 

@@ -4,6 +4,7 @@
 
 #include "DashboardUi.h"
 #include "RoomDashboardConfig.h"
+#include "RoomDashboardFormatting.h"
 
 namespace {
 
@@ -99,6 +100,15 @@ void updateMetric(char* destination, const char* state,
   cache.changes |= change;
 }
 
+void updateFormattedMetric(char* destination, const char* state,
+                           uint8_t decimals, StateChange change) {
+  if (stateIsUnavailable(state) ||
+      !formatDashboardNumber(destination, kStateLength, state, decimals)) {
+    copyState(destination, "--");
+  }
+  cache.changes |= change;
+}
+
 }  // namespace
 
 bool roomDashboardStateUpdate(const char* entityId, const char* state,
@@ -111,9 +121,9 @@ bool roomDashboardStateUpdate(const char* entityId, const char* state,
   } else if (matchesEntity(entityId, kCarbonDioxideEntity)) {
     updateMetric(cache.carbonDioxide, state, kCarbonDioxideChanged);
   } else if (matchesEntity(entityId, kTemperatureEntity)) {
-    updateMetric(cache.temperature, state, kTemperatureChanged);
+    updateFormattedMetric(cache.temperature, state, 1, kTemperatureChanged);
   } else if (matchesEntity(entityId, kHumidityEntity)) {
-    updateMetric(cache.humidity, state, kHumidityChanged);
+    updateFormattedMetric(cache.humidity, state, 1, kHumidityChanged);
   } else if (matchesEntity(entityId, kWindowEntity)) {
     if (!stateIsUnavailable(state)) {
       cache.windowOpen = stateIsOn(state);

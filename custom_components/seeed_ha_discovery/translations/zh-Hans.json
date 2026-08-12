@@ -36,14 +36,14 @@
     "step": {
       "init": {
         "title": "配置实体订阅",
-        "description": "选择要推送到 **{device_name}** 的 Home Assistant 实体。\n\n选中的实体状态将实时发送到你的 Arduino 设备，让设备可以显示或使用这些值。",
+        "description": "为 **{device_name}** 选择 Home Assistant 实体。\n\n选中实体的状态会实时发送到 Arduino 设备；其中可控制的实体也可以接收设备发起的操作。",
         "data": {
           "subscribed_entities": "订阅的实体"
         }
       },
       "wifi_entities": {
         "title": "配置实体订阅",
-        "description": "选择要推送到 **{device_name}** 的 Home Assistant 实体。\n\n选中的实体状态将实时发送到你的 Arduino 设备，让设备可以显示或使用这些值。",
+        "description": "为 **{device_name}** 选择 Home Assistant 实体。\n\n选中实体的状态会实时发送到 Arduino 设备；其中可控制的实体也可以接收设备发起的操作。",
         "data": {
           "subscribed_entities": "订阅的实体"
         }

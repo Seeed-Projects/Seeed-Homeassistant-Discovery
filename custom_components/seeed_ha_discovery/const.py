@@ -116,6 +116,10 @@ MSG_TYPE_HA_STATE: Final = "ha_state"
 # HA state clear - clear all subscribed HA states on device
 MSG_TYPE_HA_STATE_CLEAR: Final = "ha_state_clear"
 
+# HA entity control request and result | HA 实体控制请求与结果
+MSG_TYPE_HA_ENTITY_COMMAND: Final = "ha_entity_command"
+MSG_TYPE_HA_ENTITY_COMMAND_RESULT: Final = "ha_entity_command_result"
+
 # 设备休眠通知 - 设备即将进入休眠模式
 # Device sleep notification - device is about to enter sleep mode
 MSG_TYPE_SLEEP: Final = "sleep"

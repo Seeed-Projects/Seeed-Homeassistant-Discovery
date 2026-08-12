@@ -39,4 +39,5 @@ void dashboardUiSetWindowState(bool open);
 void dashboardUiSetTvPowerState(bool on);
 void dashboardUiSetTouchAvailable(bool available);
 void dashboardUiSetControlsEnabled(bool enabled);
+void dashboardUiShowNotice(const char* message);
 void dashboardUiOnAction(DashboardActionCallback callback);
