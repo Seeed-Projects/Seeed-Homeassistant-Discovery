@@ -107,7 +107,8 @@ authorization boundary. Also select these entities:
 
 The window and TV entities already appear in the display table. The integration
 only executes device actions for entities selected on this page. Temperature
-and humidity are rounded to one decimal place on the display.
+and humidity are rounded to one decimal place on the display. Presence states
+such as `has one` and `no one` are displayed as `Occupied` and `Vacant`.
 
 To reuse the firmware in another room, edit the room name, provisioning AP name,
 and entity IDs in `RoomDashboardConfig.h`. The display driver, UI, and HA state

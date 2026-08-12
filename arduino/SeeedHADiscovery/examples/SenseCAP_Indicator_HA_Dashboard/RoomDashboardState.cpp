@@ -5,6 +5,7 @@
 #include "DashboardUi.h"
 #include "RoomDashboardConfig.h"
 #include "RoomDashboardFormatting.h"
+#include "RoomDashboardOccupancy.h"
 
 namespace {
 
@@ -73,11 +74,12 @@ bool stateIsOn(const char* state) {
 }
 
 void updateOccupancy(const char* state) {
-  if (stateIsUnavailable(state)) {
+  const DashboardOccupancyState occupancy = parseDashboardOccupancy(state);
+  if (occupancy == DashboardOccupancyState::Unknown) {
     copyState(cache.occupancy, "Unknown");
     cache.occupied = false;
   } else {
-    cache.occupied = stateIsOn(state);
+    cache.occupied = occupancy == DashboardOccupancyState::Occupied;
     copyState(cache.occupancy, cache.occupied ? "Occupied" : "Vacant");
   }
   cache.changes |= kOccupancyChanged;
