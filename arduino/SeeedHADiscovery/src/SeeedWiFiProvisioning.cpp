@@ -24,6 +24,7 @@ SeeedWiFiProvisioning::SeeedWiFiProvisioning() :
     _apModeActive(false),
     _wifiConnected(false),
     _networkCount(0),
+    _scanResultsDelivered(false),
     _resetButtonPin(-1),
     _resetButtonActiveLow(true),
     _resetButtonEnabled(false),
@@ -170,7 +171,9 @@ bool SeeedWiFiProvisioning::_connectWiFi(const String& ssid, const String& passw
     while (WiFi.status() != WL_CONNECTED) {
         if (millis() - startTime > _connectTimeout) {
             _log("\nConnection timeout");
-            WiFi.disconnect(true);
+            // Keep the WiFi driver initialized for the provisioning fallback.
+            // 保持 WiFi 驱动已初始化，供后续配网热点继续使用。
+            WiFi.disconnect(false, false);
             return false;
         }
 
@@ -201,12 +204,14 @@ bool SeeedWiFiProvisioning::startAPMode() {
     _log("Starting AP mode...");
     _log("AP SSID: " + _apSSID);
 
-    // Disconnect from any network | 断开任何网络连接
-    WiFi.disconnect(true);
+    // Disconnect the station while keeping the WiFi driver initialized.
+    // 断开 Station 连接，同时保持 WiFi 驱动已初始化。
+    WiFi.disconnect(false, false);
     delay(100);
 
-    // Set WiFi mode to AP | 设置 WiFi 模式为 AP
-    WiFi.mode(WIFI_AP);
+    // Keep STA enabled so the provisioning AP can scan in the background.
+    // 保持 STA 启用，让配网热点可以在后台扫描网络。
+    WiFi.mode(WIFI_AP_STA);
 
     // Start AP | 启动 AP
     bool apStarted = false;
@@ -243,10 +248,8 @@ bool SeeedWiFiProvisioning::startAPMode() {
     _webServer->begin();
     _log("Web server started on port " + String(SEEED_WIFI_PROV_HTTP_PORT));
 
-    // Scan networks initially | 初始扫描网络
-    scanNetworks();
-
     _apModeActive = true;
+    _startAsyncScan();
 
     _log("====================================");
     _log("AP Mode Active!");
@@ -476,6 +479,17 @@ int SeeedWiFiProvisioning::scanNetworks() {
     return _networkCount;
 }
 
+void SeeedWiFiProvisioning::_startAsyncScan() {
+    const int16_t result = WiFi.scanNetworks(true);
+    _networkCount = 0;
+    _scanResultsDelivered = false;
+    if (result == WIFI_SCAN_RUNNING) {
+        _log("WiFi network scan started in background");
+    } else {
+        _log("Failed to start background WiFi scan");
+    }
+}
+
 int SeeedWiFiProvisioning::getNetworkCount() const {
     return _networkCount;
 }
@@ -578,8 +592,24 @@ void SeeedWiFiProvisioning::_handleRoot() {
 
 void SeeedWiFiProvisioning::_handleScan() {
     _log("Scan request received");
-    scanNetworks();
+    const int16_t result = WiFi.scanComplete();
+
+    if (result == WIFI_SCAN_RUNNING) {
+        _webServer->send(202, "application/json",
+                         "{\"scanning\":true,\"networks\":[]}");
+        return;
+    }
+
+    if (result == WIFI_SCAN_FAILED || _scanResultsDelivered) {
+        _startAsyncScan();
+        _webServer->send(202, "application/json",
+                         "{\"scanning\":true,\"networks\":[]}");
+        return;
+    }
+
+    _networkCount = result;
     String json = _generateNetworkListJSON();
+    _scanResultsDelivered = true;
     _webServer->send(200, "application/json", json);
 }
 
@@ -1098,6 +1128,10 @@ String SeeedWiFiProvisioning::_generateMainPage() {
             fetch('/scan')
                 .then(response => response.json())
                 .then(data => {
+                    if (data.scanning) {
+                        setTimeout(scanNetworks, 500);
+                        return;
+                    }
                     renderNetworks(data.networks);
                 })
                 .catch(error => {
@@ -1417,6 +1451,7 @@ void SeeedWiFiProvisioning::_sendMainPageChunked() {
         "function scan(){"
         "document.getElementById('networks').innerHTML='<div style=\"text-align:center;padding:20px;color:var(--text2)\">Scanning...</div>';"
         "fetch('/scan').then(r=>r.json()).then(d=>{"
+        "if(d.scanning){setTimeout(scan,500);return;}"
         "let html='';"
         "d.networks.forEach(n=>{"
         "let bars='';for(let i=1;i<=4;i++)bars+='<div class=\"signal-bar'+(i<=n.signal?' active':'')+'\"></div>';"
@@ -1506,4 +1541,3 @@ void SeeedWiFiProvisioning::_log(const String& message) {
         Serial.println("[WiFiProv] " + message);
     }
 }
-

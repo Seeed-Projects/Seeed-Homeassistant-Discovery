@@ -1,6 +1,6 @@
 # Seeed Home Assistant Discovery (WiFi)
 
-[![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)](https://github.com/limengdu/Seeed-Homeassistant-Discovery)
+[![Version](https://img.shields.io/badge/version-1.6.1-blue.svg)](https://github.com/limengdu/Seeed-Homeassistant-Discovery)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-ESP32-orange.svg)](https://www.espressif.com/)
 
@@ -260,6 +260,14 @@ This library works with the [Seeed HA Discovery](https://github.com/limengdu/See
 5. Go to Settings → Devices & Services → Add Integration → Seeed HA Discovery
 
 Devices will be automatically discovered when they connect to the same network.
+
+### Connection verification
+
+After the device receives a local IP address, open
+`http://<device-ip>/info` in a browser. A ready device returns JSON containing
+`device_id`, `name`, `model`, `version`, `ip`, `mac`, `rssi`, and `connected`.
+Refresh the endpoint several times while monitoring the serial console to verify
+that HTTP discovery remains available before adding the integration.
 
 ## 📝 License
 

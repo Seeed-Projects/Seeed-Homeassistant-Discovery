@@ -13,6 +13,42 @@
 #include "SeeedHADiscovery.h"
 #include "SeeedWiFiProvisioning.h"
 
+namespace {
+
+class JsonStringPrint : public Print {
+public:
+    explicit JsonStringPrint(String& destination) : _destination(destination) {}
+
+    size_t write(uint8_t value) override {
+        return _destination.concat(static_cast<char>(value)) ? 1 : 0;
+    }
+
+    size_t write(const uint8_t* buffer, size_t size) override {
+        if (buffer == nullptr || size == 0) {
+            return 0;
+        }
+        return _destination.concat(buffer, size) ? size : 0;
+    }
+
+private:
+    String& _destination;
+};
+
+// Serializes JSON through Arduino Print while retaining String output.
+// 通过 Arduino Print 序列化 JSON，同时保留 String 输出格式。
+bool serializeJsonDocument(const JsonDocument& document, String& destination) {
+    destination.clear();
+    const size_t expectedSize = measureJson(document);
+    if (!destination.reserve(expectedSize)) {
+        return false;
+    }
+
+    JsonStringPrint writer(destination);
+    return serializeJson(document, writer) == expectedSize;
+}
+
+}  // namespace
+
 // =============================================================================
 // SeeedHASensor Implementation | SeeedHASensor 实现
 // =============================================================================
@@ -741,7 +777,11 @@ void SeeedHADiscovery::_handleHTTPInfo() {
     doc["connected"] = _wsClientConnected;
 
     String response;
-    serializeJson(doc, response);
+    if (!serializeJsonDocument(doc, response)) {
+        _httpServer->send(500, "application/json",
+                          "{\"error\":\"serialization_failed\"}");
+        return;
+    }
 
     _httpServer->send(200, "application/json", response);
 }
@@ -794,8 +834,9 @@ void SeeedHADiscovery::_handleWSEvent(uint8_t num, WStype_t type, uint8_t* paylo
                 response["timestamp"] = doc["timestamp"];
 
                 String responseStr;
-                serializeJson(response, responseStr);
-                _wsServer->sendTXT(num, responseStr);
+                if (serializeJsonDocument(response, responseStr)) {
+                    _wsServer->sendTXT(num, responseStr);
+                }
             }
             else if (msgType == "discovery") {
                 // Discovery request, send entity list | 发现请求，发送实体列表
@@ -861,7 +902,10 @@ void SeeedHADiscovery::_sendDiscovery(uint8_t clientNum) {
 
     // Serialize and send | 序列化并发送
     String message;
-    serializeJson(doc, message);
+    if (!serializeJsonDocument(doc, message)) {
+        _log("Discovery serialization failed");
+        return;
+    }
 
     if (clientNum == 255) {
         // Broadcast to all clients | 广播给所有客户端
@@ -902,7 +946,10 @@ void SeeedHADiscovery::_sendSensorState(const String& sensorId, uint8_t clientNu
 
     // Serialize and send | 序列化并发送
     String message;
-    serializeJson(doc, message);
+    if (!serializeJsonDocument(doc, message)) {
+        _log("Sensor state serialization failed: " + sensorId);
+        return;
+    }
 
     if (clientNum == 255) {
         _broadcastMessage(message);
@@ -993,7 +1040,10 @@ void SeeedHADiscovery::_sendSwitchState(const String& switchId, uint8_t clientNu
 
     // Serialize and send | 序列化并发送
     String message;
-    serializeJson(doc, message);
+    if (!serializeJsonDocument(doc, message)) {
+        _log("Switch state serialization failed: " + switchId);
+        return;
+    }
 
     if (clientNum == 255) {
         _broadcastMessage(message);
@@ -1142,7 +1192,10 @@ void SeeedHADiscovery::onDiscovery(HADiscoveryCallback callback) {
 
 void SeeedHADiscovery::sendProtocolMessage(JsonDocument& doc, uint8_t clientNum) {
     String message;
-    serializeJson(doc, message);
+    if (!serializeJsonDocument(doc, message)) {
+        _log("Protocol message serialization failed");
+        return;
+    }
 
     if (clientNum == 255) {
         _broadcastMessage(message);
@@ -1183,8 +1236,9 @@ void SeeedHADiscovery::handle() {
             doc["timestamp"] = now;
 
             String message;
-            serializeJson(doc, message);
-            _broadcastMessage(message);
+            if (serializeJsonDocument(doc, message)) {
+                _broadcastMessage(message);
+            }
         }
     }
 }
@@ -1206,8 +1260,9 @@ void SeeedHADiscovery::notifySleep() {
         doc["timestamp"] = millis();
         
         String message;
-        serializeJson(doc, message);
-        _broadcastMessage(message);
+        if (serializeJsonDocument(doc, message)) {
+            _broadcastMessage(message);
+        }
         
         _log("Notified HA: entering sleep mode");
         

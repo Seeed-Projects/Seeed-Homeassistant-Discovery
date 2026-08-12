@@ -21,6 +21,8 @@ constexpr uint32_t kColorDangerPressed = 0xB52626;
 constexpr uint32_t kColorOffline = 0x73838D;
 
 constexpr uint8_t kPageCount = 3;
+constexpr uint8_t kMetricCount = 6;
+constexpr uint8_t kMetricViewCount = 2;
 constexpr uint8_t kInteractiveCount = 16;
 constexpr int16_t kControlIconX = 16;
 constexpr int16_t kControlIconWidth = 38;
@@ -45,18 +47,25 @@ lv_obj_t* connectionDots[3] = {nullptr, nullptr, nullptr};
 lv_obj_t* connectionLabels[3] = {nullptr, nullptr, nullptr};
 lv_obj_t* occupancyLabel = nullptr;
 lv_obj_t* batteryValueLabel = nullptr;
-lv_obj_t* metricValues[4] = {nullptr, nullptr, nullptr, nullptr};
-lv_obj_t* metricUnits[4] = {nullptr, nullptr, nullptr, nullptr};
+lv_obj_t* metricValues[kMetricCount][kMetricViewCount] = {};
+lv_obj_t* metricUnits[kMetricCount][kMetricViewCount] = {};
+uint8_t metricViewCounts[kMetricCount] = {};
 lv_obj_t* windowStateLabels[2] = {nullptr, nullptr};
 lv_obj_t* tvStateLabels[2] = {nullptr, nullptr};
 lv_obj_t* confirmationOverlay = nullptr;
+lv_obj_t* provisioningOverlay = nullptr;
+lv_obj_t* noticePanel = nullptr;
+lv_timer_t* noticeTimer = nullptr;
 lv_obj_t* touchStatusLabel = nullptr;
 
 DashboardPage activePage = DashboardPage::Overview;
 DashboardActionCallback actionCallback = nullptr;
 bool windowOpen = false;
 bool tvPowerOn = false;
+bool windowStateKnown = false;
+bool tvPowerStateKnown = false;
 bool touchAvailable = true;
+bool controlsEnabled = false;
 
 lv_color_t color(uint32_t hex) {
   return lv_color_hex(hex);
@@ -68,6 +77,19 @@ uint8_t pageIndex(DashboardPage page) {
 
 uint8_t metricIndex(DashboardMetric metric) {
   return static_cast<uint8_t>(metric);
+}
+
+// Registers one visual copy of a metric for synchronized updates.
+// 注册同一指标的一处显示副本，后续更新时保持所有页面同步。
+void registerMetricView(DashboardMetric metric, lv_obj_t* value,
+                        lv_obj_t* unit) {
+  const uint8_t index = metricIndex(metric);
+  if (index >= kMetricCount || metricViewCounts[index] >= kMetricViewCount) {
+    return;
+  }
+  const uint8_t view = metricViewCounts[index]++;
+  metricValues[index][view] = value;
+  metricUnits[index][view] = unit;
 }
 
 void removeDefaultStyle(lv_obj_t* object) {
@@ -170,39 +192,47 @@ lv_obj_t* createMetricCard(lv_obj_t* parent, int16_t x, int16_t width,
                            const char* unit, uint32_t accentColor,
                            DashboardMetric metric) {
   lv_obj_t* card = createPanel(parent, x, 84, width, 96);
-  const uint8_t index = metricIndex(metric);
 
   lv_obj_t* nameLabel = createLabel(card, name, &lv_font_montserrat_14,
                                     accentColor);
   lv_obj_set_pos(nameLabel, 14, 10);
   lv_obj_set_style_text_letter_space(nameLabel, 1, 0);
 
-  metricValues[index] = createLabel(card, value, &lv_font_montserrat_28,
-                                    accentColor);
-  lv_obj_set_pos(metricValues[index], 14, 42);
+  lv_obj_t* valueLabel = createLabel(card, value, &lv_font_montserrat_28,
+                                     accentColor);
+  lv_obj_set_pos(valueLabel, 14, 42);
 
-  metricUnits[index] = createLabel(card, unit, &lv_font_montserrat_14,
-                                   kColorTextSecondary);
-  lv_obj_align_to(metricUnits[index], metricValues[index],
+  lv_obj_t* unitLabel = createLabel(card, unit, &lv_font_montserrat_14,
+                                    kColorTextSecondary);
+  lv_obj_align_to(unitLabel, valueLabel,
                   LV_ALIGN_OUT_RIGHT_BOTTOM, 6, -3);
+  registerMetricView(metric, valueLabel, unitLabel);
   return card;
 }
 
 void updateControlLabels() {
-  const char* windowState = windowOpen ? "Open" : "Closed";
-  const char* tvState = tvPowerOn ? "On" : "Off";
+  const char* windowState = windowStateKnown
+                                ? (windowOpen ? "Open" : "Closed")
+                                : "Waiting for data";
+  const char* tvState = tvPowerStateKnown
+                            ? (tvPowerOn ? "On" : "Off")
+                            : "Waiting for data";
   for (lv_obj_t* label : windowStateLabels) {
     if (label != nullptr) {
       lv_label_set_text(label, windowState);
       lv_obj_set_style_text_color(
-          label, color(windowOpen ? kColorAccent : kColorTextSecondary), 0);
+          label,
+          color(windowStateKnown && windowOpen
+                    ? kColorAccent : kColorTextSecondary), 0);
     }
   }
   for (lv_obj_t* label : tvStateLabels) {
     if (label != nullptr) {
       lv_label_set_text(label, tvState);
       lv_obj_set_style_text_color(
-          label, color(tvPowerOn ? kColorAccent : kColorTextSecondary), 0);
+          label,
+          color(tvPowerStateKnown && tvPowerOn
+                    ? kColorAccent : kColorTextSecondary), 0);
     }
   }
 }
@@ -213,11 +243,46 @@ void invokeAction(DashboardAction action) {
   }
 }
 
+void closeNotice(lv_timer_t* timer) {
+  if (noticePanel != nullptr) {
+    lv_obj_delete(noticePanel);
+    noticePanel = nullptr;
+  }
+  noticeTimer = nullptr;
+  lv_timer_delete(timer);
+}
+
+// Shows short feedback without changing a device state locally.
+// 显示短暂反馈，同时保持设备状态只由 Home Assistant 更新。
+void showNotice(const char* message) {
+  if (noticePanel != nullptr) {
+    lv_obj_delete(noticePanel);
+  }
+  noticePanel = createPanel(lv_screen_active(), 110, 350, 260, 46, 14);
+  lv_obj_set_style_bg_color(noticePanel, color(kColorSurfaceRaised), 0);
+  lv_obj_move_foreground(noticePanel);
+  lv_obj_t* label = createLabel(noticePanel, message,
+                                &lv_font_montserrat_14, kColorTextPrimary);
+  lv_obj_center(label);
+  if (noticeTimer == nullptr) {
+    noticeTimer = lv_timer_create(closeNotice, 1800, nullptr);
+  } else {
+    lv_timer_reset(noticeTimer);
+  }
+}
+
 void handleWindowPressed(lv_event_t* event) {
   if (lv_event_get_code(event) != LV_EVENT_PRESSED || !touchAvailable) {
     return;
   }
+  if (!controlsEnabled) {
+    showNotice("HA control comes next");
+    invokeAction(DashboardAction::WindowToggle);
+    Serial.println("Dashboard window control pending");
+    return;
+  }
   windowOpen = !windowOpen;
+  windowStateKnown = true;
   updateControlLabels();
   invokeAction(DashboardAction::WindowToggle);
   Serial.println(windowOpen ? "Dashboard window opened"
@@ -228,7 +293,14 @@ void handleTvPressed(lv_event_t* event) {
   if (lv_event_get_code(event) != LV_EVENT_PRESSED || !touchAvailable) {
     return;
   }
+  if (!controlsEnabled) {
+    showNotice("HA control comes next");
+    invokeAction(DashboardAction::TvPowerToggle);
+    Serial.println("Dashboard TV control pending");
+    return;
+  }
   tvPowerOn = !tvPowerOn;
+  tvPowerStateKnown = true;
   updateControlLabels();
   invokeAction(DashboardAction::TvPowerToggle);
   Serial.println(tvPowerOn ? "Dashboard TV turned on"
@@ -253,8 +325,17 @@ void handleConfirmationAccept(lv_event_t* event) {
   if (lv_event_get_code(event) != LV_EVENT_PRESSED) {
     return;
   }
+  if (!controlsEnabled) {
+    invokeAction(DashboardAction::LeaveRoom);
+    closeConfirmation();
+    showNotice("HA control comes next");
+    Serial.println("Leave Room control pending");
+    return;
+  }
   windowOpen = false;
   tvPowerOn = false;
+  windowStateKnown = true;
+  tvPowerStateKnown = true;
   updateControlLabels();
   invokeAction(DashboardAction::LeaveRoom);
   closeConfirmation();
@@ -388,8 +469,9 @@ void createOverviewPage(lv_obj_t* screen) {
   pages[pageIndex(DashboardPage::Overview)] = page;
   createPageHeader(page, 0, "ROOM 106");
 
-  occupancyLabel = createLabel(page, "Occupied", &lv_font_montserrat_18,
-                                kColorAccent);
+  occupancyLabel = createLabel(page, "Waiting for data",
+                                &lv_font_montserrat_18,
+                                kColorTextSecondary);
   lv_obj_set_pos(occupancyLabel, 19, 50);
   lv_obj_t* batteryIcon = createLabel(page, LV_SYMBOL_BATTERY_FULL,
                                       &lv_font_montserrat_22, kColorAccent);
@@ -397,15 +479,15 @@ void createOverviewPage(lv_obj_t* screen) {
   lv_obj_t* batteryName = createLabel(page, "Motion", &lv_font_montserrat_14,
                                       kColorTextSecondary);
   lv_obj_set_pos(batteryName, 368, 46);
-  batteryValueLabel = createLabel(page, "86%", &lv_font_montserrat_18,
+  batteryValueLabel = createLabel(page, "--%", &lv_font_montserrat_18,
                                   kColorTextPrimary);
   lv_obj_set_pos(batteryValueLabel, 368, 62);
 
-  createMetricCard(page, 16, 140, "CO2", "742", "ppm",
+  createMetricCard(page, 16, 140, "CO2", "--", "ppm",
                    kColorCo2, DashboardMetric::CarbonDioxide);
-  createMetricCard(page, 164, 146, "TEMPERATURE", "24.6", "C",
+  createMetricCard(page, 164, 146, "TEMPERATURE", "--", "C",
                    kColorTemperature, DashboardMetric::Temperature);
-  createMetricCard(page, 318, 146, "HUMIDITY", "51", "%",
+  createMetricCard(page, 318, 146, "HUMIDITY", "--", "%",
                    kColorHumidity, DashboardMetric::Humidity);
 
   createControlCard(page, 16, 190, 220, 78, nullptr, true,
@@ -421,14 +503,13 @@ void createOverviewPage(lv_obj_t* screen) {
                                      &lv_font_montserrat_16,
                                      kColorTextSecondary);
   lv_obj_set_pos(energyName, 51, 15);
-  metricValues[metricIndex(DashboardMetric::MonthlyEnergy)] = createLabel(
-      energyCard, "18.4", &lv_font_montserrat_22, kColorEnergy);
-  lv_obj_set_pos(metricValues[metricIndex(DashboardMetric::MonthlyEnergy)],
-                 330, 11);
-  metricUnits[metricIndex(DashboardMetric::MonthlyEnergy)] = createLabel(
-      energyCard, "kWh", &lv_font_montserrat_14, kColorEnergy);
-  lv_obj_set_pos(metricUnits[metricIndex(DashboardMetric::MonthlyEnergy)],
-                 398, 18);
+  lv_obj_t* monthValue = createLabel(energyCard, "--",
+                                     &lv_font_montserrat_22, kColorEnergy);
+  lv_obj_set_pos(monthValue, 330, 11);
+  lv_obj_t* monthUnit = createLabel(energyCard, "kWh",
+                                    &lv_font_montserrat_14, kColorEnergy);
+  lv_obj_align_to(monthUnit, monthValue, LV_ALIGN_OUT_RIGHT_BOTTOM, 6, -3);
+  registerMetricView(DashboardMetric::MonthlyEnergy, monthValue, monthUnit);
 
   lv_obj_t* leaveButton = createPanel(page, 16, 338, 448, 58, 18);
   lv_obj_set_style_bg_color(leaveButton, color(kColorDanger), 0);
@@ -494,32 +575,41 @@ void createEnergyPage(lv_obj_t* screen) {
                                     &lv_font_montserrat_14,
                                     kColorTextSecondary);
   lv_obj_set_pos(heroLabel, 22, 20);
-  lv_obj_t* heroValue = createLabel(hero, "18.4",
+  lv_obj_t* heroValue = createLabel(hero, "--",
                                     &lv_font_montserrat_36, kColorEnergy);
   lv_obj_set_pos(heroValue, 22, 55);
   lv_obj_t* heroUnit = createLabel(hero, "kWh", &lv_font_montserrat_18,
                                    kColorEnergy);
   lv_obj_align_to(heroUnit, heroValue, LV_ALIGN_OUT_RIGHT_BOTTOM, 8, -5);
+  registerMetricView(DashboardMetric::MonthlyEnergy, heroValue, heroUnit);
 
   lv_obj_t* today = createPanel(page, 16, 228, 216, 96);
   lv_obj_t* todayName = createLabel(today, "TODAY",
                                     &lv_font_montserrat_14,
                                     kColorTextSecondary);
   lv_obj_set_pos(todayName, 18, 16);
-  lv_obj_t* todayValue = createLabel(today, "0.8 kWh",
+  lv_obj_t* todayValue = createLabel(today, "--",
                                      &lv_font_montserrat_22,
                                      kColorTextPrimary);
   lv_obj_set_pos(todayValue, 18, 51);
+  lv_obj_t* todayUnit = createLabel(today, "kWh", &lv_font_montserrat_14,
+                                    kColorTextSecondary);
+  lv_obj_align_to(todayUnit, todayValue, LV_ALIGN_OUT_RIGHT_BOTTOM, 6, -3);
+  registerMetricView(DashboardMetric::TodayEnergy, todayValue, todayUnit);
 
   lv_obj_t* power = createPanel(page, 244, 228, 220, 96);
   lv_obj_t* powerName = createLabel(power, "TV POWER",
                                     &lv_font_montserrat_14,
                                     kColorTextSecondary);
   lv_obj_set_pos(powerName, 18, 16);
-  lv_obj_t* powerValue = createLabel(power, "86 W",
+  lv_obj_t* powerValue = createLabel(power, "--",
                                      &lv_font_montserrat_22,
                                      kColorTextPrimary);
   lv_obj_set_pos(powerValue, 18, 51);
+  lv_obj_t* powerUnit = createLabel(power, "W", &lv_font_montserrat_14,
+                                    kColorTextSecondary);
+  lv_obj_align_to(powerUnit, powerValue, LV_ALIGN_OUT_RIGHT_BOTTOM, 6, -3);
+  registerMetricView(DashboardMetric::CurrentPower, powerValue, powerUnit);
 
   lv_obj_t* note = createLabel(page, "Live values will arrive from HA",
                                &lv_font_montserrat_14,
@@ -579,22 +669,78 @@ void dashboardUiCreate() {
   createNavigation(screen);
   updateControlLabels();
   updateNavigation();
-  dashboardUiSetConnectionState(false);
+  dashboardUiSetConnectionState(DashboardConnectionState::Offline);
 }
 
-void dashboardUiSetConnectionState(bool connected) {
+void dashboardUiSetConnectionState(DashboardConnectionState state) {
+  const char* text = "HA Offline";
+  uint32_t statusColor = kColorOffline;
+  if (state == DashboardConnectionState::Provisioning) {
+    text = "WiFi Setup";
+    statusColor = kColorEnergy;
+  } else if (state == DashboardConnectionState::WaitingForHA) {
+    text = "HA Waiting";
+    statusColor = kColorHumidity;
+  } else if (state == DashboardConnectionState::Online) {
+    text = "HA Online";
+    statusColor = kColorAccent;
+  }
+
   for (uint8_t i = 0; i < kPageCount; ++i) {
     if (connectionDots[i] == nullptr || connectionLabels[i] == nullptr) {
       continue;
     }
-    lv_obj_set_style_bg_color(
-        connectionDots[i], color(connected ? kColorAccent : kColorOffline), 0);
-    lv_label_set_text(connectionLabels[i],
-                      connected ? "HA Online" : "HA Offline");
-    lv_obj_set_style_text_color(
-        connectionLabels[i],
-        color(connected ? kColorAccent : kColorTextSecondary), 0);
+    lv_obj_set_style_bg_color(connectionDots[i], color(statusColor), 0);
+    lv_label_set_text(connectionLabels[i], text);
+    lv_obj_set_style_text_color(connectionLabels[i], color(statusColor), 0);
   }
+}
+
+void dashboardUiSetProvisioningState(bool active, const char* accessPoint,
+                                     const char* address) {
+  if (!active) {
+    if (provisioningOverlay != nullptr) {
+      lv_obj_delete(provisioningOverlay);
+      provisioningOverlay = nullptr;
+    }
+    return;
+  }
+  if (provisioningOverlay != nullptr) {
+    return;
+  }
+
+  provisioningOverlay = lv_obj_create(lv_screen_active());
+  lv_obj_set_pos(provisioningOverlay, 0, 0);
+  lv_obj_set_size(provisioningOverlay, 480, 480);
+  lv_obj_set_style_radius(provisioningOverlay, 0, 0);
+  lv_obj_set_style_bg_color(provisioningOverlay, color(kColorBackground), 0);
+  lv_obj_set_style_bg_opa(provisioningOverlay, LV_OPA_COVER, 0);
+  lv_obj_set_style_border_width(provisioningOverlay, 0, 0);
+  lv_obj_set_style_pad_all(provisioningOverlay, 0, 0);
+  lv_obj_clear_flag(provisioningOverlay, LV_OBJ_FLAG_SCROLLABLE);
+
+  lv_obj_t* card = createPanel(provisioningOverlay, 40, 76, 400, 328, 24);
+  lv_obj_set_style_bg_color(card, color(kColorSurfaceRaised), 0);
+  lv_obj_t* icon = createLabel(card, LV_SYMBOL_WIFI,
+                               &lv_font_montserrat_36, kColorEnergy);
+  lv_obj_set_pos(icon, 174, 30);
+  lv_obj_t* title = createLabel(card, "WiFi Setup",
+                                &lv_font_montserrat_28, kColorTextPrimary);
+  lv_obj_set_pos(title, 118, 86);
+  lv_obj_t* detail = createLabel(
+      card, "1. Connect to this hotspot\n2. Open the setup address",
+      &lv_font_montserrat_16, kColorTextSecondary);
+  lv_obj_set_pos(detail, 44, 137);
+  lv_obj_set_style_text_line_space(detail, 10, 0);
+
+  lv_obj_t* apLabel = createLabel(card,
+                                  accessPoint != nullptr ? accessPoint : "--",
+                                  &lv_font_montserrat_18, kColorAccent);
+  lv_obj_set_pos(apLabel, 44, 218);
+  lv_obj_t* addressLabel = createLabel(
+      card, address != nullptr ? address : "192.168.4.1",
+      &lv_font_montserrat_16, kColorHumidity);
+  lv_obj_set_pos(addressLabel, 44, 258);
 }
 
 void dashboardUiSetRoomName(const char* roomName) {
@@ -622,26 +768,35 @@ void dashboardUiSetMotionBattery(const char* value) {
 void dashboardUiSetMetric(DashboardMetric metric, const char* value,
                           const char* unit) {
   const uint8_t index = metricIndex(metric);
-  if (index >= 4 || value == nullptr || metricValues[index] == nullptr) {
+  if (index >= kMetricCount || value == nullptr) {
     return;
   }
-  lv_label_set_text(metricValues[index], value);
-  if (unit != nullptr && metricUnits[index] != nullptr) {
-    lv_label_set_text(metricUnits[index], unit);
-  }
-  if (metric != DashboardMetric::MonthlyEnergy) {
-    lv_obj_align_to(metricUnits[index], metricValues[index],
-                    LV_ALIGN_OUT_RIGHT_BOTTOM, 6, -3);
+  for (uint8_t view = 0; view < metricViewCounts[index]; ++view) {
+    if (metricValues[index][view] == nullptr) {
+      continue;
+    }
+    lv_label_set_text(metricValues[index][view], value);
+    if (unit != nullptr && metricUnits[index][view] != nullptr) {
+      lv_label_set_text(metricUnits[index][view], unit);
+      lv_obj_align_to(metricUnits[index][view], metricValues[index][view],
+                      LV_ALIGN_OUT_RIGHT_BOTTOM,
+                      metric == DashboardMetric::MonthlyEnergy && view == 1
+                          ? 8 : 6,
+                      metric == DashboardMetric::MonthlyEnergy && view == 1
+                          ? -5 : -3);
+    }
   }
 }
 
 void dashboardUiSetWindowState(bool open) {
   windowOpen = open;
+  windowStateKnown = true;
   updateControlLabels();
 }
 
 void dashboardUiSetTvPowerState(bool on) {
   tvPowerOn = on;
+  tvPowerStateKnown = true;
   updateControlLabels();
 }
 
@@ -663,6 +818,10 @@ void dashboardUiSetTouchAvailable(bool available) {
     lv_obj_delete(touchStatusLabel);
     touchStatusLabel = nullptr;
   }
+}
+
+void dashboardUiSetControlsEnabled(bool enabled) {
+  controlsEnabled = enabled;
 }
 
 void dashboardUiOnAction(DashboardActionCallback callback) {

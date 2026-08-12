@@ -7,6 +7,15 @@ enum class DashboardMetric : uint8_t {
   Humidity,
   CarbonDioxide,
   MonthlyEnergy,
+  TodayEnergy,
+  CurrentPower,
+};
+
+enum class DashboardConnectionState : uint8_t {
+  Offline,
+  Provisioning,
+  WaitingForHA,
+  Online,
 };
 
 enum class DashboardAction : uint8_t {
@@ -18,7 +27,9 @@ enum class DashboardAction : uint8_t {
 using DashboardActionCallback = void (*)(DashboardAction action);
 
 void dashboardUiCreate();
-void dashboardUiSetConnectionState(bool connected);
+void dashboardUiSetConnectionState(DashboardConnectionState state);
+void dashboardUiSetProvisioningState(bool active, const char* accessPoint,
+                                     const char* address);
 void dashboardUiSetRoomName(const char* roomName);
 void dashboardUiSetOccupancyState(const char* state, bool occupied);
 void dashboardUiSetMotionBattery(const char* value);
@@ -27,4 +38,5 @@ void dashboardUiSetMetric(DashboardMetric metric, const char* value,
 void dashboardUiSetWindowState(bool open);
 void dashboardUiSetTvPowerState(bool on);
 void dashboardUiSetTouchAvailable(bool available);
+void dashboardUiSetControlsEnabled(bool enabled);
 void dashboardUiOnAction(DashboardActionCallback callback);

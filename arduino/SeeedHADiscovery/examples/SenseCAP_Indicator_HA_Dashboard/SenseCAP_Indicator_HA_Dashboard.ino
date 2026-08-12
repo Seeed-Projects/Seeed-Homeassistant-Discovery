@@ -1,11 +1,15 @@
 #include <Arduino_GFX_Library.h>
 #include <PCA95x5.h>
+#include <SeeedHADiscovery.h>
 #include <Wire.h>
 #include <esp_heap_caps.h>
 #include <lvgl.h>
 
 #include "DashboardUi.h"
+#include "RoomDashboardConfig.h"
+#include "RoomDashboardState.h"
 #include "SenseCapIndicatorBus.h"
+#include "SenseCapIndicatorDisplay.h"
 #include "SenseCapIndicatorTouch.h"
 
 namespace {
@@ -24,6 +28,9 @@ constexpr uint32_t kI2cFrequency = 400000;
 constexpr int8_t kLcdClockPin = 41;
 constexpr int8_t kLcdDataPin = 48;
 constexpr int8_t kBacklightPin = 45;
+constexpr const char* kProvisioningAddress = "192.168.4.1";
+constexpr uint32_t kNetworkStartupDelayMs = 2000;
+constexpr uint32_t kNetworkTaskStackSize = 12288;
 
 constexpr PCA95x5::Port::Port kLcdChipSelectPort = PCA95x5::Port::P04;
 constexpr PCA95x5::Port::Port kLcdResetPort = PCA95x5::Port::P05;
@@ -37,22 +44,43 @@ SenseCapIndicatorTouch touch(Wire, ioExpander, kTouchResetPort,
                              kI2cSdaPin, kI2cSclPin, kI2cFrequency,
                              kDisplayWidth, kDisplayHeight);
 
-Arduino_ESP32RGBPanel rgbPanel(
-    18, 17, 16, 21,
-    4, 3, 2, 1, 0,
-    10, 9, 8, 7, 6, 5,
-    15, 14, 13, 12, 11,
-    1, 10, 8, 50,
-    1, 10, 8, 20);
+constexpr SenseCapIndicatorRgbPins kRgbPins = {
+    16, 17, 18, 21,
+    {4, 3, 2, 1, 0},
+    {10, 9, 8, 7, 6, 5},
+    {15, 14, 13, 12, 11},
+};
 
-Arduino_RGB_Display display(
-    kDisplayWidth, kDisplayHeight, &rgbPanel, 2, true,
-    &lcdBus, GFX_NOT_DEFINED, st7701_type1_init_operations,
-    sizeof(st7701_type1_init_operations));
+constexpr SenseCapIndicatorRgbTiming kRgbTiming = {
+    12000000L,
+    10, 8, 50,
+    10, 8, 20,
+};
+
+SenseCapIndicatorDisplay display(
+    kDisplayWidth, kDisplayHeight, lcdBus,
+    st7701_type1_init_operations,
+    sizeof(st7701_type1_init_operations), kRgbPins, kRgbTiming);
 
 lv_display_t* lvglDisplay = nullptr;
 lv_color_t* lvglDrawBuffer = nullptr;
 bool lvglReady = false;
+bool connectionStateInitialized = false;
+bool provisioningOverlayVisible = false;
+DashboardConnectionState lastConnectionState =
+    DashboardConnectionState::Offline;
+SeeedHADiscovery* ha = nullptr;
+TaskHandle_t networkTaskHandle = nullptr;
+uint32_t dashboardReadyAt = 0;
+
+enum class NetworkStartupState : uint8_t {
+  Idle,
+  Starting,
+  Ready,
+  Failed,
+};
+
+volatile NetworkStartupState networkStartupState = NetworkStartupState::Idle;
 
 // Prepares the PCA9555 outputs that reset the LCD and touch controller.
 // 准备用于复位 LCD 和触摸控制器的 PCA9555 输出引脚。
@@ -156,28 +184,142 @@ void printMemoryStatus() {
                 heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
 }
 
+// Converts network flags into one stable status shared by all UI pages.
+// 将网络标志转换成所有 UI 页面共用的一种稳定状态。
+DashboardConnectionState getConnectionState() {
+  if (networkStartupState != NetworkStartupState::Ready || ha == nullptr) {
+    return DashboardConnectionState::Offline;
+  }
+  if (ha->isProvisioningActive()) {
+    return DashboardConnectionState::Provisioning;
+  }
+  if (!ha->isWiFiConnected()) {
+    return DashboardConnectionState::Offline;
+  }
+  return ha->isHAConnected() ? DashboardConnectionState::Online
+                             : DashboardConnectionState::WaitingForHA;
+}
+
+// Refreshes connection labels and the first-boot provisioning guide.
+// 刷新连接标签，并在首次启动时显示配网引导。
+void updateConnectionUi() {
+  const DashboardConnectionState state = getConnectionState();
+  if (!connectionStateInitialized || state != lastConnectionState) {
+    dashboardUiSetConnectionState(state);
+    lastConnectionState = state;
+    connectionStateInitialized = true;
+    Serial.printf("Dashboard connection state: %u\n",
+                  static_cast<uint8_t>(state));
+  }
+
+  const bool provisioning = state == DashboardConnectionState::Provisioning;
+  if (provisioning != provisioningOverlayVisible) {
+    dashboardUiSetProvisioningState(provisioning,
+                                    kDashboardProvisioningAp,
+                                    kProvisioningAddress);
+    provisioningOverlayVisible = provisioning;
+  }
+}
+
+// TODO(control-stage): Route these actions to Home Assistant service calls.
+// TODO(control-stage): 在控制阶段将这些动作接入 Home Assistant 服务调用。
+void handleDashboardAction(DashboardAction action) {
+  Serial.printf("Dashboard action reserved for control stage: %u\n",
+                static_cast<uint8_t>(action));
+}
+
+// Starts blocking WiFi provisioning on the other CPU core.
+// 在另一个 CPU 核心上启动会阻塞的 WiFi 配网流程。
+void runNetworkStartup(void* parameter) {
+  (void)parameter;
+  Serial0.println("Network stage: HA object creating");
+
+  SeeedHADiscovery* instance = new SeeedHADiscovery();
+  if (instance == nullptr) {
+    networkStartupState = NetworkStartupState::Failed;
+    Serial0.println("Network stopped: HA allocation failed");
+    networkTaskHandle = nullptr;
+    vTaskDelete(nullptr);
+    return;
+  }
+
+  instance->enableDebug(true);
+  instance->setDeviceInfo("SenseCAP Indicator Room Dashboard",
+                          "SenseCAP Indicator", "1.0.0");
+  instance->onHAState([](const char* entityId, const char* state,
+                         JsonObject& attributes) {
+    roomDashboardStateUpdate(entityId, state, attributes);
+  });
+
+  Serial0.println("Network stage: WiFi provisioning starting");
+  const bool wifiConnected =
+      instance->beginWithProvisioning(kDashboardProvisioningAp);
+
+  ha = instance;
+  networkStartupState = NetworkStartupState::Ready;
+  Serial0.println(wifiConnected
+                      ? "Network stage: WiFi connected"
+                      : "Network stage: provisioning hotspot ready");
+  networkTaskHandle = nullptr;
+  vTaskDelete(nullptr);
+}
+
+// Gives LVGL time to finish its first frame before WiFi scanning begins.
+// 先让 LVGL 完成首帧，再开始 WiFi 扫描。
+void startNetworkWhenDisplayIsReady() {
+  if (networkStartupState != NetworkStartupState::Idle ||
+      millis() - dashboardReadyAt < kNetworkStartupDelayMs) {
+    return;
+  }
+
+  networkStartupState = NetworkStartupState::Starting;
+  const BaseType_t result = xTaskCreatePinnedToCore(
+      runNetworkStartup, "NetworkStartup", kNetworkTaskStackSize,
+      nullptr, 1, &networkTaskHandle, 0);
+  if (result != pdPASS) {
+    networkTaskHandle = nullptr;
+    networkStartupState = NetworkStartupState::Failed;
+    Serial0.println("Network stopped: task creation failed");
+  }
+}
+
 }  // namespace
 
 void setup() {
+  Serial0.begin(115200);
   Serial.begin(115200);
   delay(500);
+  Serial0.println("Boot stage: setup entered");
   Serial.println("SenseCAP Indicator dashboard starting");
 
   pinMode(kBacklightPin, OUTPUT);
   digitalWrite(kBacklightPin, LOW);
 
   if (!psramFound()) {
+    Serial0.println("Boot stopped: PSRAM not detected");
     Serial.println("PSRAM not detected");
     return;
   }
+  Serial0.println("Boot stage: PSRAM ready");
   printMemoryStatus();
 
+  // Initializes the WiFi driver before the RGB panel starts continuous DMA.
+  // 在 RGB 屏幕启动连续 DMA 之前初始化 WiFi 驱动。
+  Serial0.println("Boot stage: WiFi driver starting");
+  if (!WiFi.mode(WIFI_STA)) {
+    Serial0.println("Boot stopped: WiFi driver failed");
+    return;
+  }
+  Serial0.println("Boot stage: WiFi driver ready");
+
   if (!initializeDisplayControl()) {
+    Serial0.println("Boot stopped: display control failed");
     Serial.printf("Display control initialization failed: I2C error %u\n",
                   ioExpander.i2c_error());
     return;
   }
-  if (!display.begin(12000000L)) {
+  if (!display.begin()) {
+    Serial0.println("Boot stopped: display initialization failed");
     Serial.println("Display initialization failed");
     return;
   }
@@ -189,28 +331,44 @@ void setup() {
                             : "Touch controller not detected");
 
   if (!initializeLvgl()) {
+    Serial0.println("Boot stopped: LVGL initialization failed");
     return;
   }
   dashboardUiCreate();
+  dashboardUiSetRoomName(kDashboardRoomName);
   dashboardUiSetTouchAvailable(touchReady);
+  dashboardUiSetControlsEnabled(false);
+  dashboardUiOnAction(handleDashboardAction);
   lvglReady = true;
 
   digitalWrite(kBacklightPin, HIGH);
+  dashboardReadyAt = millis();
+  Serial0.println("Boot stage: dashboard ready");
   Serial.println("LVGL dashboard ready");
 }
 
 void loop() {
-  static uint32_t lastHeartbeatAt = 0;
+  static uint32_t lastStatusAt = 0;
 
   if (!lvglReady) {
     delay(100);
     return;
   }
+  startNetworkWhenDisplayIsReady();
+  if (networkStartupState == NetworkStartupState::Ready && ha != nullptr) {
+    ha->handle();
+  }
+  updateConnectionUi();
+  roomDashboardStateApply();
   lv_timer_handler();
   const uint32_t now = millis();
-  if (now - lastHeartbeatAt >= 2000) {
-    Serial.println("Dashboard heartbeat");
-    lastHeartbeatAt = now;
+  if (now - lastStatusAt >= 10000) {
+    Serial.printf(
+        "Dashboard status: WiFi=%s, HA=%s, provisioning=%s\n",
+        ha != nullptr && ha->isWiFiConnected() ? "connected" : "disconnected",
+        ha != nullptr && ha->isHAConnected() ? "connected" : "disconnected",
+        ha != nullptr && ha->isProvisioningActive() ? "active" : "inactive");
+    lastStatusAt = now;
   }
   delay(5);
 }

@@ -407,6 +407,7 @@ private:
     bool _apModeActive;                // AP mode is active | AP 模式激活
     bool _wifiConnected;               // WiFi connected | WiFi 已连接
     int _networkCount;                 // Scanned network count | 扫描到的网络数量
+    bool _scanResultsDelivered;        // Scan results returned to portal | 扫描结果已返回配网页面
 
     // -------------------------------------------------------------------------
     // Reset Button Variables | 重置按钮变量
@@ -437,6 +438,9 @@ private:
     // Try to connect to WiFi | 尝试连接 WiFi
     bool _connectWiFi(const String& ssid, const String& password);
 
+    // Start a non-blocking network scan | 启动非阻塞网络扫描
+    void _startAsyncScan();
+
     // Setup web server routes | 设置 Web 服务器路由
     void _setupWebServer();
 
@@ -466,4 +470,3 @@ private:
 };
 
 #endif // SEEED_WIFI_PROVISIONING_H
-

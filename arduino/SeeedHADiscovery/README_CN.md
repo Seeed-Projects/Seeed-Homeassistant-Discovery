@@ -1,6 +1,6 @@
 # Seeed Home Assistant Discovery (WiFi 版)
 
-[![Version](https://img.shields.io/badge/版本-1.6.0-blue.svg)](https://github.com/limengdu/Seeed-Homeassistant-Discovery)
+[![Version](https://img.shields.io/badge/版本-1.6.1-blue.svg)](https://github.com/limengdu/Seeed-Homeassistant-Discovery)
 [![License](https://img.shields.io/badge/许可证-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/平台-ESP32-orange.svg)](https://www.espressif.com/)
 
@@ -260,6 +260,13 @@ void setup() {
 5. 进入 设置 → 设备与服务 → 添加集成 → Seeed HA Discovery
 
 设备连接到同一网络后将自动被发现。
+
+### 连接验证
+
+设备获得局域网 IP 后，在浏览器打开 `http://<设备IP>/info`。准备完成的设备会
+返回包含 `device_id`、`name`、`model`、`version`、`ip`、`mac`、`rssi` 和
+`connected` 的 JSON。保持串口监视器打开并连续刷新几次这个地址，即可在添加
+集成前确认 HTTP 发现接口持续可用。
 
 ## 📝 许可证
 

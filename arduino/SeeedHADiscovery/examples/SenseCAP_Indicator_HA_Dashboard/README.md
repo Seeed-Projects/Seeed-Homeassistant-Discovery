@@ -16,17 +16,27 @@ FT5x06 touch controller.
 - GFX Library for Arduino 1.5.3
 - PCA95x5 0.1.3
 - LVGL 9.2.2
+- Seeed Home Assistant Discovery 1.6.1
+- ArduinoJson 7.2.1
+- WebSockets 2.7.1
 
-Install these items with Arduino Boards Manager and Library Manager. The FT5x06
-touch driver is included in this example.
+Install these items with Arduino Boards Manager and Library Manager. Installing
+Seeed Home Assistant Discovery also installs ArduinoJson and WebSockets. The
+FT5x06 touch driver is included in this example.
 
 ## Board settings
 
 Select `ESP32S3 Dev Module` and use these options:
 
 - Flash Size: `8MB (64Mb)`
+- Partition Scheme: `8M with spiffs (3MB APP/1.5MB SPIFFS)`
 - PSRAM: `OPI PSRAM`
 - USB CDC On Boot: `Enabled`
+
+Select the 3MB application partition shown above. Arduino IDE's default
+`Default 4MB with spiffs (1.2MB APP/1.5MB SPIFFS)` provides only about 1.25MB
+for the application, which cannot contain LVGL, Wi-Fi provisioning, and Home
+Assistant communication together.
 
 ## Build with Arduino CLI
 
@@ -39,13 +49,60 @@ arduino-cli compile \
 After uploading, the screen shows the Room 106 meeting-room dashboard. The
 Overview page presents occupancy, Home Assistant status, CO2, temperature,
 humidity, motion-sensor battery, electric-window state, television power, and
-monthly energy. The values are demonstration data until the Home Assistant
-stage supplies live entity states.
+monthly energy. The Energy page also presents today's energy and live TV power.
 
-The bottom navigation opens Overview, Controls, and Energy pages. Window and
-TV cards update their local demonstration state immediately. `Leave Room`
-opens a confirmation dialog before setting both demonstration controls to off.
-At 115200 baud, successful startup ends with `LVGL dashboard ready`.
+The bottom navigation opens Overview, Controls, and Energy pages. Window and TV
+cards provide touch feedback while device state remains synchronized with Home
+Assistant updates. `Leave Room` opens a confirmation dialog. HA control commands
+will be added in the next stage.
+
+## Wi-Fi provisioning
+
+On first boot, or when no saved Wi-Fi credentials exist, the screen displays
+`WiFi Setup`:
+
+1. Connect a phone or computer to `SenseCAP_Indicator_AP`.
+2. Open `http://192.168.4.1`; most phones also open the captive portal.
+3. Select the target Wi-Fi network, enter its password, and save.
+4. The device restarts and connects automatically. The header progresses from
+   `HA Waiting` to `HA Online`.
+
+The device stores the Wi-Fi credentials and reconnects after normal restarts.
+
+The firmware lets LVGL finish its first frame before provisioning starts. Wi-Fi
+connection and hotspot scanning run on the ESP32-S3's other CPU core so display
+refresh and touch handling continue to run.
+The example's RGB display wrapper lets the display controller read its PSRAM
+framebuffer directly, so Wi-Fi credential reads and writes can run while the
+dashboard remains visible.
+
+## Home Assistant subscriptions
+
+After adding the device to the Seeed HA Discovery integration, select these
+entities on its Home Assistant configuration page:
+
+| Dashboard value | Home Assistant entity |
+| --- | --- |
+| Occupancy | `sensor.xiaomi_03_1163_occupancy_sensor_2` |
+| Motion battery | `sensor.xiaomi_03_1163_battery_level_2` |
+| CO2 | `sensor.scd41_air_quality_monitor_carbon_dioxide` |
+| Temperature | `sensor.scd41_air_quality_monitor_temperature` |
+| Humidity | `sensor.scd41_air_quality_monitor_humidity` |
+| Electric window | `cover.liyan_liyan_4d07_window_opener_2` |
+| TV power | `switch.cuco_v3_3244_switch_2` |
+| Live TV power | `sensor.cuco_v3_3244_electric_power_2` |
+| Today's energy | `sensor.cuco_v3_3244_power_cost_today_2` |
+| Monthly energy | `sensor.cuco_v3_3244_power_cost_month_2` |
+
+To reuse the firmware in another room, edit the room name, provisioning AP name,
+and entity IDs in `RoomDashboardConfig.h`. The display driver, UI, and HA state
+handling remain unchanged.
+
+At 115200 baud, each mapped update prints a message such as:
+
+```text
+Dashboard state queued: sensor.scd41_air_quality_monitor_temperature = 24.6
+```
 
 The first touch also prints its raw and mapped coordinates. For example:
 
@@ -59,9 +116,9 @@ after repeated read failures. A successful recovery prints
 
 ## Scope
 
-This stage establishes the three-page Room 106 UI and reusable display, LVGL,
-and touch modules. Wi-Fi provisioning, Home Assistant state delivery, entity
-selection, and controllable-entity commands will be added in later stages.
+This stage adds Wi-Fi provisioning, HA connection status, and live Room 106
+entity state display. Home Assistant commands for the window, TV, and
+`Leave Room` will be added in the next stage.
 
 ## Reference
 
