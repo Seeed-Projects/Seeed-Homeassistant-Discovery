@@ -159,7 +159,7 @@ void loop() {
 | [IoTButtonV2_DeepSleep](examples/IoTButtonV2_DeepSleep/) | Battery-powered IoT button with deep sleep |
 | [reTerminal_E1001_HASubscribe_Display](examples/reTerminal_E1001_HASubscribe_Display/) | E-Paper display with HA states |
 | [reTerminal_E1002_HASubscribe_Display](examples/reTerminal_E1002_HASubscribe_Display/) | Color E-Paper display with HA states |
-| [SenseCAP_Indicator_HA_Dashboard](examples/SenseCAP_Indicator_HA_Dashboard/) | SenseCAP Indicator 480 x 480 LCD hardware bring-up |
+| [SenseCAP_Indicator_HA_Dashboard](examples/SenseCAP_Indicator_HA_Dashboard/) | SenseCAP Indicator LVGL meeting-room dashboard with touch input |
 
 The IR Mate example keeps its infrared implementation and optional dependencies inside the example folder.
 

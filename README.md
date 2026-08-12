@@ -250,7 +250,7 @@ Open `arduino/SeeedHADiscovery/examples/XIAO_ESP32C3_SCD41_AirQuality_Display/XI
 
 #### SenseCAP Indicator HA Dashboard Example
 
-The first stage initializes the SenseCAP Indicator 480 x 480 ST7701 LCD with a standard Arduino sketch and displays a static hardware verification screen. Follow the [example guide](arduino/SeeedHADiscovery/examples/SenseCAP_Indicator_HA_Dashboard/README.md) for the pinned dependencies, board settings, and build command.
+The example initializes the SenseCAP Indicator 480 x 480 ST7701 LCD and FT5x06 touch controller with Arduino, then presents a polished LVGL meeting-room dashboard. Follow the [example guide](arduino/SeeedHADiscovery/examples/SenseCAP_Indicator_HA_Dashboard/README.md) for the pinned dependencies, board settings, build command, and touch verification steps.
 
 #### BLE Version (SeeedHADiscoveryBLE)
 
