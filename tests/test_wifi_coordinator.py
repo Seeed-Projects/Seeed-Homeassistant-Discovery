@@ -121,12 +121,13 @@ class SeeedHACoordinatorTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(device.state_callbacks), 1)
         self.assertEqual(len(device.discovery_callbacks), 1)
 
-    async def test_rejects_empty_discovery(self) -> None:
+    async def test_accepts_empty_discovery_from_subscription_device(self) -> None:
         device = FakeDevice({})
         coordinator = COORDINATOR.SeeedHACoordinator(object(), device, object())
 
-        with self.assertRaisesRegex(ConnectionError, "no entities"):
-            await coordinator.async_connect()
+        await coordinator.async_connect()
+
+        self.assertEqual(coordinator.data["entities"], {})
 
     async def test_rejects_discovery_timeout(self) -> None:
         device = FakeDevice({}, report_discovery=False)

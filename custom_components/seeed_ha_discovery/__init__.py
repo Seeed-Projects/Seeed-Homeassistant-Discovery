@@ -126,12 +126,6 @@ async def _async_setup_wifi_entry(hass: HomeAssistant, entry: ConfigEntry) -> bo
     loaded_platforms = wifi_platforms_for_device(
         device.entities, device.device_info
     )
-    if not loaded_platforms:
-        await coordinator.async_disconnect()
-        hass.data[DOMAIN].pop(entry.entry_id, None)
-        raise ConfigEntryNotReady(
-            f"Device at {host} did not report any supported entities"
-        )
 
     # 保存设备和协调器引用
     entry_data: dict[str, Any] = {
@@ -168,11 +162,13 @@ async def _async_setup_wifi_entry(hass: HomeAssistant, entry: ConfigEntry) -> bo
                 host,
             )
 
-        # Load only the platforms reported by this device.
-        # 只加载该设备实际需要的平台。
-        await hass.config_entries.async_forward_entry_setups(
-            entry, loaded_platforms
-        )
+        # Subscription-only dashboards keep their WebSocket connection without
+        # creating local Home Assistant entity platforms.
+        # 纯订阅看板无需创建本机实体平台，但仍保持 WebSocket 连接。
+        if loaded_platforms:
+            await hass.config_entries.async_forward_entry_setups(
+                entry, loaded_platforms
+            )
     except Exception:
         hass.data[DOMAIN].pop(entry.entry_id, None)
         await coordinator.async_disconnect()

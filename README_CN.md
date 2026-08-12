@@ -628,7 +628,7 @@ seeed-ha-discovery/
 ├── custom_components/
 │   └── seeed_ha_discovery/       # Home Assistant 集成
 │       ├── __init__.py           # 主入口
-│       ├── manifest.json         # 集成清单 (v3.10.1)
+│       ├── manifest.json         # 集成清单 (v3.10.2)
 │       ├── config_flow.py        # 配置流程
 │       ├── const.py              # 常量定义
 │       ├── coordinator.py        # 数据协调器

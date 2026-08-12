@@ -131,9 +131,6 @@ class SeeedHACoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except asyncio.TimeoutError as err:
             raise TimeoutError("Device entity discovery timed out") from err
 
-        if not self.device.entities:
-            raise ConnectionError("Device discovery returned no entities")
-
         # 步骤 4: 设置初始数据
         self.async_set_updated_data({"entities": self.device.entities})
 

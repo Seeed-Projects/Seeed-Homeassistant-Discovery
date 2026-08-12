@@ -96,6 +96,10 @@ class FakeConfigEntries:
     def __init__(self, error: Exception | None = None) -> None:
         self.error = error
         self.unloaded_platforms = []
+        self.forwarded_platforms = []
+
+    async def async_forward_entry_setups(self, entry, platforms) -> None:
+        self.forwarded_platforms.append(list(platforms))
 
     async def async_unload_platforms(self, entry, platforms) -> bool:
         self.unloaded_platforms.append(list(platforms))
@@ -123,6 +127,34 @@ class FailingSetupCoordinator:
         self.disconnect_count += 1
 
 
+class SubscriptionDashboardDevice:
+    latest = None
+
+    def __init__(self, hass, host, port, entry) -> None:
+        self.entities = {}
+        self.device_info = {"model": "SenseCAP Indicator"}
+        self.subscriptions = []
+        SubscriptionDashboardDevice.latest = self
+
+    async def async_setup_entity_subscription(self, entity_ids) -> None:
+        self.subscriptions = list(entity_ids)
+
+
+class SubscriptionDashboardCoordinator:
+    latest = None
+
+    def __init__(self, hass, device, entry) -> None:
+        self.device = device
+        self.disconnect_count = 0
+        SubscriptionDashboardCoordinator.latest = self
+
+    async def async_connect(self) -> None:
+        return None
+
+    async def async_disconnect(self) -> None:
+        self.disconnect_count += 1
+
+
 class WiFiEntryLifecycleTest(unittest.IsolatedAsyncioTestCase):
     def make_hass(self, coordinator, error=None):
         config_entries = FakeConfigEntries(error)
@@ -139,6 +171,48 @@ class WiFiEntryLifecycleTest(unittest.IsolatedAsyncioTestCase):
             config_entries=config_entries,
         )
         return hass, config_entries
+
+    async def test_subscription_dashboard_keeps_connection_without_platforms(
+        self,
+    ) -> None:
+        config_entries = FakeConfigEntries()
+        hass = SimpleNamespace(data={}, config_entries=config_entries)
+        entry = SimpleNamespace(
+            entry_id="entry-1",
+            data={"connection_type": "wifi", "host": "192.0.2.20"},
+            options={
+                "subscribed_entities": [
+                    "sensor.room_temperature",
+                    "switch.room_tv",
+                ]
+            },
+            add_update_listener=lambda listener: lambda: None,
+            async_on_unload=lambda callback: None,
+        )
+
+        with patch.object(
+            INTEGRATION,
+            "SeeedHADevice",
+            SubscriptionDashboardDevice,
+        ), patch.object(
+            INTEGRATION,
+            "SeeedHACoordinator",
+            SubscriptionDashboardCoordinator,
+        ):
+            result = await INTEGRATION.async_setup_entry(hass, entry)
+
+        runtime = hass.data["seeed_ha_discovery"]["entry-1"]
+        self.assertTrue(result)
+        self.assertEqual(runtime["loaded_platforms"], [])
+        self.assertEqual(config_entries.forwarded_platforms, [])
+        self.assertEqual(
+            SubscriptionDashboardDevice.latest.subscriptions,
+            ["sensor.room_temperature", "switch.room_tv"],
+        )
+        self.assertEqual(
+            SubscriptionDashboardCoordinator.latest.disconnect_count,
+            0,
+        )
 
     async def test_setup_failure_cleans_partial_runtime(self) -> None:
         hass = SimpleNamespace(data={}, config_entries=FakeConfigEntries())
