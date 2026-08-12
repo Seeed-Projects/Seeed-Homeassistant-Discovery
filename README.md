@@ -628,11 +628,12 @@ seeed-ha-discovery/
 ├── custom_components/
 │   └── seeed_ha_discovery/       # Home Assistant Integration
 │       ├── __init__.py           # Main entry
-│       ├── manifest.json         # Integration manifest (v3.10.0)
+│       ├── manifest.json         # Integration manifest (v3.10.1)
 │       ├── config_flow.py        # Configuration flow
 │       ├── const.py              # Constants definition
 │       ├── coordinator.py        # Data coordinator
 │       ├── device.py             # Device communication
+│       ├── platforms.py          # WiFi platform selection
 │       ├── sensor.py             # Sensor platform
 │       ├── switch.py             # Switch platform
 │       ├── camera.py             # Camera platform (v2.2 New)

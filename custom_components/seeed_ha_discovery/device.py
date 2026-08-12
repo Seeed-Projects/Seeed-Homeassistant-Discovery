@@ -107,6 +107,7 @@ class SeeedHADevice:
 
         # 连接状态
         self._connected = False
+        self._disconnecting = False
 
         # 后台任务
         self._reconnect_task: asyncio.Task | None = None  # 重连任务
@@ -201,7 +202,8 @@ class SeeedHADevice:
 
         def remove_callback() -> None:
             """移除回调 | Remove callback"""
-            self._state_callbacks.remove(callback)
+            if callback in self._state_callbacks:
+                self._state_callbacks.remove(callback)
 
         return remove_callback
 
@@ -225,7 +227,8 @@ class SeeedHADevice:
 
         def remove_callback() -> None:
             """移除回调 | Remove callback"""
-            self._discovery_callbacks.remove(callback)
+            if callback in self._discovery_callbacks:
+                self._discovery_callbacks.remove(callback)
 
         return remove_callback
 
@@ -328,6 +331,7 @@ class SeeedHADevice:
         """
         # 正在断开连接 | Disconnecting
         _LOGGER.info("Disconnecting: %s", self.host)
+        self._disconnecting = True
         self._connected = False
         self._fail_pending_ir_transmits(ConnectionError("Device disconnected"))
         self._fail_pending_ir_learns(ConnectionError("Device disconnected"))
@@ -441,8 +445,7 @@ class SeeedHADevice:
             self._fail_pending_ir_touch_requests(
                 ConnectionError("Device disconnected")
             )
-            if not self._reconnect_task:
-                self._reconnect_task = asyncio.create_task(self._async_reconnect())
+            self._schedule_reconnect()
 
     async def _async_handle_message(self, data: dict[str, Any]) -> None:
         """
@@ -524,10 +527,6 @@ class SeeedHADevice:
             # 关闭当前 WebSocket 连接
             if self._ws and not self._ws.closed:
                 await self._ws.close()
-            
-            # 立即启动重连任务
-            if not self._reconnect_task:
-                self._reconnect_task = asyncio.create_task(self._async_reconnect())
 
         elif msg_type == MSG_TYPE_HA_ENTITY_COMMAND:
             await self._async_handle_ha_entity_command(data)
@@ -644,15 +643,29 @@ class SeeedHADevice:
         自动重连（固定间隔）
         Reconnect to the device (fixed interval).
         """
-        while not self._connected:
-            if await self.async_connect():
-                # 状态推送已在 async_connect 中完成，无需再次调用
-                # State push is already done in async_connect, no need to call again
-                break
-            
-            await asyncio.sleep(RECONNECT_INTERVAL)
+        try:
+            while not self._connected and not self._disconnecting:
+                if await self.async_connect():
+                    # State push is already done in async_connect.
+                    # 状态推送已在 async_connect 中完成。
+                    return
+                await asyncio.sleep(RECONNECT_INTERVAL)
+        finally:
+            if asyncio.current_task() is self._reconnect_task:
+                self._reconnect_task = None
+            if not self._connected and not self._disconnecting:
+                self._schedule_reconnect()
 
-        self._reconnect_task = None
+    def _schedule_reconnect(self) -> None:
+        """Start one reconnect task when the connection is inactive.
+
+        连接断开时只启动一个重连任务。
+        """
+
+        if self._disconnecting or self._connected:
+            return
+        if self._reconnect_task is None or self._reconnect_task.done():
+            self._reconnect_task = asyncio.create_task(self._async_reconnect())
 
     async def _async_restore_entity_subscription(self) -> None:
         """

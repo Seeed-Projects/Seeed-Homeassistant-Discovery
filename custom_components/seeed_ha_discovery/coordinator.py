@@ -100,15 +100,22 @@ class SeeedHACoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # 协调器开始连接 | Coordinator starting connection
         _LOGGER.info("Coordinator starting connection")
 
+        # A new setup attempt must wait for a discovery response from this
+        # connection instead of reusing a previous event state.
+        # 每次设置都等待本次连接返回新的发现消息。
+        self._discovery_complete.clear()
+
         # 步骤 1: 注册回调
         # 当设备推送状态更新时，会调用 _handle_state_update
-        self._remove_state_callback = self.device.add_state_callback(
-            self._handle_state_update
-        )
+        if self._remove_state_callback is None:
+            self._remove_state_callback = self.device.add_state_callback(
+                self._handle_state_update
+            )
         # 当设备报告其实体时，会调用 _handle_discovery
-        self._remove_discovery_callback = self.device.add_discovery_callback(
-            self._handle_discovery
-        )
+        if self._remove_discovery_callback is None:
+            self._remove_discovery_callback = self.device.add_discovery_callback(
+                self._handle_discovery
+            )
 
         # 步骤 2: 连接到设备 | Step 2: Connect to device
         if not await self.device.async_connect():
@@ -117,9 +124,15 @@ class SeeedHACoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # 步骤 3: 等待发现完成（最多等待 10 秒）| Step 3: Wait for discovery (max 10 seconds)
         try:
             await asyncio.wait_for(self._discovery_complete.wait(), timeout=10)
-            _LOGGER.info("Device discovery complete, %d entities found", len(self.device.entities))
-        except asyncio.TimeoutError:
-            _LOGGER.warning("Device discovery timeout, continuing with existing entities")
+            _LOGGER.info(
+                "Device discovery complete, %d entities found",
+                len(self.device.entities),
+            )
+        except asyncio.TimeoutError as err:
+            raise TimeoutError("Device entity discovery timed out") from err
+
+        if not self.device.entities:
+            raise ConnectionError("Device discovery returned no entities")
 
         # 步骤 4: 设置初始数据
         self.async_set_updated_data({"entities": self.device.entities})

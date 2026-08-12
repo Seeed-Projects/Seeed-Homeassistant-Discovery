@@ -40,7 +40,6 @@ from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import (
     DOMAIN,
-    PLATFORMS,
     CONF_HOST,
     CONF_PORT,
     CONF_CONNECTION_TYPE,
@@ -52,6 +51,7 @@ from .const import (
 )
 from .coordinator import SeeedHACoordinator
 from .device import SeeedHADevice
+from .platforms import wifi_platforms_for_device
 
 # 创建日志记录器
 # Create logger for this module
@@ -114,39 +114,69 @@ async def _async_setup_wifi_entry(hass: HomeAssistant, entry: ConfigEntry) -> bo
         _LOGGER.info("Successfully connected to WiFi device %s", host)
     except Exception as err:
         # 连接失败 | Connection failed
-        _LOGGER.error("Failed to connect to Seeed HA WiFi device at %s: %s", host, err)
+        _LOGGER.error(
+            "Failed to connect to Seeed HA WiFi device at %s: %s",
+            host,
+            err,
+        )
+        await coordinator.async_disconnect()
+        hass.data[DOMAIN].pop(entry.entry_id, None)
         raise ConfigEntryNotReady(f"Cannot connect to {host}") from err
+
+    loaded_platforms = wifi_platforms_for_device(
+        device.entities, device.device_info
+    )
+    if not loaded_platforms:
+        await coordinator.async_disconnect()
+        hass.data[DOMAIN].pop(entry.entry_id, None)
+        raise ConfigEntryNotReady(
+            f"Device at {host} did not report any supported entities"
+        )
 
     # 保存设备和协调器引用
     entry_data: dict[str, Any] = {
         "device": device,
         "coordinator": coordinator,
         "connection_type": CONNECTION_TYPE_WIFI,
+        "loaded_platforms": loaded_platforms,
     }
-    # Create IR management only for devices that report both infrared roles.
-    # 仅为同时上报红外收发能力的设备创建 IR 管理功能。
-    infrared_roles = {
-        config.get("role")
-        for config in device.entities.values()
-        if config.get("type") == "infrared"
-    }
-    if {"emitter", "receiver"}.issubset(infrared_roles):
-        from .ir_manager import IRMateManager
-
-        ir_manager = IRMateManager(hass, entry, device)
-        await ir_manager.async_initialize()
-        entry_data["ir_manager"] = ir_manager
     hass.data[DOMAIN][entry.entry_id] = entry_data
 
-    # 设置 HA 实体订阅（如果配置了）
-    # Set up HA entity subscription (if configured)
-    subscribed_entities = entry.options.get(CONF_SUBSCRIBED_ENTITIES, [])
-    if subscribed_entities:
-        await device.async_setup_entity_subscription(subscribed_entities)
-        _LOGGER.info("Subscribed to %d HA entities for device %s", len(subscribed_entities), host)
+    try:
+        # Create IR management only for devices that report both infrared roles.
+        # 仅为同时上报红外收发能力的设备创建 IR 管理功能。
+        infrared_roles = {
+            config.get("role")
+            for config in device.entities.values()
+            if config.get("type") == "infrared"
+        }
+        if {"emitter", "receiver"}.issubset(infrared_roles):
+            from .ir_manager import IRMateManager
 
-    # 加载传感器平台
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+            ir_manager = IRMateManager(hass, entry, device)
+            await ir_manager.async_initialize()
+            entry_data["ir_manager"] = ir_manager
+
+        # 设置 HA 实体订阅（如果配置了）
+        # Set up HA entity subscription (if configured)
+        subscribed_entities = entry.options.get(CONF_SUBSCRIBED_ENTITIES, [])
+        if subscribed_entities:
+            await device.async_setup_entity_subscription(subscribed_entities)
+            _LOGGER.info(
+                "Subscribed to %d HA entities for device %s",
+                len(subscribed_entities),
+                host,
+            )
+
+        # Load only the platforms reported by this device.
+        # 只加载该设备实际需要的平台。
+        await hass.config_entries.async_forward_entry_setups(
+            entry, loaded_platforms
+        )
+    except Exception:
+        hass.data[DOMAIN].pop(entry.entry_id, None)
+        await coordinator.async_disconnect()
+        raise
 
     # 注册配置更新监听器
     entry.async_on_unload(entry.add_update_listener(async_update_options))
@@ -163,7 +193,7 @@ async def _async_setup_ble_entry(hass: HomeAssistant, entry: ConfigEntry) -> boo
     1. 被动监听模式 - 传感器数据通过蓝牙广播接收
     2. 主动连接模式 - 通过 GATT 控制设备（如开关）
     """
-    from .const import CONF_BLE_CONTROL, CONF_BLE_SUBSCRIBED_ENTITIES
+    from .const import CONF_BLE_SUBSCRIBED_ENTITIES
 
     ble_address = entry.data[CONF_BLE_ADDRESS]
     ble_control = entry.data.get(CONF_BLE_CONTROL, False)
@@ -219,50 +249,37 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     返回 | Returns:
         bool: 卸载是否成功
     """
-    from .const import CONF_BLE_CONTROL, CONF_BLE_SUBSCRIBED_ENTITIES
-
     # 正在卸载设备 | Unloading device
     _LOGGER.info("Unloading Seeed HA device")
 
     # 获取连接类型
     data = hass.data[DOMAIN].get(entry.entry_id, {})
     connection_type = data.get("connection_type", CONNECTION_TYPE_WIFI)
-    ble_control = data.get("ble_control", False)
-    ble_subscribed = entry.data.get(CONF_BLE_SUBSCRIBED_ENTITIES, {})
+    platforms_to_unload = data.get("loaded_platforms", [])
+    _LOGGER.info("Device unloading platforms: %s", platforms_to_unload)
 
-    # 确定要卸载的平台 - 使用运行时记录的已加载平台，而不是当前配置
-    # Determine platforms to unload - use runtime record, not current config
-    if connection_type == CONNECTION_TYPE_BLE:
-        # 使用运行时记录的平台列表
-        # Use the platforms that were actually loaded at runtime
-        platforms_to_unload = data.get("loaded_platforms", ["sensor"])
-        _LOGGER.info("BLE device unloading platforms: %s", platforms_to_unload)
-    else:
-        platforms_to_unload = PLATFORMS
-
-    # 卸载所有平台
+    unload_ok = True
     try:
-        unload_ok = await hass.config_entries.async_unload_platforms(entry, platforms_to_unload)
-    except ValueError as err:
-        # 平台可能从未加载，记录警告但继续
-        # Platform might never have been loaded, log warning but continue
-        _LOGGER.warning("Error unloading platforms (may not have been loaded): %s", err)
-        unload_ok = True  # Allow cleanup to continue | 允许继续清理
-
-    if unload_ok:
-        # 获取并清理设备数据
-        data = hass.data[DOMAIN].pop(entry.entry_id, {})
-
-        # 如果是 WiFi 设备，断开 WebSocket 连接
+        if platforms_to_unload:
+            unload_ok = await hass.config_entries.async_unload_platforms(
+                entry, platforms_to_unload
+            )
+    except Exception as err:
+        _LOGGER.error("Error unloading platforms: %s", err)
+        unload_ok = False
+    finally:
+        # Network resources are always released, including partial platform
+        # unloads, so a reload cannot leave an old connection running.
+        # 无论平台卸载结果如何，都释放网络资源，确保重新加载从干净状态开始。
+        data = hass.data[DOMAIN].pop(entry.entry_id, data)
         if connection_type == CONNECTION_TYPE_WIFI and "coordinator" in data:
             coordinator: SeeedHACoordinator = data["coordinator"]
             await coordinator.async_disconnect()
-
-        # 如果是 BLE 设备且有控制功能，断开 GATT 连接
         if connection_type == CONNECTION_TYPE_BLE and "ble_manager" in data:
             manager = data["ble_manager"]
             await manager.async_disconnect()
 
+    if unload_ok:
         # 卸载完成 | Unload complete
         _LOGGER.info("Device unloaded successfully")
 
