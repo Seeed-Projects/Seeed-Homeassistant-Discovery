@@ -21,6 +21,8 @@ enum class DashboardConnectionState : uint8_t {
 enum class DashboardAction : uint8_t {
   WindowToggle,
   TvPowerToggle,
+  LeftSwitchToggle,
+  RightSwitchToggle,
   LeaveRoom,
 };
 
@@ -37,6 +39,8 @@ void dashboardUiSetMetric(DashboardMetric metric, const char* value,
                           const char* unit);
 void dashboardUiSetWindowState(bool open);
 void dashboardUiSetTvPowerState(bool on);
+void dashboardUiSetLeftSwitchState(bool on);
+void dashboardUiSetRightSwitchState(bool on);
 void dashboardUiSetTouchAvailable(bool available);
 void dashboardUiSetControlsEnabled(bool enabled);
 void dashboardUiShowNotice(const char* message);

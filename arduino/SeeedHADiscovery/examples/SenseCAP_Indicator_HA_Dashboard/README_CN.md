@@ -48,10 +48,12 @@ arduino-cli compile \
 Home Assistant 状态、CO2、温度、湿度、人体传感器电量、电动窗户、电视电源
 和本月用电。Energy 页面还会显示今日用电和电视实时功率。
 
-底部导航可以切换 Overview、Controls 和 Energy 页面。点击窗户与电视卡片时，
-设备会请求 Home Assistant 切换对应实体。点击 `Leave Room` 并确认后，设备会
-请求 Home Assistant 关闭配置中的 5 个会议室设备。屏幕上的窗户和电视状态只
-跟随 Home Assistant 回传的真实状态变化。
+底部导航可以切换 Overview、Controls 和 Energy 页面。Controls 页面包含左路
+开关、右路开关、电动窗户和电视电源卡片，点击后设备会请求 Home Assistant
+切换对应实体。空调卡片是不可点击的预留位，等待会议室空调安装完成后启用。
+点击 `Leave Room` 并确认后，设备会请求 Home Assistant 关闭配置中的 6 个
+会议室设备，其中包含预留的空调实体。可控制卡片的状态只跟随 Home Assistant
+回传的真实状态变化。
 
 ## Wi-Fi 热点配网
 
@@ -82,6 +84,8 @@ ESP32-S3 的另一个 CPU 核心上，因此屏幕刷新和触摸处理会持续
 | CO2 | `sensor.scd41_air_quality_monitor_carbon_dioxide` |
 | 温度 | `sensor.scd41_air_quality_monitor_temperature` |
 | 湿度 | `sensor.scd41_air_quality_monitor_humidity` |
+| 左路开关 | `switch.xiaomi_2wpro2_37c3_left_switch_service_2` |
+| 右路开关 | `switch.xiaomi_2wpro2_37c3_right_switch_service_2` |
 | 电动窗户 | `cover.liyan_liyan_4d07_window_opener_2` |
 | 电视电源 | `switch.cuco_v3_3244_switch_2` |
 | 电视实时功率 | `sensor.cuco_v3_3244_electric_power_2` |
@@ -92,15 +96,18 @@ ESP32-S3 的另一个 CPU 核心上，因此屏幕刷新和触摸处理会持续
 
 | 控制内容 | Home Assistant 实体 |
 | --- | --- |
-| 离开会议室左侧开关 | `switch.xiaomi_2wpro2_37c3_left_switch_service_2` |
-| 离开会议室右侧开关 | `switch.xiaomi_2wpro2_37c3_right_switch_service_2` |
-| 离开会议室电视电源 | `switch.cuco_v3_3244_switch_2` |
-| 离开会议室灯光 | `light.liyan_liyan_4d07_light_2` |
-| 离开会议室播放器 | `media_player.xiaomi_lx06_3740_play_control_2` |
+| 左路开关 | `switch.xiaomi_2wpro2_37c3_left_switch_service_2` |
+| 右路开关 | `switch.xiaomi_2wpro2_37c3_right_switch_service_2` |
+| 预留空调 | `switch.indicator_switch1_1` |
+| 电视电源 | `switch.cuco_v3_3244_switch_2` |
+| 会议室灯光 | `light.liyan_liyan_4d07_light_2` |
+| 会议室播放器 | `media_player.xiaomi_lx06_3740_play_control_2` |
 
-窗户与电视实体已经出现在前面的显示订阅表中。插件只执行设备针对已选择实体
-发起的操作。温度和湿度会在屏幕上四舍五入并保留一位小数。人员状态中的
-`has one` 和 `no one` 会分别显示为 `Occupied` 和 `Vacant`。
+左路开关、右路开关、窗户与电视实体已经出现在前面的显示订阅表中。即使实体
+对应的空调还没有安装，也要选择预留空调实体，因为它已经属于 `Leave Room`
+批量关闭范围。插件只执行设备针对已选择实体发起的操作。温度和湿度会在屏幕
+上四舍五入并保留一位小数。人员状态中的 `has one` 和 `no one` 会分别显示为
+`Occupied` 和 `Vacant`。
 
 如果同一套固件要用于另一个会议室，只需要修改
 `RoomDashboardConfig.h` 中的房间名、热点名和实体 ID，屏幕驱动、UI 与 HA
@@ -123,8 +130,8 @@ Touch pressed: raw=(292, 85), mapped=(187, 394)
 
 ## 当前范围
 
-示例包含热点配网、HA 连接状态、106 会议室实体实时显示、窗户与电视触摸控制，
-以及带确认步骤的 `Leave Room` 批量关闭操作。
+示例包含热点配网、HA 连接状态、106 会议室实体实时显示、左右开关、窗户与电视
+触摸控制、空调预留位，以及带确认步骤的 `Leave Room` 批量关闭操作。
 
 ## 参考资料
 

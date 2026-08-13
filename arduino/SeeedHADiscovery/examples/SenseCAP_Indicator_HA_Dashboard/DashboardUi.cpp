@@ -52,6 +52,8 @@ lv_obj_t* metricUnits[kMetricCount][kMetricViewCount] = {};
 uint8_t metricViewCounts[kMetricCount] = {};
 lv_obj_t* windowStateLabels[2] = {nullptr, nullptr};
 lv_obj_t* tvStateLabels[2] = {nullptr, nullptr};
+lv_obj_t* leftSwitchStateLabel = nullptr;
+lv_obj_t* rightSwitchStateLabel = nullptr;
 lv_obj_t* confirmationOverlay = nullptr;
 lv_obj_t* provisioningOverlay = nullptr;
 lv_obj_t* noticePanel = nullptr;
@@ -62,8 +64,12 @@ DashboardPage activePage = DashboardPage::Overview;
 DashboardActionCallback actionCallback = nullptr;
 bool windowOpen = false;
 bool tvPowerOn = false;
+bool leftSwitchOn = false;
+bool rightSwitchOn = false;
 bool windowStateKnown = false;
 bool tvPowerStateKnown = false;
+bool leftSwitchStateKnown = false;
+bool rightSwitchStateKnown = false;
 bool touchAvailable = true;
 bool controlsEnabled = false;
 
@@ -217,6 +223,12 @@ void updateControlLabels() {
   const char* tvState = tvPowerStateKnown
                             ? (tvPowerOn ? "On" : "Off")
                             : "Waiting for data";
+  const char* leftSwitchState = leftSwitchStateKnown
+                                    ? (leftSwitchOn ? "On" : "Off")
+                                    : "Waiting for data";
+  const char* rightSwitchState = rightSwitchStateKnown
+                                     ? (rightSwitchOn ? "On" : "Off")
+                                     : "Waiting for data";
   for (lv_obj_t* label : windowStateLabels) {
     if (label != nullptr) {
       lv_label_set_text(label, windowState);
@@ -234,6 +246,20 @@ void updateControlLabels() {
           color(tvPowerStateKnown && tvPowerOn
                     ? kColorAccent : kColorTextSecondary), 0);
     }
+  }
+  if (leftSwitchStateLabel != nullptr) {
+    lv_label_set_text(leftSwitchStateLabel, leftSwitchState);
+    lv_obj_set_style_text_color(
+        leftSwitchStateLabel,
+        color(leftSwitchStateKnown && leftSwitchOn
+                  ? kColorAccent : kColorTextSecondary), 0);
+  }
+  if (rightSwitchStateLabel != nullptr) {
+    lv_label_set_text(rightSwitchStateLabel, rightSwitchState);
+    lv_obj_set_style_text_color(
+        rightSwitchStateLabel,
+        color(rightSwitchStateKnown && rightSwitchOn
+                  ? kColorAccent : kColorTextSecondary), 0);
   }
 }
 
@@ -297,6 +323,34 @@ void handleTvPressed(lv_event_t* event) {
   showNotice("Sending to HA...");
   invokeAction(DashboardAction::TvPowerToggle);
   Serial.println("Dashboard TV toggle requested");
+}
+
+void handleLeftSwitchPressed(lv_event_t* event) {
+  if (lv_event_get_code(event) != LV_EVENT_PRESSED || !touchAvailable) {
+    return;
+  }
+  if (!controlsEnabled) {
+    showNotice("HA unavailable");
+    Serial.println("Dashboard left switch control unavailable");
+    return;
+  }
+  showNotice("Sending to HA...");
+  invokeAction(DashboardAction::LeftSwitchToggle);
+  Serial.println("Dashboard left switch toggle requested");
+}
+
+void handleRightSwitchPressed(lv_event_t* event) {
+  if (lv_event_get_code(event) != LV_EVENT_PRESSED || !touchAvailable) {
+    return;
+  }
+  if (!controlsEnabled) {
+    showNotice("HA unavailable");
+    Serial.println("Dashboard right switch control unavailable");
+    return;
+  }
+  showNotice("Sending to HA...");
+  invokeAction(DashboardAction::RightSwitchToggle);
+  Serial.println("Dashboard right switch toggle requested");
 }
 
 void closeConfirmation() {
@@ -447,6 +501,24 @@ lv_obj_t* createControlCard(lv_obj_t* parent, int16_t x, int16_t y,
   return card;
 }
 
+// Creates a visible device slot without registering a touch action.
+// 创建一个可见的设备预留位，不注册触摸动作。
+void createReservedControlCard(lv_obj_t* parent, int16_t x, int16_t y,
+                               int16_t width, int16_t height,
+                               const char* title) {
+  lv_obj_t* card = createPanel(parent, x, y, width, height);
+  lv_obj_set_style_bg_color(card, color(kColorBackground), 0);
+  lv_obj_t* icon = createLabel(card, LV_SYMBOL_POWER,
+                               &lv_font_montserrat_22, kColorOffline);
+  lv_obj_set_pos(icon, kControlIconX, (height - 22) / 2);
+  lv_obj_t* titleLabel = createLabel(card, title, &lv_font_montserrat_18,
+                                     kColorTextSecondary);
+  lv_obj_set_pos(titleLabel, kControlTitleX, 10);
+  lv_obj_t* stateLabel = createLabel(card, "Reserved",
+                                     &lv_font_montserrat_14, kColorOffline);
+  lv_obj_set_pos(stateLabel, kControlTitleX, 38);
+}
+
 void createOverviewPage(lv_obj_t* screen) {
   lv_obj_t* page = lv_obj_create(screen);
   removeDefaultStyle(page);
@@ -524,19 +596,21 @@ void createControlsPage(lv_obj_t* screen) {
                                    kColorTextSecondary);
   lv_obj_set_pos(subtitle, 18, 58);
 
-  createControlCard(page, 16, 92, 448, 88, nullptr, true,
+  createControlCard(page, 16, 82, 220, 70, LV_SYMBOL_POWER, false,
+                    "Left Switch", &leftSwitchStateLabel,
+                    handleLeftSwitchPressed);
+  createControlCard(page, 244, 82, 220, 70, LV_SYMBOL_POWER, false,
+                    "Right Switch", &rightSwitchStateLabel,
+                    handleRightSwitchPressed);
+  createControlCard(page, 16, 160, 448, 70, nullptr, true,
                     "Electric Window", &windowStateLabels[1],
                     handleWindowPressed);
-  createControlCard(page, 16, 190, 448, 88, LV_SYMBOL_POWER, false,
-                    "Television Power", &tvStateLabels[1], handleTvPressed);
+  createReservedControlCard(page, 16, 238, 220, 70,
+                            "Air Conditioner");
+  createControlCard(page, 244, 238, 220, 70, LV_SYMBOL_POWER, false,
+                    "TV Power", &tvStateLabels[1], handleTvPressed);
 
-  lv_obj_t* note = createPanel(page, 16, 288, 448, 44, 14);
-  lv_obj_t* noteLabel = createLabel(note, "Controls will sync with HA",
-                                    &lv_font_montserrat_14,
-                                    kColorTextSecondary);
-  lv_obj_center(noteLabel);
-
-  lv_obj_t* leaveButton = createPanel(page, 16, 342, 448, 54, 18);
+  lv_obj_t* leaveButton = createPanel(page, 16, 320, 448, 76, 18);
   lv_obj_set_style_bg_color(leaveButton, color(kColorDanger), 0);
   styleInteractive(leaveButton, true);
   lv_obj_add_event_cb(leaveButton, handleLeavePressed,
@@ -784,6 +858,18 @@ void dashboardUiSetWindowState(bool open) {
 void dashboardUiSetTvPowerState(bool on) {
   tvPowerOn = on;
   tvPowerStateKnown = true;
+  updateControlLabels();
+}
+
+void dashboardUiSetLeftSwitchState(bool on) {
+  leftSwitchOn = on;
+  leftSwitchStateKnown = true;
+  updateControlLabels();
+}
+
+void dashboardUiSetRightSwitchState(bool on) {
+  rightSwitchOn = on;
+  rightSwitchStateKnown = true;
   updateControlLabels();
 }
 

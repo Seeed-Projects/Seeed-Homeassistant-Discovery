@@ -23,6 +23,12 @@ constexpr const char* kWindowEntity =
     "cover.liyan_liyan_4d07_window_opener_2";
 constexpr const char* kTvPowerEntity =
     "switch.cuco_v3_3244_switch_2";
+constexpr const char* kLeftSwitchEntity =
+    "switch.xiaomi_2wpro2_37c3_left_switch_service_2";
+constexpr const char* kRightSwitchEntity =
+    "switch.xiaomi_2wpro2_37c3_right_switch_service_2";
+constexpr const char* kReservedAirConditionerEntity =
+    "switch.indicator_switch1_1";
 constexpr const char* kCurrentPowerEntity =
     "sensor.cuco_v3_3244_electric_power_2";
 constexpr const char* kTodayEnergyEntity =
@@ -33,9 +39,10 @@ constexpr const char* kMonthlyEnergyEntity =
 // Entities turned off after the Leave Room confirmation.
 // 确认离开会议室后统一关闭的实体。
 constexpr const char* kLeaveRoomEntities[] = {
-    "switch.xiaomi_2wpro2_37c3_left_switch_service_2",
-    "switch.xiaomi_2wpro2_37c3_right_switch_service_2",
-    "switch.cuco_v3_3244_switch_2",
+    kLeftSwitchEntity,
+    kRightSwitchEntity,
+    kReservedAirConditionerEntity,
+    kTvPowerEntity,
     "light.liyan_liyan_4d07_light_2",
     "media_player.xiaomi_lx06_3740_play_control_2",
 };

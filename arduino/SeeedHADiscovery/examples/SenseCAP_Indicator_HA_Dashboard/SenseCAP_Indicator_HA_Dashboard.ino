@@ -254,6 +254,12 @@ void handleDashboardAction(DashboardAction action) {
   } else if (action == DashboardAction::TvPowerToggle) {
     const char* entities[] = {kTvPowerEntity};
     sendEntityCommand("toggle", entities, 1);
+  } else if (action == DashboardAction::LeftSwitchToggle) {
+    const char* entities[] = {kLeftSwitchEntity};
+    sendEntityCommand("toggle", entities, 1);
+  } else if (action == DashboardAction::RightSwitchToggle) {
+    const char* entities[] = {kRightSwitchEntity};
+    sendEntityCommand("toggle", entities, 1);
   } else if (action == DashboardAction::LeaveRoom) {
     sendEntityCommand("turn_off", kLeaveRoomEntities,
                       kLeaveRoomEntityCount);

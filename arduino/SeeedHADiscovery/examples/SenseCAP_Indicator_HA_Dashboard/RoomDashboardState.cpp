@@ -22,6 +22,8 @@ enum StateChange : uint16_t {
   kCurrentPowerChanged = 1 << 7,
   kTodayEnergyChanged = 1 << 8,
   kMonthlyEnergyChanged = 1 << 9,
+  kLeftSwitchChanged = 1 << 10,
+  kRightSwitchChanged = 1 << 11,
 };
 
 struct RoomStateCache {
@@ -36,6 +38,8 @@ struct RoomStateCache {
   bool occupied = false;
   bool windowOpen = false;
   bool tvPowerOn = false;
+  bool leftSwitchOn = false;
+  bool rightSwitchOn = false;
   uint16_t changes = 0;
 };
 
@@ -136,6 +140,16 @@ bool roomDashboardStateUpdate(const char* entityId, const char* state,
       cache.tvPowerOn = stateIsOn(state);
       cache.changes |= kTvPowerChanged;
     }
+  } else if (matchesEntity(entityId, kLeftSwitchEntity)) {
+    if (!stateIsUnavailable(state)) {
+      cache.leftSwitchOn = stateIsOn(state);
+      cache.changes |= kLeftSwitchChanged;
+    }
+  } else if (matchesEntity(entityId, kRightSwitchEntity)) {
+    if (!stateIsUnavailable(state)) {
+      cache.rightSwitchOn = stateIsOn(state);
+      cache.changes |= kRightSwitchChanged;
+    }
   } else if (matchesEntity(entityId, kCurrentPowerEntity)) {
     updateMetric(cache.currentPower, state, kCurrentPowerChanged);
   } else if (matchesEntity(entityId, kTodayEnergyEntity)) {
@@ -180,6 +194,12 @@ void roomDashboardStateApply() {
   }
   if (changes & kTvPowerChanged) {
     dashboardUiSetTvPowerState(cache.tvPowerOn);
+  }
+  if (changes & kLeftSwitchChanged) {
+    dashboardUiSetLeftSwitchState(cache.leftSwitchOn);
+  }
+  if (changes & kRightSwitchChanged) {
+    dashboardUiSetRightSwitchState(cache.rightSwitchOn);
   }
   if (changes & kCurrentPowerChanged) {
     dashboardUiSetMetric(DashboardMetric::CurrentPower,
