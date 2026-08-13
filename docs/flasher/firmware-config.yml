@@ -147,7 +147,7 @@ firmware:
   - id: SenseCAP_Indicator_HA_Dashboard
     name: "SenseCAP Indicator Room Dashboard"
     name_zh: "SenseCAP Indicator 会议室看板"
-    version: "1.0.0"
+    version: "1.0.1"
     description: "Touch-enabled Room 106 dashboard with live Home Assistant entities, room controls, energy data, and Wi-Fi provisioning."
     description_zh: "支持触摸的 106 会议室看板，可显示 Home Assistant 实体、控制会议室设备、查看用电数据并通过热点配网。"
     sketch: "arduino/SeeedHADiscovery/examples/SenseCAP_Indicator_HA_Dashboard/SenseCAP_Indicator_HA_Dashboard.ino"

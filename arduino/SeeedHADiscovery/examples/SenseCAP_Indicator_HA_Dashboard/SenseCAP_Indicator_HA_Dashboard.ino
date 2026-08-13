@@ -6,6 +6,7 @@
 #include <lvgl.h>
 
 #include "DashboardUi.h"
+#include "RoomDashboardCommandBatch.h"
 #include "RoomDashboardConfig.h"
 #include "RoomDashboardState.h"
 #include "SenseCapIndicatorBus.h"
@@ -76,6 +77,8 @@ SeeedHADiscovery* ha = nullptr;
 TaskHandle_t networkTaskHandle = nullptr;
 uint32_t dashboardReadyAt = 0;
 uint32_t nextEntityCommandId = 1;
+constexpr uint32_t kLeaveRoomCommandTimeoutMs = 8000;
+RoomDashboardCommandBatch leaveRoomCommands;
 
 enum class NetworkStartupState : uint8_t {
   Idle,
@@ -229,22 +232,82 @@ void updateConnectionUi() {
 
 // Sends one authorized entity action through the HA integration.
 // 通过 HA 集成发送一个已授权的实体动作。
-void sendEntityCommand(const char* action, const char* const* entityIds,
-                       size_t entityCount) {
+uint32_t sendEntityCommand(const char* action, const char* const* entityIds,
+                           size_t entityCount) {
   if (ha == nullptr || !ha->isHAConnected()) {
     dashboardUiShowNotice("HA unavailable");
-    return;
+    return 0;
   }
 
+  const uint32_t requestId = nextEntityCommandId++;
   JsonDocument document;
   document["type"] = kEntityCommandType;
-  document["request_id"] = nextEntityCommandId++;
+  document["request_id"] = requestId;
   document["action"] = action;
   JsonArray entities = document["entity_ids"].to<JsonArray>();
   for (size_t index = 0; index < entityCount; ++index) {
     entities.add(entityIds[index]);
   }
   ha->sendProtocolMessage(document);
+  return requestId;
+}
+
+void showLeaveRoomResult() {
+  const DashboardCommandBatchResult result = leaveRoomCommands.result();
+  if (result == DashboardCommandBatchResult::AllSucceeded) {
+    dashboardUiShowNotice("Room shutdown complete");
+  } else if (result == DashboardCommandBatchResult::PartialSuccess) {
+    dashboardUiShowNotice("Some devices skipped");
+  } else if (result == DashboardCommandBatchResult::AllFailed) {
+    dashboardUiShowNotice("Room shutdown failed");
+  }
+  Serial.printf("Leave Room result: success=%u, failed=%u\n",
+                static_cast<unsigned>(leaveRoomCommands.successCount()),
+                static_cast<unsigned>(leaveRoomCommands.failureCount()));
+}
+
+// Sends every room shutdown target as an independent HA command.
+// 将每个会议室关闭目标作为独立的 HA 命令发送。
+void sendLeaveRoomCommands() {
+  if (ha == nullptr || !ha->isHAConnected()) {
+    dashboardUiShowNotice("HA unavailable");
+    return;
+  }
+  if (leaveRoomCommands.pending()) {
+    dashboardUiShowNotice("Shutdown in progress");
+    return;
+  }
+
+  leaveRoomCommands.begin(millis());
+  for (size_t index = 0; index < kLeaveRoomEntityCount; ++index) {
+    const char* entityIds[] = {kLeaveRoomEntities[index]};
+    const uint32_t requestId = sendEntityCommand("turn_off", entityIds, 1);
+    leaveRoomCommands.add(requestId);
+  }
+  dashboardUiShowNotice("Closing room devices...");
+}
+
+void handleEntityCommandResult(JsonDocument& document) {
+  const uint32_t requestId = document["request_id"] | 0;
+  const bool success = document["success"] | false;
+  const char* error = document["error"] | "";
+  const DashboardCommandResolution resolution =
+      leaveRoomCommands.resolve(requestId, success);
+
+  if (resolution == DashboardCommandResolution::Completed) {
+    showLeaveRoomResult();
+  } else if (resolution == DashboardCommandResolution::NotTracked) {
+    if (success) {
+      dashboardUiShowNotice("HA action completed");
+    } else if (strcmp(error, "entity_not_subscribed") == 0) {
+      dashboardUiShowNotice("Select entity in HA");
+    } else {
+      dashboardUiShowNotice("HA action failed");
+    }
+  }
+  Serial.printf(
+      "HA action result: request=%u, success=%s, error=%s\n",
+      static_cast<unsigned>(requestId), success ? "true" : "false", error);
 }
 
 void handleDashboardAction(DashboardAction action) {
@@ -261,8 +324,7 @@ void handleDashboardAction(DashboardAction action) {
     const char* entities[] = {kRightSwitchEntity};
     sendEntityCommand("toggle", entities, 1);
   } else if (action == DashboardAction::LeaveRoom) {
-    sendEntityCommand("turn_off", kLeaveRoomEntities,
-                      kLeaveRoomEntityCount);
+    sendLeaveRoomCommands();
   }
 }
 
@@ -283,24 +345,14 @@ void runNetworkStartup(void* parameter) {
 
   instance->enableDebug(true);
   instance->setDeviceInfo("SenseCAP Indicator Room Dashboard",
-                          "SenseCAP Indicator", "1.0.0");
+                          "SenseCAP Indicator", "1.0.1");
   instance->onHAState([](const char* entityId, const char* state,
                          JsonObject& attributes) {
     roomDashboardStateUpdate(entityId, state, attributes);
   });
   instance->onProtocolMessage(
       kEntityCommandResultType, [](JsonDocument& document) {
-        const bool success = document["success"] | false;
-        const char* error = document["error"] | "";
-        if (success) {
-          dashboardUiShowNotice("HA action completed");
-        } else if (strcmp(error, "entity_not_subscribed") == 0) {
-          dashboardUiShowNotice("Select entity in HA");
-        } else {
-          dashboardUiShowNotice("HA action failed");
-        }
-        Serial.printf("HA action result: success=%s, error=%s\n",
-                      success ? "true" : "false", error);
+        handleEntityCommandResult(document);
       });
 
   Serial0.println("Network stage: WiFi provisioning starting");
@@ -414,6 +466,9 @@ void loop() {
   roomDashboardStateApply();
   lv_timer_handler();
   const uint32_t now = millis();
+  if (leaveRoomCommands.expire(now, kLeaveRoomCommandTimeoutMs)) {
+    showLeaveRoomResult();
+  }
   if (now - lastStatusAt >= 10000) {
     Serial.printf(
         "Dashboard status: WiFi=%s, HA=%s, provisioning=%s\n",

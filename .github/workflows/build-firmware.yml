@@ -244,7 +244,7 @@ jobs:
           done
           cp $(find ~/.arduino15/packages/esp32 -name "boot_app0.bin" -type f | head -1) ./boot_app0.bin
           cat > manifest.json << 'EOF'
-          {"name":"SenseCAP Indicator Room Dashboard","version":"1.0.0","new_install_prompt_erase":true,"builds":[{"chipFamily":"ESP32-S3","parts":[{"path":"bootloader.bin","offset":0},{"path":"partitions.bin","offset":32768},{"path":"boot_app0.bin","offset":57344},{"path":"firmware.bin","offset":65536}]}]}
+          {"name":"SenseCAP Indicator Room Dashboard","version":"1.0.1","new_install_prompt_erase":true,"builds":[{"chipFamily":"ESP32-S3","parts":[{"path":"bootloader.bin","offset":0},{"path":"partitions.bin","offset":32768},{"path":"boot_app0.bin","offset":57344},{"path":"firmware.bin","offset":65536}]}]}
           EOF
       - uses: actions/upload-artifact@v4
         with:

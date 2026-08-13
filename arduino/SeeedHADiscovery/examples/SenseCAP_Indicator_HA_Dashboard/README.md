@@ -55,9 +55,11 @@ The bottom navigation opens Overview, Controls, and Energy pages. The Controls
 page provides left-switch, right-switch, electric-window, and TV cards. These
 cards request Home Assistant to toggle their mapped entities. The air-conditioner
 card is a reserved, non-interactive slot until the room device is installed.
-After confirmation, `Leave Room` requests Home Assistant to turn off six
-configured room devices, including the reserved air-conditioner entity. Control
-state labels only change after Home Assistant sends the real state.
+After confirmation, `Leave Room` sends six independent turn-off requests,
+including the reserved air-conditioner entity. Each available, authorized
+target continues independently, and the dashboard reports whether all, some,
+or none of the requests completed. Control state labels only change after Home
+Assistant sends the real state.
 
 ## Wi-Fi provisioning
 
@@ -112,12 +114,14 @@ authorization boundary. Also select these entities:
 | Room media player | `media_player.xiaomi_lx06_3740_play_control_2` |
 
 The left switch, right switch, window, and TV entities already appear in the
-display table. Select the reserved air-conditioner entity even before the
-physical air conditioner is installed because it is part of the `Leave Room`
-batch command. The integration only executes device actions for entities
-selected on this page. Temperature and humidity are rounded to one decimal
-place on the display. Presence states such as `has one` and `no one` are
-displayed as `Occupied` and `Vacant`.
+display table. Select the reserved air-conditioner entity after the physical
+air conditioner is installed and the entity is ready. The integration executes
+device actions for entities selected on this page. Each `Leave Room` target is
+requested separately, so every selected device can complete even when another
+target is unavailable or not selected.
+Temperature and humidity are rounded to one decimal place on the display.
+Presence states such as `has one` and `no one` are displayed as `Occupied` and
+`Vacant`.
 
 To reuse the firmware in another room, edit the room name, provisioning AP name,
 and entity IDs in `RoomDashboardConfig.h`. The display driver, UI, and HA state

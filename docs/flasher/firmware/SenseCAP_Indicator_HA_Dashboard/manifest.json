@@ -1,6 +1,6 @@
 {
   "name": "SenseCAP Indicator Room Dashboard",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "home_assistant_domain": "seeed_ha_discovery",
   "funding_url": "https://www.seeedstudio.com/",
   "new_install_prompt_erase": true,
