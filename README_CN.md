@@ -68,6 +68,7 @@
 |------|----------|----------|
 | 🏷️ **Seeed 产品** | XIAO IR Mate | ESP32-C3 |
 | 🏷️ **Seeed 产品** | SCD41 空气质量显示 | ESP32-C3 |
+| 🏷️ **Seeed 产品** | SenseCAP Indicator 会议室看板 | ESP32-S3 |
 | 🏷️ **Seeed 产品** | IoT Button V2 | ESP32-C6 |
 | 🏷️ **Seeed 产品** | 土壤湿度传感器 | ESP32-C6 |
 | 🏷️ **Seeed 产品** | 摄像头推流 | ESP32-S3 Sense |

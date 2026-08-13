@@ -68,6 +68,7 @@ Click the button below to add this integration to your Home Assistant:
 |----------|----------|-----------------|
 | 🏷️ **Seeed Products** | XIAO IR Mate | ESP32-C3 |
 | 🏷️ **Seeed Products** | SCD41 Air Quality Display | ESP32-C3 |
+| 🏷️ **Seeed Products** | SenseCAP Indicator Room Dashboard | ESP32-S3 |
 | 🏷️ **Seeed Products** | IoT Button V2 | ESP32-C6 |
 | 🏷️ **Seeed Products** | XIAO Soil Moisture Sensor | ESP32-C6 |
 | 🏷️ **Seeed Products** | CameraStream | ESP32-S3 Sense |

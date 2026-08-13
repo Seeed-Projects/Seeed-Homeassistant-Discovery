@@ -19,7 +19,7 @@ This is a web-based firmware flasher that allows users to flash pre-compiled fir
 
 ### Live Demo
 
-Visit: `https://your-username.github.io/hacs-devolop/flasher/`
+Visit: `https://seeed-projects.github.io/Seeed-Homeassistant-Discovery/flasher/`
 
 ### Supported Browsers
 
@@ -46,6 +46,13 @@ Visit: `https://your-username.github.io/hacs-devolop/flasher/`
 3. Update `.github/workflows/build-firmware.yml` matrix
 4. Add a card to `index.html`
 5. Push to GitHub - firmware will be compiled automatically
+
+### SenseCAP Indicator Room Dashboard
+
+The SenseCAP Indicator D1/D1S firmware uses an ESP32-S3 build with 8MB flash,
+the 3MB application partition, and OPI PSRAM. After installation, connect to
+the `SenseCAP_Indicator_AP` hotspot to configure Wi-Fi, then select the Room 106
+entities in the Seeed HA Discovery integration.
 
 ### File Structure
 
@@ -110,7 +117,7 @@ To test locally:
 
 ### 在线演示
 
-访问：`https://your-username.github.io/hacs-devolop/flasher/`
+访问：`https://seeed-projects.github.io/Seeed-Homeassistant-Discovery/flasher/`
 
 ### 支持的浏览器
 
@@ -137,6 +144,12 @@ To test locally:
 3. 更新 `.github/workflows/build-firmware.yml` 的 matrix
 4. 在 `index.html` 中添加卡片
 5. 推送到 GitHub - 固件将自动编译
+
+### SenseCAP Indicator 会议室看板
+
+SenseCAP Indicator D1/D1S 固件使用 ESP32-S3、8MB Flash、3MB 应用分区和
+OPI PSRAM。安装完成后，连接 `SenseCAP_Indicator_AP` 热点配置 Wi-Fi，随后
+在 Seeed HA Discovery 集成中选择 106 会议室实体。
 
 ### 文件结构
 
@@ -192,4 +205,3 @@ docs/flasher/
 - [Web Serial API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API)
 - [Arduino CLI](https://arduino.github.io/arduino-cli/)
 - [GitHub Actions for Arduino](https://github.com/arduino/compile-sketches)
-

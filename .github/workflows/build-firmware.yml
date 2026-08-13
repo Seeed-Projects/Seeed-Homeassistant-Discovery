@@ -28,6 +28,7 @@ on:
 
 env:
   ESP32_CORE_VERSION: "3.3.4"
+  INDICATOR_ESP32_CORE_VERSION: "3.1.2"
   ARDUINOJSON_VERSION: "7.4.2"
   WEBSOCKETS_VERSION: "2.7.1"
   NEOPIXEL_VERSION: "1.15.2"
@@ -36,6 +37,10 @@ env:
   ADAFRUIT_ST7789_VERSION: "1.11.0"
   SENSIRION_SCD4X_VERSION: "1.1.0"
   SENSIRION_CORE_VERSION: "0.7.3"
+  INDICATOR_ARDUINOJSON_VERSION: "7.2.1"
+  INDICATOR_ARDUINO_GFX_VERSION: "1.5.3"
+  INDICATOR_LVGL_VERSION: "9.2.2"
+  INDICATOR_PCA95X5_VERSION: "0.1.3"
 
 jobs:
   # ============================================================================
@@ -49,6 +54,7 @@ jobs:
       library-ble: ${{ steps.filter.outputs.library-ble }}
       ir-mate: ${{ steps.filter.outputs.ir-mate }}
       scd41-air-quality: ${{ steps.filter.outputs.scd41-air-quality }}
+      indicator-dashboard: ${{ steps.filter.outputs.indicator-dashboard }}
       iot-button: ${{ steps.filter.outputs.iot-button }}
       soil-moisture: ${{ steps.filter.outputs.soil-moisture }}
       camera-stream: ${{ steps.filter.outputs.camera-stream }}
@@ -78,6 +84,8 @@ jobs:
               - 'arduino/SeeedHADiscovery/examples/XIAO_IR_Mate/**'
             scd41-air-quality:
               - 'arduino/SeeedHADiscovery/examples/XIAO_ESP32C3_SCD41_AirQuality_Display/**'
+            indicator-dashboard:
+              - 'arduino/SeeedHADiscovery/examples/SenseCAP_Indicator_HA_Dashboard/**'
             iot-button:
               - 'arduino/SeeedHADiscovery/examples/IoTButtonV2_DeepSleep/**'
             soil-moisture:
@@ -196,6 +204,57 @@ jobs:
         with:
           name: firmware-XIAO_ESP32C3_SCD41_AirQuality_Display
           path: build/XIAO_ESP32C3_SCD41_AirQuality_Display/
+
+  # SenseCAP Indicator Room Dashboard - ESP32-S3
+  build-indicator-dashboard:
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.library == 'true' || needs.detect-changes.outputs.indicator-dashboard == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Arduino CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=/usr/local/bin sh
+      - name: Install dependencies
+        run: |
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
+          arduino-cli core update-index
+          for i in 1 2 3 4 5; do arduino-cli core install esp32:esp32@${{ env.INDICATOR_ESP32_CORE_VERSION }} && break || { echo "Attempt $i failed, retrying in 30s..."; sleep 30; }; done
+          arduino-cli lib install "ArduinoJson@${{ env.INDICATOR_ARDUINOJSON_VERSION }}"
+          arduino-cli lib install "WebSockets@${{ env.WEBSOCKETS_VERSION }}"
+          arduino-cli lib install "GFX Library for Arduino@${{ env.INDICATOR_ARDUINO_GFX_VERSION }}"
+          arduino-cli lib install "lvgl@${{ env.INDICATOR_LVGL_VERSION }}"
+          arduino-cli lib install "PCA95x5@${{ env.INDICATOR_PCA95X5_VERSION }}"
+          mkdir -p ~/Arduino/libraries
+          cp -r arduino/SeeedHADiscovery ~/Arduino/libraries/
+      - name: Compile
+        run: |
+          mkdir -p build/SenseCAP_Indicator_HA_Dashboard
+          arduino-cli compile --fqbn "esp32:esp32:esp32s3:FlashSize=8M,PartitionScheme=default_8MB,PSRAM=opi,CDCOnBoot=cdc" \
+            --output-dir "build/SenseCAP_Indicator_HA_Dashboard" --export-binaries \
+            "arduino/SeeedHADiscovery/examples/SenseCAP_Indicator_HA_Dashboard/SenseCAP_Indicator_HA_Dashboard.ino"
+      - name: Prepare firmware
+        run: |
+          cd build/SenseCAP_Indicator_HA_Dashboard
+          for f in *.bin; do
+            [[ "$f" == *".ino.bin" ]] && mv "$f" "firmware.bin"
+            [[ "$f" == *".bootloader.bin" ]] && mv "$f" "bootloader.bin"
+            [[ "$f" == *".partitions.bin" ]] && mv "$f" "partitions.bin"
+          done
+          cp $(find ~/.arduino15/packages/esp32 -name "boot_app0.bin" -type f | head -1) ./boot_app0.bin
+          cat > manifest.json << 'EOF'
+          {"name":"SenseCAP Indicator Room Dashboard","version":"1.0.0","new_install_prompt_erase":true,"builds":[{"chipFamily":"ESP32-S3","parts":[{"path":"bootloader.bin","offset":0},{"path":"partitions.bin","offset":32768},{"path":"boot_app0.bin","offset":57344},{"path":"firmware.bin","offset":65536}]}]}
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-SenseCAP_Indicator_HA_Dashboard
+          path: |
+            build/SenseCAP_Indicator_HA_Dashboard/bootloader.bin
+            build/SenseCAP_Indicator_HA_Dashboard/partitions.bin
+            build/SenseCAP_Indicator_HA_Dashboard/boot_app0.bin
+            build/SenseCAP_Indicator_HA_Dashboard/firmware.bin
+            build/SenseCAP_Indicator_HA_Dashboard/manifest.json
 
   # IoT Button V2 - XIAO ESP32-C6 only
   build-iot-button:
@@ -741,7 +800,7 @@ jobs:
   # ============================================================================
 
   combine:
-    needs: [detect-changes, build-ir-mate, build-scd41-air-quality, build-iot-button, build-soil-moisture, build-camera-stream, build-reterminal-e1001, build-reterminal-e1002, build-wifi-provisioning, build-button-switch, build-led-switch, build-ha-state-subscribe, build-temp-humidity, build-bluetooth-proxy]
+    needs: [detect-changes, build-ir-mate, build-scd41-air-quality, build-indicator-dashboard, build-iot-button, build-soil-moisture, build-camera-stream, build-reterminal-e1001, build-reterminal-e1002, build-wifi-provisioning, build-button-switch, build-led-switch, build-ha-state-subscribe, build-temp-humidity, build-bluetooth-proxy]
     if: always() && !cancelled()
     runs-on: ubuntu-latest
     steps:
@@ -757,7 +816,7 @@ jobs:
           mkdir -p combined-firmware
           
           # Single-chip firmware (Seeed-specific)
-          for fw in XIAO_IR_Mate XIAO_ESP32C3_SCD41_AirQuality_Display IoTButtonV2_DeepSleep XIAO_Soil_Moisture_Sensor CameraStream reTerminal_E1001 reTerminal_E1002; do
+          for fw in XIAO_IR_Mate XIAO_ESP32C3_SCD41_AirQuality_Display SenseCAP_Indicator_HA_Dashboard IoTButtonV2_DeepSleep XIAO_Soil_Moisture_Sensor CameraStream reTerminal_E1001 reTerminal_E1002; do
             if [ -d "all-firmware/firmware-${fw}" ]; then
               cp -r "all-firmware/firmware-${fw}" "combined-firmware/${fw}"
               echo "Added: ${fw}"
@@ -871,6 +930,7 @@ jobs:
           | Firmware | Hardware | Description |
           |----------|----------|-------------|
           | XIAO_ESP32C3_SCD41_AirQuality_Display | XIAO ESP32-C3 | SCD41 LCD air-quality monitor |
+          | SenseCAP_Indicator_HA_Dashboard | SenseCAP Indicator D1/D1S | Touch-enabled Room 106 HA dashboard |
           | IoTButtonV2_DeepSleep | XIAO ESP32-C6 | Low-power IoT button |
           | CameraStream | XIAO ESP32-S3 Sense | Camera streaming |
           | reTerminal_E1001 | reTerminal E1001 | E-Paper dashboard |
