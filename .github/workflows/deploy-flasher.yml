@@ -85,8 +85,15 @@ jobs:
           cp docs/flasher/index.html deploy/flasher/
           cp docs/flasher/README.md deploy/flasher/
           cp docs/flasher/firmware-config.yml deploy/flasher/
+
+          # Start with firmware committed in the repository.
+          # 先复制仓库中已经验证并提交的固件。
+          if [ -d "docs/flasher/firmware" ]; then
+            cp -r docs/flasher/firmware/* deploy/flasher/firmware/
+          fi
           
-          # Copy firmware binaries | 复制固件二进制文件
+          # Overlay newly built firmware when a workflow artifact is available.
+          # 自动构建产物存在时，使用最新产物覆盖对应固件。
           if [ -d "firmware-download" ]; then
             cp -r firmware-download/* deploy/flasher/firmware/
           fi
@@ -120,4 +127,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
