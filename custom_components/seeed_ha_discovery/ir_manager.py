@@ -691,7 +691,11 @@ class IRMateManager:
         self._ensure_capture_appliance()
         label = f"{gesture.capitalize()} tap"
         await self.async_learn_command(
-            GESTURE_CAPTURE_APPLIANCE_ID, gesture, label, timeout
+            GESTURE_CAPTURE_APPLIANCE_ID,
+            gesture,
+            label,
+            timeout,
+            sync_bound_gestures=False,
         )
         return await self.async_set_gesture_binding(
             gesture, GESTURE_CAPTURE_APPLIANCE_ID, gesture
@@ -804,8 +808,13 @@ class IRMateManager:
         command_name: str,
         timeout: int = 30,
         alternative: bool = False,
+        sync_bound_gestures: bool = True,
     ) -> dict[str, Any]:
-        """Capture and persist one learned infrared command."""
+        """Capture and persist one learned infrared command.
+
+        Set sync_bound_gestures to publish the new waveform immediately to
+        every gesture that already references this command.
+        """
         await self.async_initialize()
         appliance = self._get_appliance(appliance_id)
         target_id = command_id or _slug(command_name)
@@ -838,11 +847,12 @@ class IRMateManager:
                 "pulse_count": len(first_signal["timings"]),
                 "captured_at": dt_util.utcnow().isoformat(),
             }
-            if self._command_is_bound(appliance_id, target_id):
+            command_is_bound = self._command_is_bound(appliance_id, target_id)
+            if command_is_bound and sync_bound_gestures:
                 self._mark_pending_sync()
             await self._store.async_save(self._data)
 
-        if self._command_is_bound(appliance_id, target_id) and self.device.connected:
+        if command_is_bound and sync_bound_gestures and self.device.connected:
             await self.async_sync_bindings()
         self._notify_update()
         return await self.async_snapshot()

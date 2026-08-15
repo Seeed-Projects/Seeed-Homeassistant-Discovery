@@ -629,7 +629,7 @@ seeed-ha-discovery/
 ├── custom_components/
 │   └── seeed_ha_discovery/       # Home Assistant Integration
 │       ├── __init__.py           # Main entry
-│       ├── manifest.json         # Integration manifest (v3.10.2)
+│       ├── manifest.json         # Integration manifest (v3.10.3)
 │       ├── config_flow.py        # Configuration flow
 │       ├── const.py              # Constants definition
 │       ├── coordinator.py        # Data coordinator
