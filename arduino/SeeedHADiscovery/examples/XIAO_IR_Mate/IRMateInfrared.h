@@ -88,10 +88,8 @@ private:
     // Minimum pulses that still count as a signal; short remotes are allowed.
     // 仍算作有效信号的最少脉冲数;允许短信号的遥控器。
     static constexpr uint16_t MIN_LEARN_TIMINGS = 4;
-    // Two-pass verification tolerances and the gap that skips same-press echoes.
-    // 两遍校验的容差,以及用于跳过同一次按键回声的间隔。
-    static constexpr uint16_t LEARN_MATCH_TOLERANCE_US = 250;
-    static constexpr uint8_t LEARN_MATCH_TOLERANCE_PERCENT = 25;
+    // Gap that skips echoes from the first press during two-pass learning.
+    // 两遍学习时用于跳过第一次按键回声的间隔。
     static constexpr uint32_t LEARN_PASS_GAP_MS = 250;
     static constexpr uint8_t MAX_REPEAT_COUNT = 10;
     static constexpr uint32_t MIN_LEARNING_TIMEOUT_MS = 1000;
@@ -157,10 +155,6 @@ private:
     void _handleTouchBindingMessage(JsonDocument& doc);
     void _handleTouchStatusMessage(JsonDocument& doc);
     bool _parseTimings(JsonArray timings, std::vector<uint16_t>& output, String& error);
-    bool _timingsMatch(
-        const std::vector<uint16_t>& first,
-        const std::vector<uint16_t>& second
-    ) const;
     bool _transmitRaw(
         const std::vector<uint16_t>& timings,
         uint16_t carrierFrequency,

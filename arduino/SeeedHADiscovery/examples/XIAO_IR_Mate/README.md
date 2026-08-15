@@ -54,16 +54,18 @@ The brand list is sorted by brand and model so the catalog is easy to scan. Once
 
 The infrared receiver is enabled only while learning is in progress. It is disabled again when learning succeeds, is cancelled, or times out.
 
-## Learning a signal (two matching presses)
+## Learning a signal (two structurally matching presses)
 
-Learning captures each key twice and saves it only when both presses agree, so the result is trustworthy:
+Learning captures each key twice. Stable remotes are saved when both waveforms match. Stateful remotes such as air-conditioner controllers can change a few data bits after every press; when both captures have the same pulse count and at least 90% of their timings match, the firmware classifies them as a dynamic-state signal and saves the complete first capture. Captures with clearly different structures report a failure.
 
 1. Press a **Learn** button. IR Mate turns its status light **white** to signal that it is ready.
 2. Point the remote at IR Mate and press the key once. IR Mate buzzes once and briefly re-shows the **white** light to ask for a confirmation press.
-3. Press the **same** key again. Two matching captures light the status **green** and save the signal to the gesture; a mismatch (or no signal) lights it **red**, and the gesture keeps its previous binding.
+3. Press the **same** key again. A matching stable waveform or structurally matching dynamic waveform lights the status **green** and saves the first capture to the gesture. A clear structural mismatch (or no signal) lights it **red**, and the gesture keeps its previous binding.
 4. A Home Assistant notification reports the outcome, including the pulse count and a waveform preview on success.
 5. Open the **Last learned IR signal** sensor to see the captured pulse count and the full `timings` array. The device serial console prints both `IR learn pass 1` and `IR learn pass 2` for comparison.
 6. Select **Command** (or the gesture's bound command) to transmit. The **Last transmitted IR signal** sensor and the serial `IR TX` line show the emitted waveform, which matches the learned one pulse for pulse.
+
+A learned dynamic-state signal is a complete snapshot of the key's state. For example, learning “Cool, 26°C, Auto fan” restores that fixed state every time it is transmitted. Select the matching brand and model from the AC code library below when temperature, mode, and fan speed need continuous adjustment.
 
 ## Air-conditioner code library
 
@@ -80,8 +82,8 @@ The bundled air-conditioner codes are derived from the MIT-licensed [SmartIR](ht
 ## Status feedback
 
 - Learning in progress, ready for a key press: white light (re-shown before the confirmation press).
-- Successful infrared transmission, or a signal verified by two matching presses: green light and one short vibration.
-- Failed infrared transmission, or a learning attempt whose two presses did not match: red light and two short vibrations.
+- Successful infrared transmission, or a signal verified by two structurally matching presses: green light and one short vibration.
+- Failed infrared transmission, or a learning attempt whose two presses have clearly different structures: red light and two short vibrations.
 - Provisioning, disconnected, or not yet paired with Home Assistant: blinking blue light.
 - Connected to Home Assistant and idle: status light off.
 

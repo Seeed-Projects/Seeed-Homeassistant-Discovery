@@ -1,4 +1,5 @@
 #include "IRMateInfrared.h"
+#include "IRLearningMatcher.h"
 
 #include <limits.h>
 #include <string.h>
@@ -156,16 +157,27 @@ void IRMateInfrared::handle() {
         return;
     }
 
-    // Second pass: keep the signal only when both captures agree.
-    // 第二遍:仅当两段波形一致时才保留该信号。
+    // Second pass: classify stable and dynamic-state waveforms before saving.
+    // 第二遍:保存前区分稳定波形与动态状态波形。
     std::vector<uint16_t> secondCapture(timings, timings + timingCount);
     logTimings("IR learn pass 2", _defaultCarrierFrequency, timings, timingCount);
     delete[] timings;
 
-    if (!_timingsMatch(_firstCapture, secondCapture)) {
+    ir_learning::MatchResult match = ir_learning::classify(
+        _firstCapture,
+        secondCapture
+    );
+    if (match.kind == ir_learning::MatchKind::None) {
         Serial.println("IR learn mismatch: the two presses did not match");
         _finishLearning(false, "learn_mismatch");
         return;
+    }
+    if (match.kind == ir_learning::MatchKind::Dynamic) {
+        Serial.printf(
+            "IR learn dynamic signal: %u/%u timings matched; saving pass 1\n",
+            static_cast<unsigned int>(match.matchingTimingCount),
+            static_cast<unsigned int>(_firstCapture.size())
+        );
     }
 
     size_t matchedCount = _firstCapture.size();
@@ -179,28 +191,6 @@ void IRMateInfrared::handle() {
     if (_receiveCallback) {
         _receiveCallback(matchedCount);
     }
-}
-
-bool IRMateInfrared::_timingsMatch(
-    const std::vector<uint16_t>& first,
-    const std::vector<uint16_t>& second
-) const {
-    if (first.size() != second.size() || first.empty()) {
-        return false;
-    }
-    for (size_t index = 0; index < first.size(); index++) {
-        uint16_t high = first[index] > second[index] ? first[index] : second[index];
-        uint16_t low = first[index] > second[index] ? second[index] : first[index];
-        uint32_t tolerance = static_cast<uint32_t>(high) *
-                             LEARN_MATCH_TOLERANCE_PERCENT / 100;
-        if (tolerance < LEARN_MATCH_TOLERANCE_US) {
-            tolerance = LEARN_MATCH_TOLERANCE_US;
-        }
-        if (static_cast<uint32_t>(high - low) > tolerance) {
-            return false;
-        }
-    }
-    return true;
 }
 
 bool IRMateInfrared::toggleDefaultGreePower() {
